@@ -1,7 +1,7 @@
 from tqdm import tqdm
 
 import numpy as np
-from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
+from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit, KFold
 
 import torch
 import torch.nn as nn
@@ -61,8 +61,8 @@ def main():
     hyperparameters = Namespace(
         val_size=0.0,
         n_iter=100,
-        eval_inter=20,
-        folds=3
+        eval_inter=5,
+        folds=5
     )
 
     val_size = hyperparameters.val_size # -- > replace with valsize Parameter object for experiment logging
@@ -104,17 +104,18 @@ def main():
     )
 
     k = hyperparameters.folds
-    skf = StratifiedKFold(n_splits=k, shuffle=True, random_state=42)
+    skf = StratifiedKFold(n_splits=k, shuffle=False)
+    # kf = KFold(n_splits=5, shuffle=False)
     for fold, (train_idx, test_idx) in enumerate(skf.split(X_train, y_train)):
         model = DBConformer(# --> Update ARgs to Parameter object
             model_args,
             emb_size=40,      # Embedding dimension (paper default)
-            tem_depth=6,      # Temporal transformer depth (paper default: 5-6)
-            chn_depth=6,      # Spatial transformer depth (paper default: 5-6)
-            chn=3,            # Number of channels (redundant but needed)
-            n_classes=2       # Number of classes (redundant but needed)
+            tem_depth=2,      # Temporal transformer depth (paper default: 5-6)
+            chn_depth=2,      # Spatial transformer depth (paper default: 5-6)
+            chn=dataset_info["n_ch"],            # Number of channels (redundant but needed)
+            n_classes=dataset_info["n_classes"]       # Number of classes (redundant but needed)
             ) 
-        optimizer = torch.optim.Adam(model.parameters(), lr=3E-4, betas=(0.9, 0.99), weight_decay=1E-5)     # --> Update Args to Parameter objects
+        optimizer = torch.optim.Adam(model.parameters(), lr=1E-3, betas=(0.9, 0.99), weight_decay=0)     # --> Update Args to Parameter objects
         loss_fn = nn.CrossEntropyLoss()
 
         _x_test, _y_test = X_train[test_idx], y_train[test_idx]
@@ -183,6 +184,10 @@ def main():
 
         folds_acc.append(best_acc_per_fold)
         folds_kappa.append(best_kappa_per_fold)
+    
+    print("\n \n \n")
+    print(f"Accuracy: {np.mean(folds_acc):.2f}")
+    print(f"Kappa: {np.mean(folds_kappa):.2f}")
 
 if __name__ == '__main__':
     main()
