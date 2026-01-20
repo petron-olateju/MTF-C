@@ -8,11 +8,12 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from utils.metrics import accuracy_score
+from utils.preprocessing import EA
 from utils.data_loader import EEGDataset, load_BNCI2014_001
 from models.DBConformer import DBConformer
 
 import argparse
-from argparse import Namespace, ArgumentParser
+from argparse import Namespace
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Model, Hyperparameters, ExperimentLogger options')
@@ -36,8 +37,9 @@ def parse_args():
 
     return parser.parse_args()
 
-def main():
-    args = parse_args()
+def main(args=None):
+    if args is None:
+        args = parse_args()
     device = args.device  # --> Update to Parameter object
     verbose = args.verbose  # --> set to command line argument
 
@@ -120,6 +122,9 @@ def main():
 
         _x_test, _y_test = X_train[test_idx], y_train[test_idx]
         _x_train, _y_train = X_train[train_idx], y_train[train_idx]
+
+        _x_train = EA(_x_train)
+        _x_test = EA(_x_test)
         train_loader = DataLoader(
             EEGDataset(_x_train, _y_train),
             batch_size=32,
@@ -185,9 +190,14 @@ def main():
         folds_acc.append(best_acc_per_fold)
         folds_kappa.append(best_kappa_per_fold)
     
+    accuracy = np.mean(folds_acc)
+    kappa = np.mean(folds_kappa)
+
     print("\n \n \n")
-    print(f"Accuracy: {np.mean(folds_acc):.2f}")
-    print(f"Kappa: {np.mean(folds_kappa):.2f}")
+    print(f"Accuracy: {np.mean(accuracy):.2f}")
+    print(f"Kappa: {np.mean(kappa):.2f}")
+
+    return accuracy, kappa
 
 if __name__ == '__main__':
-    main()
+    accuracy, kappa = main()

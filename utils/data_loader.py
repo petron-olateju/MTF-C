@@ -27,8 +27,8 @@ def load_BNCI2014_001(subject, preprocessing_pipeline=None):
 
     left_imagery_idx = np.where(s_y=='left_hand')[0]
     right_imagery_idx = np.where(s_y=='right_hand')[0]
-    left_imagery = s_x[left_imagery_idx]
-    right_imagery = s_x[right_imagery_idx]
+    left_imagery = np.array(s_x[left_imagery_idx])
+    right_imagery = np.array( s_x[right_imagery_idx])
     s_x, s_y = 0, 0
     X = np.vstack((left_imagery, right_imagery))
     y = np.hstack((np.zeros(left_imagery.shape[0]), np.ones(right_imagery.shape[0])))    
@@ -45,3 +45,7 @@ def load_BNCI2014_001(subject, preprocessing_pipeline=None):
     }
     
     return X, y, info
+
+def get_subjects_BNCI2014_001():
+    dataset = BNCI2014_001()
+    return dataset.subject_list
