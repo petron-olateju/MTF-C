@@ -17,13 +17,18 @@ class EEGDataset(Dataset):
         # Return a single sample
         return self.signals[idx], self.labels[idx]
 
-def load_BNCI2014_001(subject, preprocessing_pipeline=None):
+def load_BNCI2014_001(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
     dataset = BNCI2014_001()
-    paradigm = MotorImagery(channels=['Fz', 'FCz', 'C3', 'C4', 'Cz', 'Pz', 'P1', 'P2'], resample=250)
+    paradigm = MotorImagery(channels=None, resample=250)
     if isinstance(subject, int):
         s_x, s_y, metadata = paradigm.get_data(dataset, subjects=[subject])
     else:
         raise ValueError('subject argument should be an interger within valid range on MOABB site')
+
+    raw = dataset.get_data(subjects=[1])
+    fs = raw[1]['0train']['0'].info['sfreq']
+    t0 = int(fs*t0)
+    t1 = int(fs*t1)
 
     left_imagery_idx = np.where(s_y=='left_hand')[0]
     right_imagery_idx = np.where(s_y=='right_hand')[0]
@@ -31,17 +36,23 @@ def load_BNCI2014_001(subject, preprocessing_pipeline=None):
     right_imagery = np.array( s_x[right_imagery_idx])
     s_x, s_y = 0, 0
     X = np.vstack((left_imagery, right_imagery))
+    X = X[:, :, t0:t1]
     y = np.hstack((np.zeros(left_imagery.shape[0]), np.ones(right_imagery.shape[0])))    
 
     if preprocessing_pipeline is not None:
-        X = preprocessing_pipeline(X)
+        if isinstance(preprocessing_pipeline, list) == 0:
+            raise ValueError("preprocessing_pipeline argument should be a list of preprocseeing functions")
+        else:
+            for fn in preprocessing_pipeline:
+                X = fn(X)
 
     n_trials, n_ch, n_times = X.shape
     info = {
         "n_trials": n_trials,
         "n_ch": n_ch,
         "n_times": n_times,
-        "n_classes": len(np.unique(y))
+        "n_classes": len(np.unique(y)),
+        "fs": fs
     }
     
     return X, y, info

@@ -1,5 +1,7 @@
 from tqdm import tqdm
-import sys
+import csv
+
+import numpy as np
 import argparse
 from argparse import Namespace
 
@@ -11,8 +13,8 @@ def parse_args():
 
     parser.add_argument('--script', type=str, default='cross_validation.py', 
         choices=[
-            'cross_validation.py',
-            'pre_training.py'
+            'cross_validation',
+            'pre_training'
         ])
 
     parser.add_argument('--model_name', type=str, default='db_conformer',
@@ -27,6 +29,7 @@ def parse_args():
     parser.add_argument('--device', type=str, default='cpu',
         choices = ['cpu', 'cuda']
     )
+    parser.add_argument('--csv_output', type=str, default='./',)
     parser.add_argument('--verbose', action='store_true',
         help='Print training progress')
 
@@ -60,12 +63,18 @@ def main():
             model_name=model_name,
             verbose=True
         )
-        accuracy, kappa = cross_validation(args)
+        if script == 'cross_validation':
+            accuracy, kappa = cross_validation(args)
+        else:
+            accuracy = 0.5
+            kappa = 0.0
         accuracies.append(accuracy)
         kappas.append(kappa)
         print(f"subject {subject} | Accuracy: {accuracy:.2f}, Kappa: {kappa:.2f}")
-
+    print("\n \n \n")
     print("\nAll subjects completed!")
+    print(f"Accuracy: {np.mean(accuracies):.2f} +- {np.std(accuracies):.2f}")
+    print(f"Kappa: {np.mean(kappa):.2f} +- {np.std(kappas):.2f}")
 
 
 if __name__ == '__main__':

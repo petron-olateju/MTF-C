@@ -8,7 +8,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from utils.metrics import accuracy_score
-from utils.preprocessing import EA
+from utils.preprocessing import EA, bandpass_filtering, exponential_moving_standardization
 from utils.data_loader import EEGDataset, load_BNCI2014_001
 from models.DBConformer import DBConformer
 
@@ -46,6 +46,10 @@ def main(args=None):
     # ====================
     # DATA LOADING & SPLITTING
     # ====================
+    PREPROCESSING = [
+        bandpass_filtering,
+        # exponential_moving_standardization,
+    ]
     if args.dataset == 'dummy_dataset':
         X = np.random.randn(100, 1, 3, 1062)      # --> Replacce with loader class from utils.dataset_loader 
         y = np.random.randint(0, 2, size=100)
@@ -57,7 +61,10 @@ def main(args=None):
     }
     else:
         if args.dataset == 'BNCI2014_001':
-            X, y, dataset_info = load_BNCI2014_001(subject=args.subject)
+            X, y, dataset_info = load_BNCI2014_001(
+                subject=args.subject, 
+                preprocessing_pipeline=PREPROCESSING
+                )
 
     # --> Replace with laod from yaml file
     hyperparameters = Namespace(
