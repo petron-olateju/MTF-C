@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 # from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from utils.metrics import accuracy_score
-from utils.preprocessing import EA, EA_online, bandpass_filtering, exponential_moving_standardization
+from utils.preprocessing import EA, EA_online, bandpass_filtering
 from utils.data_loader import EEGDataset, load_BNCI2014_001, load_BNCI2014_002, load_BNCI2014_004
 from utils.data_loader import load_BNCI2015_001, load_BNCI2015_004, load_Liu2024, load_AlexMI
 from utils.experiment_recorder import Parameter, Experiment
@@ -54,7 +54,6 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
     # ====================
     PREPROCESSING = [
         bandpass_filtering,
-        # exponential_moving_standardization,
     ]
     if args.dataset == 'dummy_dataset':
         X = np.random.randn(100, 1, 3, 1062)      # --> Replacce with loader class from utils.dataset_loader 
