@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 import yaml
@@ -9,7 +10,7 @@ class Experiment:
 
   def __init__(self, name, dir, description, baseline=None):
     self.name = name
-    self.dir = dir
+    self.dir = f'{dir}/{name}'
     self.description = description
     self.parameters = dict()
     self.baseline = baseline
@@ -43,7 +44,9 @@ class Experiment:
         'parameters': self.parameters,
     }
 
-    with open(self.dir, "w") as f:
+    os.makedirs(self.dir, exist_ok=True)
+
+    with open(f'{self.dir}/training_parameters.yaml', "w") as f:
       yaml.dump(experiment_dict, f, default_flow_style=False)
 
     print(f"Model saved to {self.dir}")

@@ -1,5 +1,5 @@
 from tqdm import tqdm
-from typing import Tuple, List
+from typing import Tuple, List, Union
 
 import numpy as np
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
@@ -11,7 +11,9 @@ from torch.utils.data import DataLoader
 
 from utils.metrics import accuracy_score
 from utils.preprocessing import EA, EA_online, bandpass_filtering, exponential_moving_standardization
-from utils.data_loader import EEGDataset, load_BNCI2014_001
+from utils.data_loader import EEGDataset, load_BNCI2014_001, load_BNCI2014_002, load_BNCI2014_004
+from utils.data_loader import load_BNCI2015_001, load_BNCI2015_004, load_Liu2024, load_AlexMI
+from utils.experiment_recorder import Parameter, Experiment
 from models.DBConformer import DBConformer
 
 import argparse
@@ -28,7 +30,9 @@ def parse_args():
         ]
         )
     parser.add_argument('--dataset', type=str, default='dummy_dataset',
-        choices=['dummy_dataset', 'BNCI2014_001']
+        choices=[
+            'dummy_dataset', 'BNCI2014_001', 'BNCI2014_002', 'BNCI2014_004', 
+            'BNCI2015_001', 'BNCI2015_004', 'Liu2024', 'AlexMI']
     )
     parser.add_argument('--subject', type=int, default=1)
     parser.add_argument('--device', type=str, default='cpu',
@@ -39,7 +43,7 @@ def parse_args():
 
     return parser.parse_args()
 
-def main(args=None) -> Tuple[List, List]:
+def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List, List, Union['Experiment', None]]:
     if args is None:
         args = parse_args()
     device = args.device  # --> Update to Parameter object
@@ -67,6 +71,36 @@ def main(args=None) -> Tuple[List, List]:
                 subject=args.subject, 
                 preprocessing_pipeline=PREPROCESSING
                 )
+        elif args.dataset == 'BNCI2014_002':
+            X, y, dataset_info = load_BNCI2014_002(
+                subject=args.subject, 
+                preprocessing_pipeline=PREPROCESSING
+                )
+        elif args.dataset == 'BNCI2014_004':
+            X, y, dataset_info = load_BNCI2014_004(
+                subject=args.subject, 
+                preprocessing_pipeline=PREPROCESSING
+                )
+        elif args.dataset == 'BNCI2015_001':
+            X, y, dataset_info = load_BNCI2015_001(
+                subject=args.subject, 
+                preprocessing_pipeline=PREPROCESSING
+                )
+        elif args.dataset == 'BNCI2015_004':
+            X, y, dataset_info = load_BNCI2015_004(
+                subject=args.subject, 
+                preprocessing_pipeline=PREPROCESSING
+                )
+        elif args.dataset == 'Liu2024':
+            X, y, dataset_info = load_Liu2024(
+                subject=args.subject, 
+                preprocessing_pipeline=PREPROCESSING
+                )
+        elif args.dataset == 'AlexMI':
+            X, y, dataset_info = load_AlexMI(
+                subject=args.subject, 
+                preprocessing_pipeline=PREPROCESSING
+                )
 
     # --> Replace with laod from yaml file
     hyperparameters = Namespace(
@@ -78,6 +112,17 @@ def main(args=None) -> Tuple[List, List]:
         lr=1E-3,
         batch_size=32,
     )
+    if experiment is not None:
+        experiment.add_params([
+            Parameter(hyperparameters.val_size, 'validation_size', 'Traininig-Hyperparameters'),
+            Parameter(hyperparameters.n_iter, 'n_iter', 'Traininig-Hyperparameters'),
+            Parameter(hyperparameters.eval_inter, 'eval_inter', 'Traininig-Hyperparameters'),
+            Parameter(hyperparameters.folds, 'k-folds', 'Traininig-Hyperparameters'),
+            Parameter(hyperparameters.n_repeats, 'k-folds-repeat', 'Traininig-Hyperparameters'),
+            Parameter(hyperparameters.lr, 'learning_rate', 'Traininig-Hyperparameters'),
+            Parameter(hyperparameters.batch_size, 'batch_size', 'Traininig-Hyperparameters'),
+            Parameter(dataset_info, args.dataset, 'Dataset-Details')
+            ])
 
     val_size = hyperparameters.val_size # -- > replace with valsize Parameter object for experiment logging
     if val_size > 0.0:
@@ -116,6 +161,11 @@ def main(args=None) -> Tuple[List, List]:
         branch='all',             # Options: 'all', 'temporal', 'spatial' (paper default: 'all')
         chn_atten_flag=True       # Use channel attention (paper default: True)
     )
+    if experiment is not None:
+        experiment.add_params([
+            Parameter(model_args.patch_size, 'patch_size', 'Model-Hyperparameters'),
+            Parameter(model_args.spa_dim, 'spatial_dimensionality', 'Model-Hyperparameters'),
+            ])
 
     all_accuracies = []
     all_kappas = []
@@ -232,7 +282,7 @@ def main(args=None) -> Tuple[List, List]:
     # print(f"Accuracy: {np.mean(accuracy):.2f}")
     # print(f"Kappa: {np.mean(kappa):.2f}")
 
-    return all_accuracies, all_kappas
+    return all_accuracies, all_kappas, experiment
 
 if __name__ == '__main__':
-    accuracy, kappa = main()
+    accuracy, kappa, experiment = main()
