@@ -48,13 +48,13 @@ def main():
     dataset = args.dataset
     device = args.device
 
-    accuracies = []
-    kappas = []
+    all_accuracies = []
+    all_kappas = []
 
     for subject in tqdm(subjects, total=len(subjects), desc="Training"):
-        print(f"\n{'='*50}")
-        print(f"Running Subject {subject}")
-        print(f"{'='*50}\n")
+        # print(f"\n{'='*50}")
+        # print(f"Running Subject {subject}")
+        # print(f"{'='*50}\n")
 
         args = Namespace(
             dataset=dataset,
@@ -65,16 +65,14 @@ def main():
         )
         if script == 'cross_validation':
             accuracy, kappa = cross_validation(args)
-        else:
-            accuracy = 0.5
-            kappa = 0.0
-        accuracies.append(accuracy)
-        kappas.append(kappa)
-        print(f"subject {subject} | Accuracy: {accuracy:.2f}, Kappa: {kappa:.2f}")
-    print("\n \n \n")
+            all_accuracies = all_accuracies + accuracy
+            all_kappas = all_kappas + kappa
+        print(f"subject {subject} | Accuracy: {np.mean(accuracy):.2f}, Kappa: {np.mean(kappa):.2f}")
+        print("============================================")
+    print("========================================")
     print("\nAll subjects completed!")
-    print(f"Accuracy: {np.mean(accuracies):.2f} +- {np.std(accuracies):.2f}")
-    print(f"Kappa: {np.mean(kappa):.2f} +- {np.std(kappas):.2f}")
+    print(f"Accuracy: {np.mean(all_accuracies):.2f} +- {np.std(all_accuracies):.2f}")
+    print(f"Kappa: {np.mean(all_kappas):.2f} +- {np.std(all_kappas):.2f}")
 
 
 if __name__ == '__main__':

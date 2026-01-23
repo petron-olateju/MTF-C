@@ -22,6 +22,9 @@ def load_BNCI2014_001(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
     paradigm = MotorImagery(channels=None, resample=250)
     if isinstance(subject, int):
         s_x, s_y, metadata = paradigm.get_data(dataset, subjects=[subject])
+        session_mask = metadata['session'].str.contains('0')  # Session T only
+        s_x = s_x[session_mask]
+        s_y = s_y[session_mask]
     else:
         raise ValueError('subject argument should be an interger within valid range on MOABB site')
 
@@ -35,6 +38,7 @@ def load_BNCI2014_001(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
     left_imagery = np.array(s_x[left_imagery_idx])
     right_imagery = np.array( s_x[right_imagery_idx])
     s_x, s_y = 0, 0
+
     X = np.vstack((left_imagery, right_imagery))
     X = X[:, :, t0:t1]
     y = np.hstack((np.zeros(left_imagery.shape[0]), np.ones(right_imagery.shape[0])))    

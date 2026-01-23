@@ -25,6 +25,12 @@ def EA(x):
     XEA = np.zeros(x.shape)
     for i in range(x.shape[0]):
         XEA[i] = np.dot(sqrtRefEA, x[i])
+    return XEA, sqrtRefEA
+
+def EA_online(x, sqrtRefEA):
+    XEA = np.zeros(x.shape)
+    for i in range(x.shape[0]):
+        XEA[i] = np.dot(sqrtRefEA, x[i])
     return XEA
 
 def bandpass_filtering(X, low=8.0, high=30.0, fs=250):
