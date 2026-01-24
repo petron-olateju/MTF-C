@@ -1,3 +1,4 @@
+import yaml
 from tqdm import tqdm
 from typing import Tuple, List, Union
 
@@ -18,6 +19,7 @@ from models.DBConformer import DBConformer
 
 import argparse
 from argparse import Namespace
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Model, Hyperparameters, ExperimentLogger options')
@@ -43,11 +45,14 @@ def parse_args():
 
     return parser.parse_args()
 
+
+
+
 def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List, List, Union['Experiment', None]]:
     if args is None:
         args = parse_args()
     device = args.device  # --> Update to Parameter object
-    verbose = args.verbose  # --> set to command line argument
+    # verbose = args.verbose  # --> set to command line argument
 
     # ====================
     # DATA LOADING & SPLITTING
@@ -55,6 +60,7 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
     PREPROCESSING = [
         bandpass_filtering,
     ]
+
     if args.dataset == 'dummy_dataset':
         X = np.random.randn(100, 1, 3, 1062)      # --> Replacce with loader class from utils.dataset_loader 
         y = np.random.randint(0, 2, size=100)
@@ -101,15 +107,24 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
                 preprocessing_pipeline=PREPROCESSING
                 )
 
-    # --> Replace with laod from yaml file
+    # ====================
+    # CONFIGS & HYPERPARAMETERS
+    # ====================
+    with open('./configs/cross_validation.yaml', 'r') as f:
+        configs = yaml.safe_load(f)
+
+    training_configs = configs['training']
+    model_configs = configs[args.model_name]
+    
+    # --> Training Hyperparameters + update experiment tracker
     hyperparameters = Namespace(
-        val_size=0.0,
-        n_iter=100,
-        eval_inter=5,
-        folds=5,
-        n_repeats=5,
-        lr=1E-3,
-        batch_size=32,
+        val_size = training_configs['val_size'],
+        n_iter = training_configs['n_iter'],
+        eval_inter = training_configs['eval_inter'],
+        folds = training_configs['folds'],
+        n_repeats = training_configs['n_repeats'],
+        lr = training_configs['lr'],
+        batch_size = training_configs['batch_size'],
     )
     if experiment is not None:
         experiment.add_params([
@@ -123,7 +138,37 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
             Parameter(dataset_info, args.dataset, 'Dataset-Details')
             ])
 
-    val_size = hyperparameters.val_size # -- > replace with valsize Parameter object for experiment logging
+    # --> Model parameters + update experiment tracker
+    model_args = Namespace(
+        # Data configuration
+        data_name = args.dataset,
+        chn = dataset_info["n_ch"],                    # Number of channels (matches your X shape)
+        time_sample_num = dataset_info["n_times"],     # Number of time points (matches your X shape)
+        class_num = dataset_info["n_classes"],              # Binary classification
+        
+        # Patch configuration
+        patch_size = model_configs['patch_size'],           
+        spa_dim = model_configs['spa_dim'],               # Spatial dimension for channel embedding
+        
+        # Model flags
+        gate_flag = model_configs['gate_flag'],          # Use gated fusion (paper default: False)
+        posemb_flag = model_configs['posemb_flag'],         # Use positional embeddings (paper default: True)
+        branch = model_configs['branch'],             # Options: 'all', 'temporal', 'spatial' (paper default: 'all')
+        chn_atten_flag = model_configs['chn_attn_flag']       # Use channel attention (paper default: True)
+    )
+    if experiment is not None:
+        experiment.add_params([
+            Parameter(model_args.patch_size, 'patch_size', 'Model-Hyperparameters'),
+            Parameter(model_args.spa_dim, 'spatial_dimensionality', 'Model-Hyperparameters'),
+            Parameter(model_configs['emb_size'], 'embedding_size', 'Model-Hyperparameters'),
+            Parameter(model_configs['tem_depth'], 'temporal_depth', 'Model-Hyperparameters'),
+            Parameter(model_configs['chn_size'], 'channel_depth', 'Model-Hyperparameters'),
+            ])
+
+    val_size = hyperparameters.val_size
+    n_iter = hyperparameters.n_iter
+    eval_inter = hyperparameters.eval_inter
+
     if val_size > 0.0:
         sss = StratifiedShuffleSplit(n_splits=1, test_size=val_size, random_state=42)
         for train_idx, val_idx in sss.split(X, y):
@@ -133,59 +178,47 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
         X_train = X
         y_train = y
 
-    # ====================
-    # Within Subject 5-CV
-    # ====================
-    n_iter = hyperparameters.n_iter    # --> Update to Parameter object
-    eval_inter = hyperparameters.eval_inter  # --> Update to Parameter object
-
-    folds_acc = []
-    folds_kappa = []
-
-    # --> Replace with laod from yaml file
-    model_args = Namespace(
-        # Data configuration
-        data_name=args.dataset,
-        chn=dataset_info["n_ch"],                    # Number of channels (matches your X shape)
-        time_sample_num=dataset_info["n_times"],     # Number of time points (matches your X shape)
-        class_num=dataset_info["n_classes"],              # Binary classification
-        
-        # Patch configuration
-        patch_size=100,           
-        spa_dim=16,               # Spatial dimension for channel embedding
-        
-        # Model flags
-        gate_flag=False,          # Use gated fusion (paper default: False)
-        posemb_flag=True,         # Use positional embeddings (paper default: True)
-        branch='all',             # Options: 'all', 'temporal', 'spatial' (paper default: 'all')
-        chn_atten_flag=True       # Use channel attention (paper default: True)
-    )
-    if experiment is not None:
-        experiment.add_params([
-            Parameter(model_args.patch_size, 'patch_size', 'Model-Hyperparameters'),
-            Parameter(model_args.spa_dim, 'spatial_dimensionality', 'Model-Hyperparameters'),
-            ])
-
-    all_accuracies = []
-    all_kappas = []
+    # --> Repeat 5-fold CV per subject for 5 cycles (n_repeats)
+    all_accuracies = []     # accruacies for 5 folds * 5 cycle
+    all_kappas = []     # kappa values for 5 folds * 5 cycle
     for seed in tqdm(range(1, hyperparameters.n_repeats+1), total=hyperparameters.n_repeats):
-        np.random.seed(seed)
 
+        np.random.seed(seed)
         k = hyperparameters.folds
         skf = StratifiedKFold(n_splits=k, shuffle=False)
+
+        folds_acc = []      # folds accuracies for current cycle
+        folds_kappa = []    # folds kappa values for current cycle 
+
         for fold, (train_idx, test_idx) in enumerate(skf.split(X_train, y_train)):
-            model = DBConformer(# --> Update ARgs to Parameter object
-                model_args,
-                emb_size=40,      # Embedding dimension (paper default)
-                tem_depth=2,      # Temporal transformer depth (paper default: 5-6)
-                chn_depth=2,      # Spatial transformer depth (paper default: 5-6)
-                chn=dataset_info["n_ch"],            # Number of channels (redundant but needed)
-                n_classes=dataset_info["n_classes"]       # Number of classes (redundant but needed)
-                ) 
-            model = model.to(device)
+            
+            # --> Instantiate new model per -fold
+            if args.model_name == 'db_conformer':
+                model = DBConformer(# --> Update ARgs to Parameter object
+                    model_args,
+                    emb_size = model_configs['emb_size'],
+                    tem_depth = model_configs['tem_depth'], 
+                    chn_depth = model_configs['chn_depth'],
+                    chn = dataset_info["n_ch"],            # Number of channels (redundant but needed)
+                    n_classes = dataset_info["n_classes"]       # Number of classes (redundant but needed)
+                    ) 
+                model = model.to(device)
+            else:
+                model = DBConformer(# --> Update ARgs to Parameter object
+                    model_args,
+                    emb_size = model_configs['emb_size'],
+                    tem_depth = model_configs['tem_depth'], 
+                    chn_depth = model_configs['chn_depth'],
+                    chn = dataset_info["n_ch"],            # Number of channels (redundant but needed)
+                    n_classes = dataset_info["n_classes"]       # Number of classes (redundant but needed)
+                    ) 
+                model = model.to(device)
+            
+            # --> Optimizer + learning_rate scheduling scheme
             optimizer = torch.optim.Adam(model.parameters(), lr=hyperparameters.lr, betas=(0.9, 0.99), weight_decay=0)     # --> Update Args to Parameter objects
             # scheduler = CosineAnnealingLR(optimizer, T_max=n_iter, eta_min=1E-6)
-
+            
+            # --> Split data for fold +  class imbalance reweighting + euclidean alignment + dataloader definitiion
             _x_test, _y_test = X_train[test_idx], y_train[test_idx]
             _x_train, _y_train = X_train[train_idx], y_train[train_idx]
 
@@ -210,7 +243,7 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
                 shuffle=True
                 )
 
-            # Training and Evaluate CV-folds for n_iter epochs
+            # Training and Evaluate CV-fold for n_iter epochs
             best_acc_per_fold = 0
             best_kappa_per_fold = -1
             for i in range(n_iter): #tqdm(range(n_iter), total=n_iter): # desc=f"Training: fold {fold+1}/{k}"
