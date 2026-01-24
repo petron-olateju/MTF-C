@@ -162,7 +162,7 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
             Parameter(model_args.spa_dim, 'spatial_dimensionality', 'Model-Hyperparameters'),
             Parameter(model_configs['emb_size'], 'embedding_size', 'Model-Hyperparameters'),
             Parameter(model_configs['tem_depth'], 'temporal_depth', 'Model-Hyperparameters'),
-            Parameter(model_configs['chn_size'], 'channel_depth', 'Model-Hyperparameters'),
+            Parameter(model_configs['chn_depth'], 'channel_depth', 'Model-Hyperparameters'),
             ])
 
     val_size = hyperparameters.val_size
