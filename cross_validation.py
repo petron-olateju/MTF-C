@@ -139,6 +139,13 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
             Parameter(hyperparameters.batch_size, 'batch_size', 'Traininig-Hyperparameters'),
             Parameter(dataset_info, args.dataset, 'Dataset-Details')
             ])
+        if args.model_name == 'db_conformer':
+            experiment.add_params([Parameter(model_configs['emb_size'], 'embedding_size', 'Model-Hyperparameters')])
+        elif args.model_name == 'mtf_c':
+            experiment.add_params([
+                Parameter(model_configs['patch_emb_size'], 'patch_embedding_size', 'Model-Hyperparameters'), 
+                Parameter(model_configs['sst_emb_size'], 'sst_embedding_size', 'Model-Hyperparameters')])
+
 
     # --> Model parameters + update experiment tracker
     model_args = Namespace(
@@ -163,7 +170,6 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
         experiment.add_params([
             Parameter(model_args.patch_size, 'patch_size', 'Model-Hyperparameters'),
             Parameter(model_args.spa_dim, 'spatial_dimensionality', 'Model-Hyperparameters'),
-            Parameter(model_configs['emb_size'], 'embedding_size', 'Model-Hyperparameters'),
             Parameter(model_configs['tem_depth'], 'temporal_depth', 'Model-Hyperparameters'),
             Parameter(model_configs['chn_depth'], 'channel_depth', 'Model-Hyperparameters'),
             ])
@@ -210,11 +216,12 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
                 model = MTFC(# --> Update ARgs to Parameter object
                     model_args,
                     n_filter_banks = 6,
-                    patch_emb_size = model_configs['emb_size'],
-                    sst_emb_size = model_configs['emb_size'],
+                    patch_emb_size = model_configs['patch_emb_size'],
+                    sst_emb_size = model_configs['sst_emb_size'],
                     depth = model_configs['tem_depth'],
                     n_classes = dataset_info['n_classes']
                 )
+                model = model.to(device)
             else:
                 model = DBConformer(# --> Update ARgs to Parameter object
                     model_args,
@@ -245,6 +252,7 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
             _x_test = EA_online(_x_test, sqrtRefEA)
 
             if args.model_name=='mtf_c':
+                mne.set_log_level('WARNING')  # suppress INFO logs
                 filter_banks = {
                     'delta': [None, 4],
                     'theta': [4, 8],

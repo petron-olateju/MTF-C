@@ -14,18 +14,20 @@ db_conformer:
   posemb_flag: True
   branch: 'all'
   chn_attn_flag: True
+  fts_attn_flag: False
   emb_size: 40
   tem_depth: 2
   chn_depth: 2
 
 mtf_c:
-  patch_size: 100
+  patch_size: 200
   spa_dim: 16
   gate_flag: False
   posemb_flag: True
   branch: 'all'
   chn_attn_flag: False
   fts_attn_flag: True
-  emb_size: 40
+  patch_emb_size: 10
+  sst_emb_size: 40
   tem_depth: 2
   chn_depth: 2
