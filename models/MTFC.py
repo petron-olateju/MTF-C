@@ -8,7 +8,7 @@ from .DBConformer import TransformerEncoder, ClassificationHead
 
 
 class FilterBanksPatchEmbeddingTemporal(nn.Module):
-    def __init__(self, args, n_filter_banks=5, emb_size=40):
+    def __init__(self, args, n_filter_banks=6, emb_size=40):
         super().__init__()
         
         self.n_filter_banks = n_filter_banks
@@ -26,6 +26,7 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
         ])
 
     def forward(self, x):
+        x = x.squeeze(1)
         assert x.size(1) == self.n_filter_banks
         out = [self.patch_embeddings[i](x[:, i, :, :]) for i in range(self.n_filter_banks)]
         out = torch.cat(out, dim=1)
@@ -56,7 +57,7 @@ class MTFC(nn.Module):
             self.pos_embedding_temporal = nn.Parameter(torch.randn(1, self.F * self.P, self.D))
             self.pos_embedding_spatial = nn.Parameter(torch.randn(1, self.C, self.D))
 
-        self.sst_projection_space = nn.Linear(self.D, self.FST)
+        self.sst_projection_space = nn.Linear(self.D, self.FTS)
 
         if args.fts_atten_flag:
             self.fts_attn_pool = nn.Sequential(
@@ -66,11 +67,11 @@ class MTFC(nn.Module):
             )
 
         self.fts_transformer = TransformerEncoder(depth, self.FTS)
-        self.classfier = ClassificationHead(self.FTS, n_classes)
+        self.classifier = ClassificationHead(self.FTS, n_classes)
 
     def forward(self, x):   # x: (B, F, C, T)
-        x_embed_fp = self.embedding(x[:, :self.F, :, :])    # --> (B, F*P, D)
-        x_embed_spatial = self.channel_embedding(x[:, -1, :, :])     # --> (B, C, D)     
+        x_embed_fp = self.embedding(x[:, :, :self.F, :, :])    # --> (B, F*P, D)
+        x_embed_spatial = self.channel_embedding(x[:, :, -1, :, :].squeeze(1, 2))     # --> (B, C, D)     
 
         if self.posemb_flag:
             x_embed_fp = x_embed_fp + self.pos_embedding_temporal  # temporal positional encoding

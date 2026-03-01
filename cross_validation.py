@@ -209,11 +209,11 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
             elif args.model_name == 'mtf_c':
                 model = MTFC(# --> Update ARgs to Parameter object
                     model_args,
-                    n_filter_banks = 5,
+                    n_filter_banks = 6,
                     patch_emb_size = model_configs['emb_size'],
                     sst_emb_size = model_configs['emb_size'],
                     depth = model_configs['tem_depth'],
-                    n_classes = model_configs['n_classes']
+                    n_classes = dataset_info['n_classes']
                 )
             else:
                 model = DBConformer(# --> Update ARgs to Parameter object
