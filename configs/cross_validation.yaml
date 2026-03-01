@@ -14,6 +14,7 @@ db_conformer:
   posemb_flag: True
   branch: 'all'
   chn_attn_flag: True
+  fts_attn_flag: True
   emb_size: 40
   tem_depth: 2
   chn_depth: 2

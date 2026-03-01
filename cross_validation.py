@@ -16,6 +16,7 @@ from utils.data_loader import EEGDataset, load_BNCI2014_001, load_BNCI2014_002, 
 from utils.data_loader import load_BNCI2015_001, load_BNCI2015_004, load_Liu2024, load_AlexMI
 from utils.experiment_recorder import Parameter, Experiment
 from models.DBConformer import DBConformer
+from models.MTFC import MTFC
 
 import argparse
 from argparse import Namespace
@@ -154,7 +155,8 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
         gate_flag = model_configs['gate_flag'],          # Use gated fusion (paper default: False)
         posemb_flag = model_configs['posemb_flag'],         # Use positional embeddings (paper default: True)
         branch = model_configs['branch'],             # Options: 'all', 'temporal', 'spatial' (paper default: 'all')
-        chn_atten_flag = model_configs['chn_attn_flag']       # Use channel attention (paper default: True)
+        chn_atten_flag = model_configs['chn_attn_flag'],       # Use channel attention (paper default: True)
+        fts_atten_flag = model_configs['fts_attn_flag']
     )
     if experiment is not None:
         experiment.add_params([
