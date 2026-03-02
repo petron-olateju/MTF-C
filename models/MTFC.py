@@ -18,12 +18,12 @@ def band_kernel_size(fs, low_freq):
     return k if k % 2 == 1 else k + 1  # ensure odd for symmetric padding
 
 filter_banks = {
-    'delta': [None, 4],   # ~large kernel
+    'delta': [1, 4],   # ~large kernel
     'theta': [4, 8],
     'alpha': [8, 12],
     'beta':  [12, 30],
     'gamma': [30, 100],
-    'broad': [None, None]  # raw
+    'broad': [0.1, 100]  # raw
 }
 
 
@@ -56,7 +56,7 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
 
 class MTFC(nn.Module):
 
-    def __init__(self, args, n_filter_banks= 5, patch_emb_size=40, sst_emb_size=40, 
+    def __init__(self, args, n_filter_banks= 4, patch_emb_size=40, sst_emb_size=40, 
             depth=5, n_classes=2, fs=250) -> None:
         super().__init__()
 
