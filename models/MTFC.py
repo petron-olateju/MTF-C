@@ -17,7 +17,7 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
                 data_name=args.data_name,
                 in_planes=args.chn,  # number of channels
                 out_planes=emb_size,  # Default 40
-                kernel_size=63,
+                kernel_size=66,
                 radix=1,
                 patch_size=args.patch_size,  # needs to be divisible by the number of time points
                 time_points=args.time_sample_num,  # number of time points
@@ -40,6 +40,16 @@ class MTFC(nn.Module):
         super().__init__()
 
         self.embedding = FilterBanksPatchEmbeddingTemporal(args, n_filter_banks=n_filter_banks, emb_size=patch_emb_size)
+        # self.embedding = PatchEmbeddingTemporal(
+        #     data_name=args.data_name,
+        #     in_planes=args.chn,  # number of channels
+        #     out_planes=patch_emb_size,  # Default 40
+        #     kernel_size=66,
+        #     radix=6,
+        #     patch_size=args.patch_size,  # needs to be divisible by the number of time points
+        #     time_points=args.time_sample_num,  # number of time points
+        #     num_classes=args.class_num  # number of classes
+        # )
         self.channel_embedding = PatchEmbeddingSpatial(spa_dim=args.spa_dim, emb_size=patch_emb_size)  # Default 16
         self.P = args.time_sample_num // args.patch_size  # Example: 1000 // 125 = 8
         self.C = args.chn  # number of channels
