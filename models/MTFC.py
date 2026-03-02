@@ -49,7 +49,7 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
 
     def forward(self, x):
         x = x.squeeze(1)
-        out = [self.patch_embeddings[i](x) for i in range(self.n_filter_banks)]
+        out = [self.patch_embeddings[i](x).unsqueeze(1) for i in range(self.n_filter_banks)]
         out = torch.cat(out, dim=1)
         return out
 
@@ -86,7 +86,8 @@ class MTFC(nn.Module):
         self.fts_atten_flag = args.fts_atten_flag   # Default True
 
         if args.posemb_flag:
-            self.pos_embedding_temporal = nn.Parameter(torch.randn(1, self.F * self.P, self.D))
+            self.pos_embedding_frequency = nn.Parameter(torch.randn(1, self.F, 1, self.D))
+            self.pos_embedding_temporal = nn.Parameter(torch.randn(1, 1, self.P, self.D))
             self.pos_embedding_spatial = nn.Parameter(torch.randn(1, self.C, self.D))
 
         self.sst_projection_space = nn.Linear(self.D, self.FTS)
@@ -105,12 +106,15 @@ class MTFC(nn.Module):
         # x_embed_fp = self.embedding(x[:, :, :self.F, :, :])    # --> (B, F*P, D)
         # x_embed_spatial = self.channel_embedding(x[:, :, -1, :, :].squeeze(1, 2))     # --> (B, C, D)     
 
-        x_embed_fp = self.embedding(x[:, :, :, :])    # --> (B, F*P, D)
+        x_embed_fp = self.embedding(x)    # --> (B, F*P, D)
         x_embed_spatial = self.channel_embedding(x[:, :, :, :].squeeze(1))     # --> (B, C, D)   
 
         if self.posemb_flag:
+            x_embed_fp = x_embed_fp + self.pos_embedding_frequency  # frequency positional encoding
             x_embed_fp = x_embed_fp + self.pos_embedding_temporal  # temporal positional encoding
-            x_embed_spatial = x_embed_spatial + self.pos_embedding_spatial  # spatial positional encoding   
+            x_embed_spatial = x_embed_spatial + self.pos_embedding_spatial  # spatial positional encoding  
+
+        x_embed_fp = rearrange(x_embed_fp, 'b f p t -> b (f p) t') 
 
         x_embed_fp = self.sst_projection_space(x_embed_fp)  # --> (B, F*P, FTS)
         x_embed_spatial = self.sst_projection_space(x_embed_spatial)    # --> (B, C, FTS)

@@ -5,7 +5,7 @@ training:
   folds: 5
   n_repeats: 5
   lr: 1.0e-3
-  batch_size: 128
+  batch_size: 32
 
 db_conformer:
   patch_size: 100
@@ -27,7 +27,7 @@ mtf_c:
   branch: 'all'
   chn_attn_flag: False
   fts_attn_flag: True
-  patch_emb_size: 10
+  patch_emb_size: 40
   sst_emb_size: 40
   tem_depth: 2
   chn_depth: 2
