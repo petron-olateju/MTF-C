@@ -6,10 +6,32 @@ from einops import rearrange
 from .DBConformer import PatchEmbeddingTemporal, PatchEmbeddingSpatial
 from .DBConformer import TransformerEncoder, ClassificationHead
 
+KERNEL_SIZES = {
+    'delta': None,  # will compute below
+}
+
+# kernel ~ fs / low_freq / 2, rounded to odd number
+def band_kernel_size(fs, low_freq):
+    if low_freq is None:
+        low_freq = 1  # treat delta as ~1Hz
+    k = int(fs / low_freq / 2)
+    return k if k % 2 == 1 else k + 1  # ensure odd for symmetric padding
+
+filter_banks = {
+    'delta': [None, 4],   # ~large kernel
+    'theta': [4, 8],
+    'alpha': [8, 12],
+    'beta':  [12, 30],
+    'gamma': [30, 100],
+    'broad': [None, None]  # raw
+}
+
 
 class FilterBanksPatchEmbeddingTemporal(nn.Module):
-    def __init__(self, args, n_filter_banks=6, emb_size=40):
+    def __init__(self, args, n_filter_banks=6, emb_size=40, fs=250):
         super().__init__()
+
+        self.fs = fs
         
         self.n_filter_banks = n_filter_banks
         self.patch_embeddings = nn.ModuleList([
@@ -17,7 +39,7 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
                 data_name=args.data_name,
                 in_planes=args.chn,  # number of channels
                 out_planes=emb_size,  # Default 40
-                kernel_size=66,
+                kernel_size=band_kernel_size(self.fs, list(filter_banks.values())[i][0]),
                 radix=1,
                 patch_size=args.patch_size,  # needs to be divisible by the number of time points
                 time_points=args.time_sample_num,  # number of time points
@@ -27,8 +49,7 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
 
     def forward(self, x):
         x = x.squeeze(1)
-        assert x.size(1) == self.n_filter_banks
-        out = [self.patch_embeddings[i](x[:, i, :, :]) for i in range(self.n_filter_banks)]
+        out = [self.patch_embeddings[i](x) for i in range(self.n_filter_banks)]
         out = torch.cat(out, dim=1)
         return out
 
@@ -36,10 +57,10 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
 class MTFC(nn.Module):
 
     def __init__(self, args, n_filter_banks= 5, patch_emb_size=40, sst_emb_size=40, 
-            depth=5, n_classes=2) -> None:
+            depth=5, n_classes=2, fs=250) -> None:
         super().__init__()
 
-        self.embedding = FilterBanksPatchEmbeddingTemporal(args, n_filter_banks=n_filter_banks, emb_size=patch_emb_size)
+        self.embedding = FilterBanksPatchEmbeddingTemporal(args, n_filter_banks=n_filter_banks, emb_size=patch_emb_size, fs=fs)
         # self.embedding = PatchEmbeddingTemporal(
         #     data_name=args.data_name,
         #     in_planes=args.chn,  # number of channels
@@ -57,6 +78,7 @@ class MTFC(nn.Module):
         self.FTS = sst_emb_size
         self.F = n_filter_banks
         self.FP = self.F * self.P
+        self.fs = fs
         self.gate_flag = args.gate_flag  # Default False, due to the reduced performance
         self.posemb_flag = args.posemb_flag  # Default True
         self.branch = args.branch  # Default 'all', options=[all, temporal]
@@ -80,8 +102,11 @@ class MTFC(nn.Module):
         self.classifier = ClassificationHead(self.FTS, n_classes)
 
     def forward(self, x):   # x: (B, F, C, T)
-        x_embed_fp = self.embedding(x[:, :, :self.F, :, :])    # --> (B, F*P, D)
-        x_embed_spatial = self.channel_embedding(x[:, :, -1, :, :].squeeze(1, 2))     # --> (B, C, D)     
+        # x_embed_fp = self.embedding(x[:, :, :self.F, :, :])    # --> (B, F*P, D)
+        # x_embed_spatial = self.channel_embedding(x[:, :, -1, :, :].squeeze(1, 2))     # --> (B, C, D)     
+
+        x_embed_fp = self.embedding(x[:, :, :, :])    # --> (B, F*P, D)
+        x_embed_spatial = self.channel_embedding(x[:, :, :, :].squeeze(1))     # --> (B, C, D)   
 
         if self.posemb_flag:
             x_embed_fp = x_embed_fp + self.pos_embedding_temporal  # temporal positional encoding

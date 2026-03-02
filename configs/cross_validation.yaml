@@ -20,7 +20,7 @@ db_conformer:
   chn_depth: 2
 
 mtf_c:
-  patch_size: 200
+  patch_size: 100
   spa_dim: 16
   gate_flag: False
   posemb_flag: True
@@ -28,6 +28,6 @@ mtf_c:
   chn_attn_flag: False
   fts_attn_flag: True
   patch_emb_size: 10
-  sst_emb_size: 20
-  tem_depth: 1
-  chn_depth: 1
+  sst_emb_size: 40
+  tem_depth: 2
+  chn_depth: 2

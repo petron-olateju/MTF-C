@@ -215,11 +215,12 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
             elif args.model_name == 'mtf_c':
                 model = MTFC(# --> Update ARgs to Parameter object
                     model_args,
-                    n_filter_banks = 6,
+                    n_filter_banks = 5,
                     patch_emb_size = model_configs['patch_emb_size'],
                     sst_emb_size = model_configs['sst_emb_size'],
                     depth = model_configs['tem_depth'],
-                    n_classes = dataset_info['n_classes']
+                    n_classes = dataset_info['n_classes'],
+                    fs = dataset_info["fs"]
                 )
                 model = model.to(device)
             else:
@@ -251,33 +252,33 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
             _x_train, sqrtRefEA = EA(_x_train)
             _x_test = EA_online(_x_test, sqrtRefEA)
 
-            if args.model_name=='mtf_c':
-                mne.set_log_level('WARNING')  # suppress INFO logs
-                filter_banks = {
-                    'delta': [None, 4],
-                    'theta': [4, 8],
-                    'alpha': [8, 12],
-                    'beta': [12, 30],
-                    'gamma': [30, 100]
-                }
+            # if args.model_name=='mtf_c':
+            #     mne.set_log_level('WARNING')  # suppress INFO logs
+            #     filter_banks = {
+            #         'delta': [None, 4],
+            #         'theta': [4, 8],
+            #         'alpha': [8, 12],
+            #         'beta': [12, 30],
+            #         'gamma': [30, 100]
+            #     }
 
-                train = []
-                test = []
-                for band, corner_freqs in filter_banks.items():
-                    train.append(mne.filter.filter_data(
-                        _x_train, sfreq=dataset_info['fs'],
-                        l_freq=corner_freqs[0], h_freq=corner_freqs[1]
-                        )[:, np.newaxis, :, :])
-                    test.append(mne.filter.filter_data(
-                        _x_test, sfreq=dataset_info['fs'],
-                        l_freq=corner_freqs[0], h_freq=corner_freqs[1]
-                        )[:, np.newaxis, :, :])
+            #     train = []
+            #     test = []
+            #     for band, corner_freqs in filter_banks.items():
+            #         train.append(mne.filter.filter_data(
+            #             _x_train, sfreq=dataset_info['fs'],
+            #             l_freq=corner_freqs[0], h_freq=corner_freqs[1]
+            #             )[:, np.newaxis, :, :])
+            #         test.append(mne.filter.filter_data(
+            #             _x_test, sfreq=dataset_info['fs'],
+            #             l_freq=corner_freqs[0], h_freq=corner_freqs[1]
+            #             )[:, np.newaxis, :, :])
 
-                train.append(_x_train[:, np.newaxis, :, :])
-                test.append(_x_test[:, np.newaxis, :, :])
+            #     train.append(_x_train[:, np.newaxis, :, :])
+            #     test.append(_x_test[:, np.newaxis, :, :])
 
-                _x_train = np.concatenate(train, axis=1)
-                _x_test = np.concatenate(test, axis=1)
+            #     _x_train = np.concatenate(train, axis=1)
+            #     _x_test = np.concatenate(test, axis=1)
 
             train_loader = DataLoader(
                 EEGDataset(_x_train, _y_train),
