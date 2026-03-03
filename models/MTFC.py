@@ -49,7 +49,6 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
         ])
 
     def forward(self, x):
-        x = x.squeeze(1)
         out = [self.patch_embeddings[i](x).unsqueeze(1) for i in range(self.n_filter_banks)]
         out = torch.cat(out, dim=1)
         return out
@@ -73,7 +72,7 @@ class MTFC(nn.Module):
         self.branch = args.branch  # Default 'all', options=[all, temporal]
         self.chn_atten_flag = args.chn_atten_flag  # Default True
         self.fts_atten_flag = args.fts_atten_flag   # Default True
-        self.frequency_component_reconstruction = True if args.frequency_method is not False else False
+        self.frequency_component_reconstruction = args.frequency_method
 
         if (args.frequency_method is not False) and (args.frequency_method == 'spatio_temporal_embedding'):
             self.spectrogram_generator = nn.Linear(self.D, self.F)
@@ -121,8 +120,8 @@ class MTFC(nn.Module):
 
 
         # Get temporal and spatial components embedding
-        x_embed_temporal = self.temporal_embedding(x)    # --> (B, P, D) or (B, F*P, D)
-        x_embed_spatial = self.channel_embedding(x[:, :, :, :].squeeze(1))     # --> (B, C, D)   
+        x_embed_temporal = self.temporal_embedding(x.squeeze(1))    # --> (B, P, D) or (B, F*P, D)
+        x_embed_spatial = self.channel_embedding(x.squeeze(1))     # --> (B, C, D)   
 
 
         # Get frequency components embdding if frequency components spatio_temporal reconstruction is being used
@@ -134,6 +133,8 @@ class MTFC(nn.Module):
 
             x_embed_frequency = rearrange(stft, 'b c p f-> b f (c p)')
             x_embed_frequency = F.relu(x_embed_frequency)
+        
+        print(x_embed_frequency.size(), x_embed_spatial.size(), x_embed_temporal.size())
 
 
         # Positional Encoding

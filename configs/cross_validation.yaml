@@ -23,7 +23,7 @@ db_conformer:
 
 mtf_c:
   patch_size: 100
-  filter_banks: 5
+  filter_banks: 101
   spa_dim: 16
   gate_flag: False
   posemb_flag: True

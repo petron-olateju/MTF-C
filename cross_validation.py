@@ -7,6 +7,7 @@ from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 import mne
 mne.set_log_level('WARNING')  # suppress INFO logs
 
+import math
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -263,9 +264,14 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
             wsize = int((F - 1) * 2)
             if wsize % 2 > 0:
                 wsize += 1
-            tstep = int(dataset_info['n_times'] / P)
+            tstep = P #math.ceil(dataset_info['n_times'] / P)
             _stft_train = np.array([mne.time_frequency.stft(x, wsize, tstep) for x in _x_train])
             _stft_test = np.array([mne.time_frequency.stft(x, wsize, tstep) for x in _x_test])
+
+            # pad = P - _stft_train.shape[-1]
+            # _stft_train = np.pad(_stft_train, ((0,0), (0,0), (0,0), (0,pad)))
+            # pad = P - _stft_test.shape[-1]
+            # _stft_test = np.pad(_stft_test, ((0,0), (0,0), (0,0), (0,pad)))
 
             assert _stft_train.shape[-2] == _stft_test.shape[-2] == F
             assert _stft_train.shape[-1] == _stft_test.shape[-1] == P
