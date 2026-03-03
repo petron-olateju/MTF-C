@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from einops import rearrange
 
@@ -60,18 +61,6 @@ class MTFC(nn.Module):
             depth=5, n_classes=2, fs=250) -> None:
         super().__init__()
 
-        self.embedding = FilterBanksPatchEmbeddingTemporal(args, n_filter_banks=n_filter_banks, emb_size=patch_emb_size, fs=fs)
-        # self.embedding = PatchEmbeddingTemporal(
-        #     data_name=args.data_name,
-        #     in_planes=args.chn,  # number of channels
-        #     out_planes=patch_emb_size,  # Default 40
-        #     kernel_size=66,
-        #     radix=6,
-        #     patch_size=args.patch_size,  # needs to be divisible by the number of time points
-        #     time_points=args.time_sample_num,  # number of time points
-        #     num_classes=args.class_num  # number of classes
-        # )
-        self.channel_embedding = PatchEmbeddingSpatial(spa_dim=args.spa_dim, emb_size=patch_emb_size)  # Default 16
         self.P = args.time_sample_num // args.patch_size  # Example: 1000 // 125 = 8
         self.C = args.chn  # number of channels
         self.D = patch_emb_size
@@ -82,11 +71,35 @@ class MTFC(nn.Module):
         self.gate_flag = args.gate_flag  # Default False, due to the reduced performance
         self.posemb_flag = args.posemb_flag  # Default True
         self.branch = args.branch  # Default 'all', options=[all, temporal]
-        # self.chn_atten_flag = args.chn_atten_flag  # Default True
+        self.chn_atten_flag = args.chn_atten_flag  # Default True
         self.fts_atten_flag = args.fts_atten_flag   # Default True
+        self.frequency_component_reconstruction = True if args.frequency_method is not False else False
+
+        if (args.frequency_method is not False) and (args.frequency_method == 'spatio_temporal_embedding'):
+            self.spectrogram_generator = nn.Linear(self.D, self.F)
+            self.frequency_embedding = nn.Linear(self.C * self.P, self.D)
+
+            self.temporal_embedding = PatchEmbeddingTemporal(
+                data_name=args.data_name,
+                in_planes=args.chn,  # number of channels
+                out_planes=patch_emb_size,  # Default 40
+                kernel_size=63,
+                radix=1,
+                patch_size=args.patch_size,  # needs to be divisible by the number of time points
+                time_points=args.time_sample_num,  # number of time points
+                num_classes=args.class_num  # number of classes
+            )
+        elif (args.frequency_method is not False) and (args.frequency_method == 'filter_banks'):
+            self.temporal_embedding = FilterBanksPatchEmbeddingTemporal(args, n_filter_banks=n_filter_banks, emb_size=patch_emb_size, fs=fs)
+
+        self.channel_embedding = PatchEmbeddingSpatial(spa_dim=args.spa_dim, emb_size=patch_emb_size)  # Default 16
 
         if args.posemb_flag:
-            self.pos_embedding_frequency = nn.Parameter(torch.randn(1, self.F, 1, self.D))
+            if args.frequency_method is not False:
+                if self.frequency_component_reconstruction == 'spatio_temporal_embedding':
+                    self.pos_embedding_frequency = nn.Parameter(torch.randn(1, self.F, self.D))
+                elif self.frequency_component_reconstruction == 'filter_banks':
+                    self.pos_embedding_frequency = nn.Parameter(torch.randn(1, self.F, 1, self.D))
             self.pos_embedding_temporal = nn.Parameter(torch.randn(1, 1, self.P, self.D))
             self.pos_embedding_spatial = nn.Parameter(torch.randn(1, self.C, self.D))
 
@@ -106,18 +119,52 @@ class MTFC(nn.Module):
         # x_embed_fp = self.embedding(x[:, :, :self.F, :, :])    # --> (B, F*P, D)
         # x_embed_spatial = self.channel_embedding(x[:, :, -1, :, :].squeeze(1, 2))     # --> (B, C, D)     
 
-        x_embed_fp = self.embedding(x)    # --> (B, F*P, D)
+
+        # Get temporal and spatial components embedding
+        x_embed_temporal = self.temporal_embedding(x)    # --> (B, P, D) or (B, F*P, D)
         x_embed_spatial = self.channel_embedding(x[:, :, :, :].squeeze(1))     # --> (B, C, D)   
 
+
+        # Get frequency components embdding if frequency components spatio_temporal reconstruction is being used
+        if self.frequency_component_reconstruction == 'spatio_temporal_embedding':
+            zt = x_embed_temporal.unsqueeze(1).expand(-1, self.C, -1, -1)
+            zs = x_embed_spatial.unsqueeze(2).expand(-1, -1, self.P, -1)
+            z_st = zs + zt      # Mixing spatial and temporal embeddings
+            stft = F.relu(self.spectrogram_generator(z_st))
+
+            x_embed_frequency = rearrange(stft, 'b c p f-> b f (c p)')
+            x_embed_frequency = F.relu(x_embed_frequency)
+
+
+        # Positional Encoding
         if self.posemb_flag:
-            x_embed_fp = x_embed_fp + self.pos_embedding_frequency  # frequency positional encoding
-            x_embed_fp = x_embed_fp + self.pos_embedding_temporal  # temporal positional encoding
+            if self.frequency_component_reconstruction == 'spatio_temporal_embedding':
+                x_embed_frequency = x_embed_frequency + self.pos_embedding_frequency  # type: ignore # frequency positional encoding
+            elif self.frequency_component_reconstruction == 'filter_banks':
+                x_embed_temporal = x_embed_temporal + self.pos_embedding_frequency
+
+            x_embed_temporal = x_embed_temporal + self.pos_embedding_temporal  # temporal positional encoding
             x_embed_spatial = x_embed_spatial + self.pos_embedding_spatial  # spatial positional encoding  
 
-        x_embed_fp = rearrange(x_embed_fp, 'b f p t -> b (f p) t') 
 
-        x_embed_fp = self.sst_projection_space(x_embed_fp)  # --> (B, F*P, FTS)
+        # Project time, space, frequnecy components embedding into the same empedding space
+        if self.frequency_component_reconstruction == 'spatio_temporal_embedding':
+            x_embed_frequency = self.sst_projection_space(x_embed_frequency)    # type: ignore # --> (B, F, FTS)
+        x_embed_temporal = self.sst_projection_space(x_embed_temporal)  # --> (B, P, FTS) or (B, F, P, FTS)
         x_embed_spatial = self.sst_projection_space(x_embed_spatial)    # --> (B, C, FTS)
+        
+
+        # Make time-frequency embedding
+        if self.frequency_component_reconstruction == 'spatio_temporal_embedding':
+            # using spatio-temporal embedding approach from 
+            z_hat_f = x_embed_frequency.unsqueeze(2).expand(-1, -1, self.P, -1) # type: ignore
+            z_hat_t = x_embed_temporal.unsqueeze(1).expand(-1, self.F, -1, -1)
+            x_embed_fp = rearrange(z_hat_f + z_hat_t, 'b f p d -> b (f p) d')
+        if self.frequency_component_reconstruction == 'filter_banks':
+            # Squash time and frequency axis if using filter-banks approach
+            x_embed_fp = rearrange(x_embed_temporal, 'b f p d -> b (f p) d') 
+        else:
+            x_embed_fp = x_embed_temporal
 
 
         # Mixing TF and Spatial Embeddings
@@ -126,8 +173,10 @@ class MTFC(nn.Module):
         x_embed_fts = (x_embed_fp + x_embed_spatial).contiguous()   # --> (B, F*P, C, FTS)
         x_embed_fts = rearrange(x_embed_fts, 'b t c d -> b (t c) d')
 
+
         # Transformer mixed FTS embeddings forward pass
         x_embed_fts = self.fts_transformer(x_embed_fts)
+
 
         # Learning FTS Importance
         if self.fts_atten_flag:
@@ -135,9 +184,12 @@ class MTFC(nn.Module):
             attn_weights = torch.softmax(attn_scores, dim=1)
             x_embed_fts = attn_weights * x_embed_fts
         
+
         # Classification Head
         x_embed = torch.sum(x_embed_fts, dim=1)
         _, out = self.classifier(x_embed)
 
-        return x_embed, out
+        if self.frequency_component_reconstruction == 'spatio_temporal_embedding':
+            return stft, x_embed, out # type: ignore
+        return None, x_embed, out
 

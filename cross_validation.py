@@ -5,6 +5,7 @@ from typing import Tuple, List, Union
 import numpy as np
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 import mne
+mne.set_log_level('WARNING')  # suppress INFO logs
 
 import torch
 import torch.nn as nn
@@ -164,7 +165,8 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
         posemb_flag = model_configs['posemb_flag'],         # Use positional embeddings (paper default: True)
         branch = model_configs['branch'],             # Options: 'all', 'temporal', 'spatial' (paper default: 'all')
         chn_atten_flag = model_configs['chn_attn_flag'],       # Use channel attention (paper default: True)
-        fts_atten_flag = model_configs['fts_attn_flag']
+        fts_atten_flag = model_configs['fts_attn_flag'],
+        frequency_method = model_configs['frequency_method']
     )
     if experiment is not None:
         experiment.add_params([
@@ -215,7 +217,7 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
             elif args.model_name == 'mtf_c':
                 model = MTFC(# --> Update ARgs to Parameter object
                     model_args,
-                    n_filter_banks = 6,
+                    n_filter_banks = model_configs['filter_banks'],
                     patch_emb_size = model_configs['patch_emb_size'],
                     sst_emb_size = model_configs['sst_emb_size'],
                     depth = model_configs['tem_depth'],
@@ -249,8 +251,24 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
 
             loss_fn = nn.CrossEntropyLoss(weight=class_weights)
 
+
+            # Euclidean Alignemnt of epochs
             _x_train, sqrtRefEA = EA(_x_train)
             _x_test = EA_online(_x_test, sqrtRefEA)
+
+
+            # Compute STFT for each epoch
+            P = model_configs['patch_size']
+            F = model_configs['filter_banks']
+            wsize = int((F - 1) * 2)
+            if wsize % 2 > 0:
+                wsize += 1
+            tstep = int(dataset_info['n_times'] / P)
+            _stft_train = np.array([mne.time_frequency.stft(x, wsize, tstep) for x in _x_train])
+            _stft_test = np.array([mne.time_frequency.stft(x, wsize, tstep) for x in _x_test])
+
+            assert _stft_train.shape[-2] == _stft_test.shape[-2] == F
+            assert _stft_train.shape[-1] == _stft_test.shape[-1] == P
 
             # if args.model_name=='mtf_c':
             #     mne.set_log_level('WARNING')  # suppress INFO logs
@@ -281,12 +299,12 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
             #     _x_test = np.concatenate(test, axis=1)
 
             train_loader = DataLoader(
-                EEGDataset(_x_train, _y_train),
+                EEGDataset(_x_train, _y_train, _stft_train),
                 batch_size=hyperparameters.batch_size,
                 shuffle=True
                 )
             test_loader = DataLoader(
-                EEGDataset(_x_test, _y_test),
+                EEGDataset(_x_test, _y_test, _stft_test),
                 batch_size=hyperparameters.batch_size,
                 shuffle=True
                 )
@@ -299,15 +317,23 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
                 model.train()
                 train_loss = 0
                 train_acc = 0
-                for j, (x, y) in enumerate(train_loader):
+                for j, (x, y, y_stft) in enumerate(train_loader):
                     x = torch.unsqueeze(x, 1)
-                    x, y = x.to(device), y.to(device)
+                    x, y, y_stft = x.to(device), y.to(device), y_stft.to(device)
                     y = y.long()
                     optimizer.zero_grad()
-                    representations, logits = model(x)
+                    if args.model_name != 'mtf_c':
+                        representations, logits = model(x)
+                        stft_loss = None
+                    else:
+                        stft, representations, logits = model(x)
+                        if stft is not None:
+                            stft_loss = F.mse_loss(stft, y_stft)
                     acc = accuracy_score(logits, y.cpu().detach().numpy())
 
                     loss = loss_fn(logits, y)
+                    if stft_loss is not None: # type: ignore
+                        loss += stft_loss # type: ignore
                     loss.backward()
                     optimizer.step()
                     # scheduler.step()
@@ -322,17 +348,25 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
                     model.eval()
                     test_accs = []
                     test_losses = []
-                    for j, (x, y) in enumerate(test_loader):
+                    for j, (x, y, y_stft) in enumerate(test_loader):
                         if x.size(0) < 2:
                             continue
                         x = torch.unsqueeze(x, 1)
-                        x, y = x.to(device), y.to(device)
+                        x, y, y_stft = x.to(device), y.to(device), y_stft.to(device)
                         y = y.long()
                         with torch.no_grad():
                             # logits, loss, acc = fine_tune_run(encoder, model, clf_head, x, y, LBL_SMOOTH=LBL_SMOOTH)
-                            representations, logits = model(x)
+                            if args.model_name != 'mtf_c':
+                                representations, logits = model(x)
+                                stft_loss = None
+                            else:
+                                stft, representations, logits = model(x)
+                                if stft is not None:
+                                    stft_loss = F.mse_loss(stft, y_stft)
                             acc = accuracy_score(logits, y.cpu().detach().numpy())
                             loss = loss_fn(logits, y)
+                            if stft_loss is not None: # type: ignore
+                                loss += stft_loss # type: ignore
 
                             test_accs.append(acc)
                             test_losses.append(loss.item())

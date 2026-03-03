@@ -6,16 +6,17 @@ from moabb.datasets import BNCI2014_001, BNCI2014_002, BNCI2014_004, BNCI2015_00
 from moabb.paradigms import MotorImagery
 
 class EEGDataset(Dataset):
-    def __init__(self, data, labels):
+    def __init__(self, data, labels, stft):
         self.signals = torch.tensor(data, dtype=torch.float32)
         self.labels = labels
+        self.stft = stft
     
     def __len__(self):
         return len(self.signals)
     
     def __getitem__(self, idx):
         # Return a single sample
-        return self.signals[idx], self.labels[idx]
+        return self.signals[idx], self.labels[idx], self.stft[idx]
 
 # ============================================================================
 # Liu2024
