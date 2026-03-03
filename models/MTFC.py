@@ -1,3 +1,5 @@
+import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -56,7 +58,7 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
 
 class MTFC(nn.Module):
 
-    def __init__(self, args, n_filter_banks= 4, patch_emb_size=40, sst_emb_size=40, 
+    def __init__(self, args, n_filter_banks= 4, wsize_divisor=2, n_times=1000, patch_emb_size=40, sst_emb_size=40, 
             depth=5, n_classes=2, fs=250) -> None:
         super().__init__()
 
@@ -72,9 +74,18 @@ class MTFC(nn.Module):
         self.branch = args.branch  # Default 'all', options=[all, temporal]
         self.chn_atten_flag = args.chn_atten_flag  # Default True
         self.fts_atten_flag = args.fts_atten_flag   # Default True
-        self.frequency_component_reconstruction = args.frequency_method
+        self.sst_reconstruction = args.sst_method
 
-        if (args.frequency_method is not False) and (args.frequency_method == 'spatio_temporal_embedding'):
+
+        # Match STFT Temporal Length
+        if args.sst_method == 'spatio_temporal_embedding':
+            wsize = int((self.F - 1) * 2)
+            tstep = math.ceil(wsize / wsize_divisor)
+            self.stft_length = math.ceil(n_times / tstep)
+            self.temporal_loom = nn.Linear(self.P, self.stft_length)
+
+
+        if (args.sst_method is not False) and (args.sst_method == 'spatio_temporal_embedding'):
             self.spectrogram_generator = nn.Linear(self.D, self.F)
             self.frequency_embedding = nn.Linear(self.C * self.P, self.D)
 
@@ -88,18 +99,21 @@ class MTFC(nn.Module):
                 time_points=args.time_sample_num,  # number of time points
                 num_classes=args.class_num  # number of classes
             )
-        elif (args.frequency_method is not False) and (args.frequency_method == 'filter_banks'):
+        elif (args.sst_method is not False) and (args.sst_method == 'filter_banks'):
             self.temporal_embedding = FilterBanksPatchEmbeddingTemporal(args, n_filter_banks=n_filter_banks, emb_size=patch_emb_size, fs=fs)
 
         self.channel_embedding = PatchEmbeddingSpatial(spa_dim=args.spa_dim, emb_size=patch_emb_size)  # Default 16
 
         if args.posemb_flag:
-            if args.frequency_method is not False:
-                if self.frequency_component_reconstruction == 'spatio_temporal_embedding':
+            if args.sst_method is not False:
+                if self.sst_reconstruction == 'spatio_temporal_embedding':
                     self.pos_embedding_frequency = nn.Parameter(torch.randn(1, self.F, self.D))
-                elif self.frequency_component_reconstruction == 'filter_banks':
+                    self.pos_embedding_temporal = nn.Parameter(torch.randn(1, self.P, self.D))
+                elif self.sst_reconstruction == 'filter_banks':
                     self.pos_embedding_frequency = nn.Parameter(torch.randn(1, self.F, 1, self.D))
-            self.pos_embedding_temporal = nn.Parameter(torch.randn(1, 1, self.P, self.D))
+                    self.pos_embedding_temporal = nn.Parameter(torch.randn(1, 1, self.P, self.D))
+            else:
+                self.pos_embedding_temporal = nn.Parameter(torch.randn(1, 1, self.P, self.D))
             self.pos_embedding_spatial = nn.Parameter(torch.randn(1, self.C, self.D))
 
         self.sst_projection_space = nn.Linear(self.D, self.FTS)
@@ -125,23 +139,23 @@ class MTFC(nn.Module):
 
 
         # Get frequency components embdding if frequency components spatio_temporal reconstruction is being used
-        if self.frequency_component_reconstruction == 'spatio_temporal_embedding':
+        if self.sst_reconstruction == 'spatio_temporal_embedding':
             zt = x_embed_temporal.unsqueeze(1).expand(-1, self.C, -1, -1)
             zs = x_embed_spatial.unsqueeze(2).expand(-1, -1, self.P, -1)
             z_st = zs + zt      # Mixing spatial and temporal embeddings
             stft = F.relu(self.spectrogram_generator(z_st))
 
             x_embed_frequency = rearrange(stft, 'b c p f-> b f (c p)')
-            x_embed_frequency = F.relu(x_embed_frequency)
-        
-        print(x_embed_frequency.size(), x_embed_spatial.size(), x_embed_temporal.size())
+            x_embed_frequency = F.relu(self.frequency_embedding(x_embed_frequency))
+
+            loomed_stft = F.relu(self.temporal_loom(rearrange(stft, 'b c p f -> b c f p')))
 
 
         # Positional Encoding
         if self.posemb_flag:
-            if self.frequency_component_reconstruction == 'spatio_temporal_embedding':
+            if self.sst_reconstruction == 'spatio_temporal_embedding':
                 x_embed_frequency = x_embed_frequency + self.pos_embedding_frequency  # type: ignore # frequency positional encoding
-            elif self.frequency_component_reconstruction == 'filter_banks':
+            elif self.sst_reconstruction == 'filter_banks':
                 x_embed_temporal = x_embed_temporal + self.pos_embedding_frequency
 
             x_embed_temporal = x_embed_temporal + self.pos_embedding_temporal  # temporal positional encoding
@@ -149,19 +163,19 @@ class MTFC(nn.Module):
 
 
         # Project time, space, frequnecy components embedding into the same empedding space
-        if self.frequency_component_reconstruction == 'spatio_temporal_embedding':
+        if self.sst_reconstruction == 'spatio_temporal_embedding':
             x_embed_frequency = self.sst_projection_space(x_embed_frequency)    # type: ignore # --> (B, F, FTS)
         x_embed_temporal = self.sst_projection_space(x_embed_temporal)  # --> (B, P, FTS) or (B, F, P, FTS)
         x_embed_spatial = self.sst_projection_space(x_embed_spatial)    # --> (B, C, FTS)
         
 
         # Make time-frequency embedding
-        if self.frequency_component_reconstruction == 'spatio_temporal_embedding':
+        if self.sst_reconstruction == 'spatio_temporal_embedding':
             # using spatio-temporal embedding approach from 
             z_hat_f = x_embed_frequency.unsqueeze(2).expand(-1, -1, self.P, -1) # type: ignore
             z_hat_t = x_embed_temporal.unsqueeze(1).expand(-1, self.F, -1, -1)
             x_embed_fp = rearrange(z_hat_f + z_hat_t, 'b f p d -> b (f p) d')
-        if self.frequency_component_reconstruction == 'filter_banks':
+        elif self.sst_reconstruction == 'filter_banks':
             # Squash time and frequency axis if using filter-banks approach
             x_embed_fp = rearrange(x_embed_temporal, 'b f p d -> b (f p) d') 
         else:
@@ -190,7 +204,7 @@ class MTFC(nn.Module):
         x_embed = torch.sum(x_embed_fts, dim=1)
         _, out = self.classifier(x_embed)
 
-        if self.frequency_component_reconstruction == 'spatio_temporal_embedding':
-            return stft, x_embed, out # type: ignore
+        if self.sst_reconstruction == 'spatio_temporal_embedding':
+            return loomed_stft, x_embed, out # type: ignore
         return None, x_embed, out
 

@@ -167,7 +167,7 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
         branch = model_configs['branch'],             # Options: 'all', 'temporal', 'spatial' (paper default: 'all')
         chn_atten_flag = model_configs['chn_attn_flag'],       # Use channel attention (paper default: True)
         fts_atten_flag = model_configs['fts_attn_flag'],
-        frequency_method = model_configs['frequency_method']
+        sst_method = model_configs['sst_method']
     )
     if experiment is not None:
         experiment.add_params([
@@ -220,6 +220,8 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
                     model_args,
                     n_filter_banks = model_configs['filter_banks'],
                     patch_emb_size = model_configs['patch_emb_size'],
+                    wsize_divisor = model_configs['wsize_divisor'],
+                    n_times = dataset_info['n_times'],
                     sst_emb_size = model_configs['sst_emb_size'],
                     depth = model_configs['tem_depth'],
                     n_classes = dataset_info['n_classes'],
@@ -259,22 +261,15 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
 
 
             # Compute STFT for each epoch
-            P = model_configs['patch_size']
+            # P = model_configs['patch_size']
             F = model_configs['filter_banks']
             wsize = int((F - 1) * 2)
-            if wsize % 2 > 0:
-                wsize += 1
-            tstep = P #math.ceil(dataset_info['n_times'] / P)
+            assert wsize % 2 == 0
+            tstep = math.ceil(wsize / model_configs['wsize_divisor'])
             _stft_train = np.array([mne.time_frequency.stft(x, wsize, tstep) for x in _x_train])
             _stft_test = np.array([mne.time_frequency.stft(x, wsize, tstep) for x in _x_test])
-
-            # pad = P - _stft_train.shape[-1]
-            # _stft_train = np.pad(_stft_train, ((0,0), (0,0), (0,0), (0,pad)))
-            # pad = P - _stft_test.shape[-1]
-            # _stft_test = np.pad(_stft_test, ((0,0), (0,0), (0,0), (0,pad)))
-
-            assert _stft_train.shape[-2] == _stft_test.shape[-2] == F
-            assert _stft_train.shape[-1] == _stft_test.shape[-1] == P
+            _stft_train = abs(_stft_train)
+            _stft_test = abs(_stft_test)
 
             # if args.model_name=='mtf_c':
             #     mne.set_log_level('WARNING')  # suppress INFO logs
@@ -325,7 +320,7 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
                 train_acc = 0
                 for j, (x, y, y_stft) in enumerate(train_loader):
                     x = torch.unsqueeze(x, 1)
-                    x, y, y_stft = x.to(device), y.to(device), y_stft.to(device)
+                    x, y, y_stft = x.to(device), y.to(device), y_stft.to(device=device, dtype=torch.float)
                     y = y.long()
                     optimizer.zero_grad()
                     if args.model_name != 'mtf_c':
@@ -334,7 +329,7 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
                     else:
                         stft, representations, logits = model(x)
                         if stft is not None:
-                            stft_loss = F.mse_loss(stft, y_stft)
+                            stft_loss = nn.MSELoss()(stft, y_stft)
                     acc = accuracy_score(logits, y.cpu().detach().numpy())
 
                     loss = loss_fn(logits, y)
@@ -358,7 +353,7 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
                         if x.size(0) < 2:
                             continue
                         x = torch.unsqueeze(x, 1)
-                        x, y, y_stft = x.to(device), y.to(device), y_stft.to(device)
+                        x, y, y_stft = x.to(device), y.to(device), y_stft.to(device=device, dtype=torch.float)
                         y = y.long()
                         with torch.no_grad():
                             # logits, loss, acc = fine_tune_run(encoder, model, clf_head, x, y, LBL_SMOOTH=LBL_SMOOTH)
@@ -368,7 +363,7 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
                             else:
                                 stft, representations, logits = model(x)
                                 if stft is not None:
-                                    stft_loss = F.mse_loss(stft, y_stft)
+                                    stft_loss = nn.MSELoss()(stft, y_stft)
                             acc = accuracy_score(logits, y.cpu().detach().numpy())
                             loss = loss_fn(logits, y)
                             if stft_loss is not None: # type: ignore
