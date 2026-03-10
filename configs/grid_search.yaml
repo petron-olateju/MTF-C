@@ -24,7 +24,7 @@ db_conformer:
   chn_depth: [1]
 
 mtf_c:
-  patch_size: [40, 80, 120]
+  patch_size: [60, 100, 140]
   filter_banks: [7, 11, 15]
   wsize_divisor: [2, 4]
   sst_method: ['filter_banks', 'st_addition', 'st_addition_projection', 'stf_attention_temporal_values']
