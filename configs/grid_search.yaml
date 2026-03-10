@@ -30,7 +30,7 @@ mtf_c:
   sst_method: ['filter_banks', 'st_addition', 'st_addition_projection', 'stf_attention_temporal_values']
   stft_reconstruction: [True, False]
   patch_emb_size: [16, 40, 80]
-  n_heads_patch_emb: [4, 8]
+  n_heads_patch: [4, 8]
   sst_emb_size: [40]
   branch: ['all']
   chn_attn_flag: [False]

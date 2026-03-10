@@ -36,7 +36,7 @@ mtf_c:
   sst_method: 'stf_attention_temporal_values'
   stft_reconstruction: True
   patch_emb_size: 80
-  n_heads_patch_emb: 4
+  n_heads_patch: 4
   sst_emb_size: 40
   tem_depth: 1
   chn_depth: 1
