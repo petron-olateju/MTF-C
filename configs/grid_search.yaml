@@ -3,7 +3,7 @@ training:
   n_iter: 100
   eval_inter: 5
   folds: 5
-  n_repeats: 1
+  n_repeats: 5
   lr: 1.0e-3
   batch_size: 64
 
@@ -29,7 +29,8 @@ mtf_c:
   wsize_divisor: [2, 4]
   sst_method: ['filter_banks', 'st_addition', 'st_addition_projection', 'stf_attention_temporal_values']
   stft_reconstruction: [True, False]
-  patch_emb_size: [20, 40, 80]
+  patch_emb_size: [16, 40, 80]
+  n_heads_patch_emb: [4, 8]
   sst_emb_size: [40]
   branch: ['all']
   chn_attn_flag: [False]

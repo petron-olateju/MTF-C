@@ -1,10 +1,10 @@
 import math
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+import torch # type: ignore
+import torch.nn as nn # type: ignore
+import torch.nn.functional as F # type: ignore
 
-from einops import rearrange
+from einops import rearrange # type: ignore
 
 from .DBConformer import PatchEmbeddingTemporal, PatchEmbeddingSpatial
 from .DBConformer import TransformerEncoder, ClassificationHead
@@ -119,13 +119,14 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
 
 class MTFC(nn.Module):
 
-    def __init__(self, args, n_filter_banks= 4, wsize_divisor=2, n_times=1000, patch_emb_size=40, sst_emb_size=40, 
+    def __init__(self, args, n_filter_banks= 4, wsize_divisor=2, n_times=1000, patch_emb_size=40, n_heads_patch=4, sst_emb_size=40, 
             depth=5, n_classes=2, fs=250) -> None:
         super().__init__()
 
         self.P = args.time_sample_num // args.patch_size  # Example: 1000 // 125 = 8
         self.C = args.chn  # number of channels
         self.D = patch_emb_size
+        self.H = n_heads_patch
         self.FTS = sst_emb_size
         self.F = n_filter_banks
         self.FP = self.F * self.P
@@ -158,19 +159,18 @@ class MTFC(nn.Module):
                 nn.ELU())
 
         if args.sst_method in ['st_addition', 'st_addition_projection', 'stf_attention_temporal_values']:
-            if args.stft_reconstruction is True:
-                if args.sst_method in ['st_addition', 'st_addition_projection']:
-                    self.spectrogram_generator = nn.Sequential(
-                        nn.Linear(self.D, self.D**2),
-                        nn.ELU(),
-                        nn.Linear(self.D**2, self.F),
-                        nn.ELU())
-                elif args.sst_method in ['stf_attention_temporal_values']:
-                    self.spectrogram_generator = nn.Sequential(
-                        nn.Linear(self.D, self.D**2),
-                        nn.ELU(),
-                        nn.Linear(self.D**2, 1),
-                        nn.ELU())
+            if args.sst_method in ['st_addition', 'st_addition_projection']:
+                self.spectrogram_generator = nn.Sequential(
+                    nn.Linear(self.D, self.D**2),
+                    nn.ELU(),
+                    nn.Linear(self.D**2, self.F),
+                    nn.ELU())
+            elif args.sst_method in ['stf_attention_temporal_values']:
+                self.spectrogram_generator = nn.Sequential(
+                    nn.Linear(self.D, self.D**2),
+                    nn.ELU(),
+                    nn.Linear(self.D**2, 1),
+                    nn.ELU())
 
             self.temporal_embedding = PatchEmbeddingTemporal(
                 data_name=args.data_name,
@@ -193,7 +193,7 @@ class MTFC(nn.Module):
             elif args.sst_method == 'stf_attention_temporal_values':
                 self.stf_attention_head = N_CrossAttentionHeads(
                     emb_size = self.D,
-                    num_heads = 16,
+                    num_heads = self.H,
                     n_comps = self.F,
                     AttnClass = st_t_CrossAttentionHead
                 )
@@ -296,13 +296,12 @@ class MTFC(nn.Module):
                 z_st = self.stf_attention_head(z_st, z_t)
 
             # Within Transformer STFT Estimation
-            if self.stft_reconstruction:
-                if self.sst_method in ['st_addition', 'st_addition_projection']:
-                    stft = self.spectrogram_generator(z_st)
-                if self.sst_method in ['stf_attention_temporal_values']:
-                    stft = self.spectrogram_generator(z_st).squeeze(dim=-1)
-                    stft = rearrange(stft, 'b f c t -> b c t f')
-                    
+            if self.sst_method in ['st_addition', 'st_addition_projection']:
+                stft = self.spectrogram_generator(z_st) # type: ignore
+            if self.sst_method in ['stf_attention_temporal_values']:
+                stft = self.spectrogram_generator(z_st).squeeze(dim=-1) # type: ignore
+                stft = rearrange(stft, 'b f c t -> b c t f')
+
             if self.sst_method in ['filter_banks']:
                 z_t = x_embed_temporal.unsqueeze(3).expand(-1, -1, -1, self.C, -1)
                 z_s = x_embed_spatial.unsqueeze(1).unsqueeze(2).expand(-1, self.F, self.P, -1, -1)
@@ -316,10 +315,10 @@ class MTFC(nn.Module):
 
             # Out of Transformer STFT EStimation for STFT Reconstruction
             if self.stft_reconstruction:
-                loomed_stft = nn.ELU()(self.stft_temporal_loom(rearrange(stft, 'b c t f -> b c f t')))
+                loomed_stft = nn.ELU()(self.stft_temporal_loom(rearrange(stft, 'b c t f -> b c f t'))) # type: ignore
                 
             # Generate Embedding for Frequency Components
-            x_embed_frequency = rearrange(stft, 'b c p f-> b f (c p)')
+            x_embed_frequency = rearrange(stft, 'b c p f-> b f (c p)') # type: ignore
             x_embed_frequency = self.frequency_embedding(x_embed_frequency)
 
 

@@ -237,6 +237,7 @@ def main(args=None, experiment: Union['Experiment', None] = None, config = None,
                     model_args,
                     n_filter_banks = model_configs['filter_banks'],
                     patch_emb_size = model_configs['patch_emb_size'],
+                    n_heads_patch = model_configs['n_heads_patch'],
                     wsize_divisor = model_configs['wsize_divisor'],
                     n_times = dataset_info['n_times'],
                     sst_emb_size = model_configs['sst_emb_size'],
@@ -402,8 +403,9 @@ def main(args=None, experiment: Union['Experiment', None] = None, config = None,
                     if fold_acc > best_acc_per_fold:
                         best_acc_per_fold = fold_acc
                         best_kappa_per_fold = fold_kappa
-                        best_stft_reconstruction_loss_per_fold = fold_stft_loss
-                        start_stft_loss += fold_stft_loss.item()
+                        if (args.model_name == 'mtf_c') and (stft is not None):
+                            best_stft_reconstruction_loss_per_fold = fold_stft_loss
+                            start_stft_loss += fold_stft_loss.item()
                         
                     # if verbose:
                     #     print(f"Acc:{fold_acc}, Kappa:{fold_kappa}")
@@ -414,7 +416,7 @@ def main(args=None, experiment: Union['Experiment', None] = None, config = None,
         
         accuracy = np.mean(folds_acc)
         kappa = np.mean(folds_kappa)
-        if (args.model_name == 'mtf_c') and (stft is not None):
+        if (args.model_name == 'mtf_c') and (stft is not None): # type: ignore
             _folds_stft_loss = [f.item() for f in folds_stft_reconstruction_loss]
             stft_loss = np.mean(_folds_stft_loss)
         else:

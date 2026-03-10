@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 from itertools import product
 
-import numpy as np
+import numpy as np # type: ignore
 import pandas as pd
 import argparse
 from argparse import Namespace
@@ -103,33 +103,33 @@ def main():
         if script == 'cross_validation':
             accuracy, kappa, stft_reconstruction_loss, experiment = cross_validation(mthd_args, experiment, config='grid_search', model_configs=current_param)
 
-        if args.model_name != 'mtf_c':
-            print(f"subject {args.subject} | Accuracy: {np.mean(accuracy):.2f}, Kappa: {np.mean(kappa):.2f}")
-            print("============================================")
-        else:
-            print(f"subject {args.subject} | Accuracy: {np.mean(accuracy):.2f}, Kappa: {np.mean(kappa):.2f} | STFT Reconstruction Loss: {np.mean(stft_reconstruction_loss):.2f}")
-            print("============================================")
+            if args.model_name != 'mtf_c':
+                print(f"subject {args.subject} | Accuracy: {np.mean(accuracy):.2f}, Kappa: {np.mean(kappa):.2f}")
+                print("============================================")
+            else:
+                print(f"subject {args.subject} | Accuracy: {np.mean(accuracy):.2f}, Kappa: {np.mean(kappa):.2f} | STFT Reconstruction Loss: {np.mean(stft_reconstruction_loss):.2f}")
+                print("============================================")
 
-        acc_mean = np.mean(accuracy)
-        acc_std = np.std(accuracy)
-        kappa_mean = np.mean(kappa)
-        kappa_std = np.mean(kappa)
-        stft_result = np.mean(stft_reconstruction_loss)
+            acc_mean = np.mean(accuracy)
+            acc_std = np.std(accuracy)
+            kappa_mean = np.mean(kappa)
+            kappa_std = np.mean(kappa)
+            stft_result = np.mean(stft_reconstruction_loss)
 
-        if acc_mean > best_acc:
-            best_acc = acc_mean
-            best_acc_std = acc_std
-            best_kappa = kappa_mean
-            best_kappa_std = kappa_std
-            best_stft_loss = stft_result
-            best_params = current_param
-        elif (acc_mean == best_acc) and (stft_result <= best_stft_loss):
-            best_acc = acc_mean
-            best_acc_std = acc_std
-            best_kappa = kappa_mean
-            best_kappa_std = kappa_std
-            best_stft_loss = stft_result
-            best_params = current_param
+            if acc_mean > best_acc:
+                best_acc = acc_mean
+                best_acc_std = acc_std
+                best_kappa = kappa_mean
+                best_kappa_std = kappa_std
+                best_stft_loss = stft_result
+                best_params = current_param
+            elif (acc_mean == best_acc) and (stft_result <= best_stft_loss):
+                best_acc = acc_mean
+                best_acc_std = acc_std
+                best_kappa = kappa_mean
+                best_kappa_std = kappa_std
+                best_stft_loss = stft_result
+                best_params = current_param
 
     if args.model_name not in accuracy_results:
         accuracy_results[args.model_name] = { }
@@ -138,11 +138,11 @@ def main():
         kappa_std_results[args.model_name] = { }
         stft_reconstruction_results[args.model_name] = { }
 
-    accuracy_results[args.model_name][args.dataset] = acc_mean
-    accuracy_std_results[args.model_name][args.dataset] = acc_std
-    kappa_results[args.model_name][args.dataset] = kappa_mean
-    kappa_std_results[args.model_name][args.dataset] = kappa_std
-    stft_reconstruction_results[args.model_name][args.dataset] = stft_result
+    accuracy_results[args.model_name][args.dataset] = best_acc
+    accuracy_std_results[args.model_name][args.dataset] = best_acc_std
+    kappa_results[args.model_name][args.dataset] = best_kappa
+    kappa_std_results[args.model_name][args.dataset] = best_kappa_std
+    stft_reconstruction_results[args.model_name][args.dataset] = best_stft_loss
 
     print("========================================")
     print(f"\n Grid search for subject {args.subject} {args.dataset} dataset completed!!!")
@@ -165,14 +165,14 @@ def main():
             'subject': args.subject,
             'metrics': {
                 'accuracy': {
-                    'mean': float(acc_mean),
-                    'std': float(acc_std)
+                    'mean': float(best_acc),
+                    'std': float(best_acc_std)
                 },
                 'kappa': {
-                    'mean': float(kappa_mean),
-                    'std': float(kappa_std)
+                    'mean': float(best_kappa),
+                    'std': float(best_kappa_std)
                 },
-                'stft_reconstruction_loss': float(stft_result)
+                'stft_reconstruction_loss': float(best_stft_loss)
             }
         }
 
