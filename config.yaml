@@ -1,7 +1,7 @@
 N_SUBJECTS: 15
 N_RUNS: 10
 
-N_MOVEMENTS: 7
+N_MOVEMENTS: 5
 MOVEMENTS:
   - 'Elbow_Flexion'
   - 'Elbow_Extension'
