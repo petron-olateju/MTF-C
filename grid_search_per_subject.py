@@ -90,6 +90,7 @@ def main():
         total_combos *= len(v)
     for combo in tqdm(combos, total=total_combos, desc='Grid Search'):
         current_param = dict(zip(param_names, combo))
+        print(f"Current config: {current_param}")
 
         mthd_args = Namespace(
             dataset=args.dataset,

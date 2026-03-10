@@ -296,16 +296,19 @@ class MTFC(nn.Module):
                 z_st = self.stf_attention_head(z_st, z_t)
 
             # Within Transformer STFT Estimation
-            if self.sst_method in ['st_addition', 'st_addition_projection']:
-                stft = self.spectrogram_generator(z_st)
-            if self.sst_method in ['stf_attention_temporal_values']:
-                stft = self.spectrogram_generator(z_st).squeeze(dim=-1)
-                stft = rearrange(stft, 'b f c t -> b c t f')
-            elif self.sst_method in ['filter_banks']:
+            if self.stft_reconstruction:
+                if self.sst_method in ['st_addition', 'st_addition_projection']:
+                    stft = self.spectrogram_generator(z_st)
+                if self.sst_method in ['stf_attention_temporal_values']:
+                    stft = self.spectrogram_generator(z_st).squeeze(dim=-1)
+                    stft = rearrange(stft, 'b f c t -> b c t f')
+                    
+            if self.sst_method in ['filter_banks']:
                 z_t = x_embed_temporal.unsqueeze(3).expand(-1, -1, -1, self.C, -1)
                 z_s = x_embed_spatial.unsqueeze(1).unsqueeze(2).expand(-1, self.F, self.P, -1, -1)
-                z_t = nn.ELU()(self.ct_shared_projection(z_t))
-                z_s = nn.ELU()(self.ct_shared_projection(z_s))
+                if self.stft_reconstruction:
+                    z_t = nn.ELU()(self.ct_shared_projection(z_t))
+                    z_s = nn.ELU()(self.ct_shared_projection(z_s))
 
                 stft = torch.abs(torch.sum(z_s * z_t, dim=-1))
                 stft = rearrange(stft, 'b f p c -> b c p f')
