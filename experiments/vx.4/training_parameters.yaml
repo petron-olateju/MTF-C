@@ -1,6 +1,7 @@
 baseline: null
-description: MTF-C Dry Run
-name: v1.0
+description: st_addition + stf_attention head on temporal embeddings + stf_embedding
+  to Frequency spectrum via MLP for STFT reconstruction
+name: vx.4
 parameters:
   Dataset-Details:
     BNCI2014_004:
@@ -11,13 +12,13 @@ parameters:
       n_trials: 120
   Model-Hyperparameters:
     channel_depth: 1
+    filter_banks: 7
     patch_embedding_size: 20
     patch_size: 100
     spatial_dimensionality: 16
     sst_embedding_size: 40
+    sst_method: stf_attention_temporal_values
     temporal_depth: 1
-    filter_banks: 7
-    sst_method: st_addition
     wsize_divisor: 2
   Traininig-Hyperparameters:
     batch_size: 32

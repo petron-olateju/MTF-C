@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 import mne
 mne.set_log_level('WARNING')  # suppress INFO logs
+import scipy
 
 import math
 import torch
@@ -52,7 +53,7 @@ def parse_args():
 
 
 
-def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List, List, Union['Experiment', None]]:
+def main(args=None, experiment: Union['Experiment', None] = None, config = None, model_configs = None):
     if args is None:
         args = parse_args()
     device = args.device  # --> Update to Parameter object
@@ -114,11 +115,19 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
     # ====================
     # CONFIGS & HYPERPARAMETERS
     # ====================
-    with open('./configs/cross_validation.yaml', 'r') as f:
-        configs = yaml.safe_load(f)
+    if config is None:
+        with open('./configs/cross_validation.yaml', 'r') as f:
+            configs = yaml.safe_load(f)
 
-    training_configs = configs['training']
-    model_configs = configs[args.model_name]
+        training_configs = configs['training']
+        model_configs = configs[args.model_name]
+    else:
+        with open(f'./configs/{config}.yaml', 'r') as f:
+            configs = yaml.safe_load(f)
+
+        training_configs = configs['training']
+        if model_configs is  None:
+            model_configs = configs[args.model_name]
     
     # --> Training Hyperparameters + update experiment tracker
     hyperparameters = Namespace(
@@ -146,7 +155,10 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
         elif args.model_name == 'mtf_c':
             experiment.add_params([
                 Parameter(model_configs['patch_emb_size'], 'patch_embedding_size', 'Model-Hyperparameters'), 
-                Parameter(model_configs['sst_emb_size'], 'sst_embedding_size', 'Model-Hyperparameters')])
+                Parameter(model_configs['sst_emb_size'], 'sst_embedding_size', 'Model-Hyperparameters'),
+                Parameter(model_configs['filter_banks'], 'filter_banks', 'Model-Hyperparameters'),
+                Parameter(model_configs['wsize_divisor'], 'wsize_divisor', 'Model-Hyperparameters'),
+                Parameter(model_configs['sst_method'], 'sst_method', 'Model-Hyperparameters')])
 
 
     # --> Model parameters + update experiment tracker
@@ -167,7 +179,8 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
         branch = model_configs['branch'],             # Options: 'all', 'temporal', 'spatial' (paper default: 'all')
         chn_atten_flag = model_configs['chn_attn_flag'],       # Use channel attention (paper default: True)
         fts_atten_flag = model_configs['fts_attn_flag'],
-        sst_method = model_configs['sst_method']
+        sst_method = model_configs['sst_method'],
+        stft_reconstruction = model_configs['stft_reconstruction']
     )
     if experiment is not None:
         experiment.add_params([
@@ -193,14 +206,18 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
     # --> Repeat 5-fold CV per subject for 5 cycles (n_repeats)
     all_accuracies = []     # accruacies for 5 folds * 5 cycle
     all_kappas = []     # kappa values for 5 folds * 5 cycle
+    all_stft_reconstruction_loss = []
     for seed in tqdm(range(1, hyperparameters.n_repeats+1), total=hyperparameters.n_repeats):
 
         np.random.seed(seed)
         k = hyperparameters.folds
         skf = StratifiedKFold(n_splits=k, shuffle=False)
 
+        start_stft_loss = 0
+
         folds_acc = []      # folds accuracies for current cycle
         folds_kappa = []    # folds kappa values for current cycle 
+        folds_stft_reconstruction_loss = []
 
         for fold, (train_idx, test_idx) in enumerate(skf.split(X_train, y_train)):
             
@@ -271,6 +288,14 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
             _stft_train = abs(_stft_train)
             _stft_test = abs(_stft_test)
 
+            # Target time length to match conformer output
+            n_timepoints = int(_x_train.shape[2])
+            target_T = n_timepoints // model_configs['patch_size']  # (N, C, F, target_T)
+
+            # Resample along time axis (axis=-1) to match conformer
+            _stft_train = scipy.signal.resample(_stft_train, target_T, axis=-1)
+            _stft_test  = scipy.signal.resample(_stft_test,  target_T, axis=-1)
+
             # if args.model_name=='mtf_c':
             #     mne.set_log_level('WARNING')  # suppress INFO logs
             #     filter_banks = {
@@ -313,6 +338,7 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
             # Training and Evaluate CV-fold for n_iter epochs
             best_acc_per_fold = 0
             best_kappa_per_fold = -1
+            best_stft_reconstruction_loss_per_fold = math.inf
             for i in range(n_iter): #tqdm(range(n_iter), total=n_iter): # desc=f"Training: fold {fold+1}/{k}"
                 # Train and upadte train folds performance
                 model.train()
@@ -323,13 +349,11 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
                     x, y, y_stft = x.to(device), y.to(device), y_stft.to(device=device, dtype=torch.float)
                     y = y.long()
                     optimizer.zero_grad()
-                    if args.model_name != 'mtf_c':
-                        representations, logits = model(x)
-                        stft_loss = None
+                    stft, representations, logits = model(x)
+                    if stft is not None:
+                        stft_loss = nn.MSELoss()(stft, y_stft)
                     else:
-                        stft, representations, logits = model(x)
-                        if stft is not None:
-                            stft_loss = nn.MSELoss()(stft, y_stft)
+                        stft_loss = None
                     acc = accuracy_score(logits, y.cpu().detach().numpy())
 
                     loss = loss_fn(logits, y)
@@ -357,13 +381,11 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
                         y = y.long()
                         with torch.no_grad():
                             # logits, loss, acc = fine_tune_run(encoder, model, clf_head, x, y, LBL_SMOOTH=LBL_SMOOTH)
-                            if args.model_name != 'mtf_c':
-                                representations, logits = model(x)
-                                stft_loss = None
+                            stft, representations, logits = model(x)
+                            if stft is not None:
+                                stft_loss = nn.MSELoss()(stft, y_stft)
                             else:
-                                stft, representations, logits = model(x)
-                                if stft is not None:
-                                    stft_loss = nn.MSELoss()(stft, y_stft)
+                                stft_loss = None
                             acc = accuracy_score(logits, y.cpu().detach().numpy())
                             loss = loss_fn(logits, y)
                             if stft_loss is not None: # type: ignore
@@ -374,30 +396,43 @@ def main(args=None, experiment: Union['Experiment', None] = None) -> Tuple[List,
 
                     fold_acc = np.mean(test_accs).item()
                     fold_kappa = (fold_acc - 0.5) / (1 - 0.5)
+                    if (args.model_name == 'mtf_c') and (stft is not None):
+                        fold_stft_loss = stft_loss
 
                     if fold_acc > best_acc_per_fold:
                         best_acc_per_fold = fold_acc
                         best_kappa_per_fold = fold_kappa
+                        best_stft_reconstruction_loss_per_fold = fold_stft_loss
+                        start_stft_loss += fold_stft_loss.item()
                         
                     # if verbose:
                     #     print(f"Acc:{fold_acc}, Kappa:{fold_kappa}")
 
             folds_acc.append(best_acc_per_fold)
             folds_kappa.append(best_kappa_per_fold)
+            folds_stft_reconstruction_loss.append(best_stft_reconstruction_loss_per_fold)
         
         accuracy = np.mean(folds_acc)
         kappa = np.mean(folds_kappa)
+        if (args.model_name == 'mtf_c') and (stft is not None):
+            _folds_stft_loss = [f.item() for f in folds_stft_reconstruction_loss]
+            stft_loss = np.mean(_folds_stft_loss)
+        else:
+            stft_loss = 0
 
         all_accuracies.append(accuracy)
         all_kappas.append(kappa)
+        all_stft_reconstruction_loss.append(stft_loss)
 
-    accuracy = np.mean(all_accuracies)
-    kappa = np.mean(all_kappas)
+    # accuracy = np.mean(all_accuracies)
+    # kappa = np.mean(all_kappas)
     # print(f"subject - {args.subject}")
     # print(f"Accuracy: {np.mean(accuracy):.2f}")
     # print(f"Kappa: {np.mean(kappa):.2f}")
 
-    return all_accuracies, all_kappas, experiment
+    print(f"START STFT RECONSTRUCTION LOSS: {start_stft_loss / (hyperparameters.n_repeats * hyperparameters.folds)}")
+
+    return all_accuracies, all_kappas, all_stft_reconstruction_loss, experiment
 
 if __name__ == '__main__':
-    accuracy, kappa, experiment = main()
+    accuracy, kappa, stft_reconstruction_loss, experiment = main()
