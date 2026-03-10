@@ -18,9 +18,10 @@ db_conformer:
   chn_attn_flag: True
   fts_attn_flag: False
   sst_method: False
+  stft_reconstruction: False
   emb_size: 40
-  tem_depth: 2
-  chn_depth: 2
+  tem_depth: 1
+  chn_depth: 1
 
 mtf_c:
   patch_size: 100
@@ -32,8 +33,9 @@ mtf_c:
   branch: 'all'
   chn_attn_flag: False
   fts_attn_flag: True
-  sst_method: 'spatio_temporal_embedding'
-  patch_emb_size: 20
+  sst_method: 'stf_attention_temporal_values'
+  stft_reconstruction: True
+  patch_emb_size: 80
   sst_emb_size: 40
   tem_depth: 1
   chn_depth: 1

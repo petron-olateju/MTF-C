@@ -1,6 +1,6 @@
 baseline: null
-description: MTF-C Dry Run
-name: v1.0
+description: DBConformer channeld, temporal depth trasnformer reduced to 1
+name: v0.2
 parameters:
   Dataset-Details:
     BNCI2014_004:
@@ -11,14 +11,10 @@ parameters:
       n_trials: 120
   Model-Hyperparameters:
     channel_depth: 1
-    patch_embedding_size: 20
+    embedding_size: 40
     patch_size: 100
     spatial_dimensionality: 16
-    sst_embedding_size: 40
     temporal_depth: 1
-    filter_banks: 7
-    sst_method: st_addition
-    wsize_divisor: 2
   Traininig-Hyperparameters:
     batch_size: 32
     eval_inter: 5

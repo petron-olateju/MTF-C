@@ -63,11 +63,13 @@ def main():
 
     all_accuracies = []
     all_kappas = []
+    all_stft = []
 
     accuracy_results = { }
     accuracy_std_results = { }
     kappa_results = { }
     kappa_std_results = { }
+    stft_reconstruction_results = { }
 
     for dataset in datasets:
         if dataset == 'BNCI2014_001':
@@ -103,28 +105,38 @@ def main():
                 model_name=model_name,
                 verbose=True
             )
+           
             if script == 'cross_validation':
-                accuracy, kappa, experiment = cross_validation(mthd_args, experiment)
+                accuracy, kappa, stft_reconstruction_loss, experiment = cross_validation(mthd_args, experiment)
                 all_accuracies = all_accuracies + accuracy
                 all_kappas = all_kappas + kappa
-            print(f"subject {subject} | Accuracy: {np.mean(accuracy):.2f}, Kappa: {np.mean(kappa):.2f}")
-            print("============================================")
+                all_stft = all_stft + stft_reconstruction_loss
+            if args.model_name != 'mtf_c':
+                print(f"subject {subject} | Accuracy: {np.mean(accuracy):.2f}, Kappa: {np.mean(kappa):.2f}")
+                print("============================================")
+            else:
+                print(f"subject {subject} | Accuracy: {np.mean(accuracy):.2f}, Kappa: {np.mean(kappa):.2f} | STFT Reconstruction Loss: {np.mean(stft_reconstruction_loss):.2f}")
+                print("============================================")
+
 
         acc_mean = np.mean(all_accuracies)
         acc_std = np.std(all_accuracies)
         kappa_mean = np.mean(all_kappas)
         kappa_std = np.mean(all_kappas)
+        stft_result = np.mean(all_stft)
 
         if args.model_name not in accuracy_results:
             accuracy_results[args.model_name] = { }
             accuracy_std_results[args.model_name] = { }
             kappa_results[args.model_name] = { }
             kappa_std_results[args.model_name] = { }
+            stft_reconstruction_results[args.model_name] = { }
 
         accuracy_results[args.model_name][dataset] = acc_mean
         accuracy_std_results[args.model_name][dataset] = acc_std
         kappa_results[args.model_name][dataset] = kappa_mean
         kappa_std_results[args.model_name][dataset] = kappa_std
+        stft_reconstruction_results[args.model_name][dataset] = stft_result
 
         print("========================================")
         print(f"\n {dataset} dataset. All subjects completed!!!")
@@ -137,6 +149,7 @@ def main():
         pd.DataFrame(accuracy_std_results).to_csv(f'{args.experiment_folder}/{args.experiment_version}/accuracy_std.results.csv')
         pd.DataFrame(kappa_results).to_csv(f'{args.experiment_folder}/{args.experiment_version}/kappa.results.csv')
         pd.DataFrame(kappa_std_results).to_csv(f'{args.experiment_folder}/{args.experiment_version}/kappa_std.results.csv')
+        pd.DataFrame(stft_reconstruction_results).to_csv(f'{args.experiment_folder}/{args.experiment_version}/stft_reconstruction.results.csv')
 
 
 if __name__ == '__main__':
