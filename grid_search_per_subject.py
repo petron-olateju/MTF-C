@@ -113,7 +113,7 @@ def main():
             acc_mean = np.mean(accuracy)
             acc_std = np.std(accuracy)
             kappa_mean = np.mean(kappa)
-            kappa_std = np.mean(kappa)
+            kappa_std = np.std(kappa)
             stft_result = np.mean(stft_reconstruction_loss)
 
             if acc_mean > best_acc:
