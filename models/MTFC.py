@@ -123,7 +123,7 @@ class MTFC(nn.Module):
             depth=5, n_classes=2, fs=250) -> None:
         super().__init__()
 
-        self.P = args.time_sample_num // args.patch_size  # Example: 1000 // 125 = 8
+        self.P = (args.time_sample_num - 1) // args.patch_size  # Example: 1000 // 125 = 8
         self.C = args.chn  # number of channels
         self.D = patch_emb_size
         self.H = n_heads_patch

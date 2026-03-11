@@ -281,21 +281,21 @@ def main(args=None, experiment: Union['Experiment', None] = None, config = None,
             # Compute STFT for each epoch
             # P = model_configs['patch_size']
             F = model_configs['filter_banks']
+            P = model_configs['patch_size']
+            assert (F-1) % P == 0
             wsize = int((F - 1) * 2)
             assert wsize % 2 == 0
-            tstep = math.ceil(wsize / model_configs['wsize_divisor'])
+            tstep = P
+            # tstep = math.ceil(wsize / model_configs['wsize_divisor'])
             _stft_train = np.array([mne.time_frequency.stft(x, wsize, tstep) for x in _x_train])
             _stft_test = np.array([mne.time_frequency.stft(x, wsize, tstep) for x in _x_test])
             _stft_train = abs(_stft_train)
             _stft_test = abs(_stft_test)
 
-            # Target time length to match conformer output
-            n_timepoints = int(_x_train.shape[2])
-            target_T = n_timepoints // model_configs['patch_size']  # (N, C, F, target_T)
-
-            # Resample along time axis (axis=-1) to match conformer
-            _stft_train = scipy.signal.resample(_stft_train, target_T, axis=-1)
-            _stft_test  = scipy.signal.resample(_stft_test,  target_T, axis=-1)
+            # Trim to match model's P = (n_times - 1) // patch_size
+            target_T = (dataset_info['n_times'] - 1) // P  # 176
+            _stft_train = _stft_train[:, :, :, :target_T]  # (B, C, F, target_T)
+            _stft_test  = _stft_test[:, :, :, :target_T]
 
             # if args.model_name=='mtf_c':
             #     mne.set_log_level('WARNING')  # suppress INFO logs

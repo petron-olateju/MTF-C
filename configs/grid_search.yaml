@@ -3,9 +3,9 @@ training:
   n_iter: 100
   eval_inter: 5
   folds: 5
-  n_repeats: 5
+  n_repeats: 1
   lr: 1.0e-3
-  batch_size: 64
+  batch_size: 32
 
 db_conformer:
   patch_size: [20, 40, 60, 80, 100, 120, 140]
@@ -24,13 +24,13 @@ db_conformer:
   chn_depth: [1]
 
 mtf_c:
-  patch_size: [60, 100, 140]
-  filter_banks: [7, 11, 15]
-  wsize_divisor: [2, 4]
-  sst_method: ['filter_banks', 'st_addition', 'st_addition_projection', 'stf_attention_temporal_values']
-  stft_reconstruction: [True, False]
-  patch_emb_size: [16, 40, 80]
-  n_heads_patch: [4, 8]
+  patch_size: [50]
+  filter_banks: [51]
+  wsize_divisor: [2]
+  sst_method: ['stf_attention_temporal_values']
+  stft_reconstruction: [True]
+  patch_emb_size: [20]
+  n_heads_patch: [5]
   sst_emb_size: [40]
   branch: ['all']
   chn_attn_flag: [False]
