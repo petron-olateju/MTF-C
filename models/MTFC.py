@@ -97,7 +97,7 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
 
         filter_banks = create_filter_banks(n_filter_banks, fs=fs, start_freq=1.0)
         
-        self.n_filter_banks = n_filter_banks
+        self.n_filter_banks = self.F 
         self.patch_embeddings = nn.ModuleList([
             PatchEmbeddingTemporal(
                 data_name=args.data_name,
@@ -119,7 +119,8 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
 
 class MTFC(nn.Module):
 
-    def __init__(self, args, n_filter_banks= 4, wsize_divisor=2, n_times=1000, patch_emb_size=40, n_heads_patch=4, sst_emb_size=40, 
+    def __init__(self, args, n_filter_banks= 4, wsize_divisor=2, freq_downsample=2,
+    n_times=1000, patch_emb_size=40, n_heads_patch=4, sst_emb_size=40, 
             depth=5, n_classes=2, fs=250) -> None:
         super().__init__()
 
@@ -128,7 +129,7 @@ class MTFC(nn.Module):
         self.D = patch_emb_size
         self.H = n_heads_patch
         self.FTS = sst_emb_size
-        self.F = n_filter_banks
+        self.F = ((n_filter_banks // 2) * 2) // freq_downsample
         self.FP = self.F * self.P
         self.fs = fs
         self.gate_flag = args.gate_flag  # Default False, due to the reduced performance
@@ -207,7 +208,7 @@ class MTFC(nn.Module):
                     nn.ELU()
                 )
 
-            self.temporal_embedding = FilterBanksPatchEmbeddingTemporal(args, n_filter_banks=n_filter_banks, emb_size=patch_emb_size, fs=fs)
+            self.temporal_embedding = FilterBanksPatchEmbeddingTemporal(args, n_filter_banks=self.F , emb_size=patch_emb_size, fs=fs)
         else:
             self.temporal_embedding = PatchEmbeddingTemporal(
                 data_name=args.data_name,

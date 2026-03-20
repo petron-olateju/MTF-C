@@ -26,6 +26,7 @@ db_conformer:
 mtf_c:
   patch_size: 100
   filter_banks: 7
+  freq_downsample: 1
   wsize_divisor: 2
   spa_dim: 16
   gate_flag: False

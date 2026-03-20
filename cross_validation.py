@@ -158,6 +158,7 @@ def main(args=None, experiment: Union['Experiment', None] = None, config = None,
                 Parameter(model_configs['sst_emb_size'], 'sst_embedding_size', 'Model-Hyperparameters'),
                 Parameter(model_configs['filter_banks'], 'filter_banks', 'Model-Hyperparameters'),
                 Parameter(model_configs['wsize_divisor'], 'wsize_divisor', 'Model-Hyperparameters'),
+                Parameter(model_configs['freq_downsample'], 'freq_downsample', 'Model-Hyperparameters'),
                 Parameter(model_configs['sst_method'], 'sst_method', 'Model-Hyperparameters')])
 
 
@@ -239,6 +240,7 @@ def main(args=None, experiment: Union['Experiment', None] = None, config = None,
                     patch_emb_size = model_configs['patch_emb_size'],
                     n_heads_patch = model_configs['n_heads_patch'],
                     wsize_divisor = model_configs['wsize_divisor'],
+                    freq_downsample = model_configs['freq_downsample'],
                     n_times = dataset_info['n_times'],
                     sst_emb_size = model_configs['sst_emb_size'],
                     depth = model_configs['tem_depth'],
@@ -279,7 +281,6 @@ def main(args=None, experiment: Union['Experiment', None] = None, config = None,
 
 
             # Compute STFT for each epoch
-            # P = model_configs['patch_size']
             F = model_configs['filter_banks']
             P = model_configs['patch_size']
             assert (F-1) % P == 0
@@ -296,6 +297,22 @@ def main(args=None, experiment: Union['Experiment', None] = None, config = None,
             target_T = (dataset_info['n_times'] - 1) // P  # 176
             _stft_train = _stft_train[:, :, :, :target_T]  # (B, C, F, target_T)
             _stft_test  = _stft_test[:, :, :, :target_T]
+
+
+            freq_downsample = model_configs['freq_downsample']
+            F_bins_trimmed = (_stft_train.shape[2] // freq_downsample) * freq_downsample  # 51 → 50
+
+            _stft_train = _stft_train[:, :, :F_bins_trimmed, :].reshape(
+                _stft_train.shape[0], _stft_train.shape[1],
+                -1, freq_downsample,
+                _stft_train.shape[3]
+            ).mean(axis=3)
+
+            _stft_test = _stft_test[:, :, :F_bins_trimmed, :].reshape(
+                _stft_test.shape[0], _stft_test.shape[1],
+                -1, freq_downsample,
+                _stft_test.shape[3]
+            ).mean(axis=3)
 
             # if args.model_name=='mtf_c':
             #     mne.set_log_level('WARNING')  # suppress INFO logs

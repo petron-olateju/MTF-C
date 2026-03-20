@@ -3,7 +3,7 @@ training:
   n_iter: 100
   eval_inter: 5
   folds: 5
-  n_repeats: 1
+  n_repeats: 5
   lr: 1.0e-3
   batch_size: 32
 
@@ -24,8 +24,9 @@ db_conformer:
   chn_depth: [1]
 
 mtf_c:
-  patch_size: [50]
-  filter_banks: [51]
+  patch_size: [150]
+  filter_banks: [151]
+  freq_downsample: [15]
   wsize_divisor: [2]
   sst_method: ['stf_attention_temporal_values']
   stft_reconstruction: [True]
