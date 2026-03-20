@@ -31,7 +31,7 @@ def create_filter_banks(n_filter_banks, fs, start_freq=1.0):
     }
     return filter_banks
 
-class st_t_CrossAttentionHead(nn.Module):
+class SpatioTemporal_Temporal_AttentionHead(nn.Module):
     def __init__(self, emb_size, num_heads=2, dropout=0.2):
         super().__init__()
         assert emb_size % num_heads == 0
@@ -71,7 +71,7 @@ class st_t_CrossAttentionHead(nn.Module):
         return out
 
 class N_CrossAttentionHeads(nn.Module):
-    def __init__(self, emb_size, num_heads=2, n_comps=7, dropout=0.2, AttnClass=st_t_CrossAttentionHead):
+    def __init__(self, emb_size, num_heads=2, n_comps=7, dropout=0.2, AttnClass=SpatioTemporal_Temporal_AttentionHead):
         super().__init__()
         self.emb_size = emb_size
         self.num_heads = num_heads
@@ -196,7 +196,7 @@ class MTFC(nn.Module):
                     emb_size = self.D,
                     num_heads = self.H,
                     n_comps = self.F,
-                    AttnClass = st_t_CrossAttentionHead
+                    AttnClass = SpatioTemporal_Temporal_AttentionHead
                 )
     
         elif args.sst_method in ['filter_banks']:
