@@ -1,41 +1,91 @@
+"""Multi-Scale Temporal Frequency Conformer (MTFC) for EEG classification.
+
+This module implements the MTFC architecture which combines spectral-spatio-temporal
+embeddings with a transformer-based conformer for EEG signal classification.
+"""
+
 import math
 
-import torch # type: ignore
-import torch.nn as nn # type: ignore
-import torch.nn.functional as F # type: ignore
-
-from einops import rearrange # type: ignore
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from einops import rearrange
 
 from .DBConformer import PatchEmbeddingTemporal, PatchEmbeddingSpatial
 from .DBConformer import TransformerEncoder, ClassificationHead
 
-KERNEL_SIZES = {
-    'delta': None,  # will compute below
-}
 
-# kernel ~ fs / low_freq / 2, rounded to odd number
+# =============================================================================
+# Utility Functions
+# =============================================================================
+
+
 def band_kernel_size(fs, low_freq):
+    """Compute kernel size for frequency band filtering.
+
+    Args:
+        fs: Sampling frequency in Hz.
+        low_freq: Lower frequency bound for the band. If None, defaults to 1 Hz.
+
+    Returns:
+        Kernel size (odd number) for symmetric padding in filtering operations.
+    """
     if low_freq is None:
-        low_freq = 1  # treat delta as ~1Hz
+        low_freq = 1
     k = int(fs / low_freq / 2)
-    return k if k % 2 == 1 else k + 1  # ensure odd for symmetric padding
+    return k if k % 2 == 1 else k + 1
 
 
 def create_filter_banks(n_filter_banks, fs, start_freq=1.0):
+    """Create frequency band definitions for filter banks.
+
+    Args:
+        n_filter_banks: Number of frequency bands to create.
+        fs: Sampling frequency in Hz.
+        start_freq: Starting frequency for the first band in Hz.
+
+    Returns:
+        Dictionary mapping band index to [start_freq, end_freq] pairs.
+    """
     nyquist = fs / 2
     band_width = (nyquist - start_freq) / n_filter_banks
-    
-    filter_banks = {
-        i: [round(start_freq + i * band_width, 2), round(start_freq + (i + 1) * band_width, 2)]
+    return {
+        i: [
+            round(start_freq + i * band_width, 2),
+            round(start_freq + (i + 1) * band_width, 2),
+        ]
         for i in range(n_filter_banks)
     }
-    return filter_banks
+
+
+# =============================================================================
+# Attention Layers
+# =============================================================================
+
 
 class SpatioTemporal_Temporal_AttentionHead(nn.Module):
+    """Cross-attention head for spatiotemporal-to-temporal attention.
+
+    This attention mechanism allows spatiotemporal embeddings (B, C, P, D) to attend
+    to temporal embeddings (B, P, D), producing attended spatiotemporal embeddings.
+    Used in the stf_attention_temporal_values mode of MTFC.
+
+    Args:
+        emb_size: Embedding dimension D.
+        num_heads: Number of attention heads.
+        dropout: Dropout probability.
+
+    Input shapes:
+        query: (B, C, P, D) - spatiotemporal embeddings (channels x patches x dim)
+        key_value: (B, P, D) - temporal embeddings (patches x dim)
+
+    Output shape:
+        (B, C, P, D) - attended spatiotemporal embeddings
+    """
+
     def __init__(self, emb_size, num_heads=2, dropout=0.2):
         super().__init__()
         assert emb_size % num_heads == 0
-        self.emb_size = emb_size
         self.num_heads = num_heads
         self.head_dim = emb_size // num_heads
 
@@ -45,210 +95,556 @@ class SpatioTemporal_Temporal_AttentionHead(nn.Module):
         self.out_proj = nn.Linear(emb_size, emb_size)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, query, key_value):  # query: (B, P1, D), key_value: (B, P2, D)
+    def forward(self, query, key_value):
+        """Compute cross-attention from spatiotemporal to temporal embeddings.
+
+        Args:
+            query: Spatiotemporal embeddings of shape (B, C, P, D).
+            key_value: Temporal embeddings of shape (B, P, D).
+
+        Returns:
+            Attended spatiotemporal embeddings of shape (B, C, P, D).
+        """
         H, D = self.num_heads, self.head_dim
+        B, C, P, _ = query.shape
+        P_kv = key_value.shape[1]
 
-        Q = self.query_proj(query)
-        K = self.key_proj(key_value)
-        V = self.value_proj(key_value)
+        Q = self.query_proj(query).view(B, C, P, H, D)
+        K = self.key_proj(key_value).view(B, P_kv, H, D)
+        V = self.value_proj(key_value).view(B, P_kv, H, D)
 
-        # Split last dim into (num_heads, head_dim)
-        *q_dims, _ = Q.shape
-        *k_dims, _ = K.shape
+        attn_scores = torch.einsum("BCPHD,BKHD->BCHPK", Q, K) / (D**0.5)
+        attn_probs = self.dropout(F.softmax(attn_scores, dim=-2))
 
-        Q = Q.reshape(*q_dims, H, D)    # (B, F, C, P1, H, D)
-        K = K.reshape(*k_dims, H, D)    # (B, P2, H, D)
-        V = V.reshape(*k_dims, H, D)    # (B, P2, H, D)
+        out = torch.einsum("BCHPK,BKHD->BCPHD", attn_probs, V).reshape(B, C, P, H * D)
+        return self.out_proj(out)
 
-        attn_scores = torch.einsum('bcqhd, bkhd -> bcqhk', Q, K) / (D ** 0.5)
-        attn_probs = F.softmax(attn_scores, dim=-1)
-        attn_probs = self.dropout(attn_probs)
-
-        out = torch.einsum('bcqhk, bkhd -> bcqhd', attn_probs, V)
-        out = out.reshape(*q_dims, self.emb_size)
-        out = self.out_proj(out)
-
-        return out
 
 class N_CrossAttentionHeads(nn.Module):
-    def __init__(self, emb_size, num_heads=2, n_comps=7, dropout=0.2, AttnClass=SpatioTemporal_Temporal_AttentionHead):
-        super().__init__()
-        self.emb_size = emb_size
-        self.num_heads = num_heads
-        self.n_comps = n_comps
-        self.dropout = dropout
+    """Wrapper for multiple cross-attention heads.
 
-        self.component_attn = nn.ModuleList([
-            AttnClass(emb_size=emb_size, num_heads=num_heads, dropout=dropout) 
-            for _ in range(self.n_comps)
-        ])
+    Wraps F attention heads (e.g., SpatioTemporal_Temporal_AttentionHead) to produce
+    output for F frequency components, enabling parallel attention computation.
+
+    Args:
+        emb_size: Embedding dimension D.
+        num_heads: Number of attention heads per component.
+        n_comps: Number of parallel attention components (typically F for frequencies).
+        dropout: Dropout probability.
+        AttnClass: Attention head class to instantiate.
+
+    Input shapes:
+        query: (B, C, P, D) - spatiotemporal embeddings
+        key_value: (B, P, D) - temporal embeddings
+
+    Output shape:
+        (B, F, C, P, D) - F parallel attended embeddings
+    """
+
+    def __init__(
+        self,
+        emb_size,
+        num_heads=2,
+        n_comps=7,
+        dropout=0.2,
+        AttnClass=SpatioTemporal_Temporal_AttentionHead,
+    ):
+        super().__init__()
+        self.component_attn = nn.ModuleList(
+            [
+                AttnClass(emb_size=emb_size, num_heads=num_heads, dropout=dropout)
+                for _ in range(n_comps)
+            ]
+        )
 
     def forward(self, query, key_value):
-        out = torch.stack(
+        """Compute parallel attention for multiple components.
+
+        Args:
+            query: Spatiotemporal embeddings of shape (B, C, P, D).
+            key_value: Temporal embeddings of shape (B, P, D).
+
+        Returns:
+            Stacked outputs of shape (B, F, C, P, D).
+        """
+        return torch.stack(
             [head(query, key_value) for head in self.component_attn], dim=1
-            )
-        return out
+        )
 
-class FilterBanksPatchEmbeddingTemporal(nn.Module):
-    def __init__(self, args, n_filter_banks=6, emb_size=40, fs=250):
+
+# =============================================================================
+# Spatio-Temporal Mixing Layers
+# =============================================================================
+
+
+class STAddition(nn.Module):
+    """Combines temporal and spatial embeddings via broadcasting addition.
+
+    Takes temporal embeddings (B, P, D) and spatial embeddings (B, C, D) and
+    combines them through broadcasting addition to produce spatiotemporal
+    embeddings (B, C, P, D).
+
+    Args:
+        num_channels: Number of channels C.
+        num_patches: Number of temporal patches P.
+
+    Input shapes:
+        x_temporal: (B, P, D) - temporal embeddings
+        x_spatial: (B, C, D) - spatial (channel) embeddings
+
+    Output shape:
+        (B, C, P, D) - spatiotemporal embeddings where each element is
+        x_spatial[b, c, d] + x_temporal[b, p, d]
+    """
+
+    def __init__(self, num_channels, num_patches):
         super().__init__()
+        self.C = num_channels
+        self.P = num_patches
 
-        self.fs = fs
+    def forward(self, x_temporal, x_spatial):
+        """Combine temporal and spatial embeddings.
 
-        filter_banks = create_filter_banks(n_filter_banks, fs=fs, start_freq=1.0)
-        
-        self.n_filter_banks = self.F 
-        self.patch_embeddings = nn.ModuleList([
-            PatchEmbeddingTemporal(
-                data_name=args.data_name,
-                in_planes=args.chn,  # number of channels
-                out_planes=emb_size,  # Default 40
-                kernel_size=band_kernel_size(self.fs, list(filter_banks.values())[i][0]),
-                radix=1,
-                patch_size=args.patch_size,  # needs to be divisible by the number of time points
-                time_points=args.time_sample_num,  # number of time points
-                num_classes=args.class_num  # number of classes
-            ) for i in range(self.n_filter_banks)
-        ])
+        Args:
+            x_temporal: Temporal embeddings (B, P, D).
+            x_spatial: Spatial embeddings (B, C, D).
+
+        Returns:
+            Spatiotemporal embeddings (B, C, P, D).
+        """
+        zt = x_temporal.unsqueeze(1).expand(-1, self.C, -1, -1)
+        zs = x_spatial.unsqueeze(2).expand(-1, -1, self.P, -1)
+        return zs + zt
+
+
+class ST_SharedProjection(nn.Module):
+    """Shared MLP projection for embedding transformation.
+
+    A two-layer MLP with ELU activation that projects embeddings to an intermediate
+    space (2x emb_size) and back, enabling more expressive transformations.
+    Shared between temporal and spatial branches to reduce parameters.
+
+    Args:
+        emb_size: Input and output embedding dimension.
+
+    Input shape:
+        x: (B, *, D) - arbitrary batch of embeddings
+
+    Output shape:
+        (B, *, D) - projected embeddings
+    """
+
+    def __init__(self, emb_size):
+        super().__init__()
+        self.projection = nn.Sequential(
+            nn.Linear(emb_size, emb_size * 2),
+            nn.ELU(),
+            nn.Linear(emb_size * 2, emb_size),
+            nn.ELU(),
+        )
 
     def forward(self, x):
-        out = [self.patch_embeddings[i](x).unsqueeze(1) for i in range(self.n_filter_banks)]
-        out = torch.cat(out, dim=1)
+        """Project embeddings through shared MLP.
+
+        Args:
+            x: Input embeddings (B, *, D).
+
+        Returns:
+            Projected embeddings (B, *, D).
+        """
+        return self.projection(x)
+
+
+class STAdditionProjection(nn.Module):
+    """Combines temporal and spatial embeddings with shared projection.
+
+    Applies ST_SharedProjection to both temporal and spatial embeddings before
+    combining them via STAddition. This enables more expressive transformations
+    of the embeddings before fusion.
+
+    Args:
+        num_channels: Number of channels C.
+        num_patches: Number of temporal patches P.
+        emb_size: Embedding dimension D.
+
+    Input shapes:
+        x_temporal: (B, P, D) - temporal embeddings
+        x_spatial: (B, C, D) - spatial embeddings
+
+    Output shape:
+        (B, C, P, D) - combined spatiotemporal embeddings
+    """
+
+    def __init__(self, num_channels, num_patches, emb_size):
+        super().__init__()
+        self.shared_projection = ST_SharedProjection(emb_size)
+        self.addition = STAddition(num_channels, num_patches)
+
+    def forward(self, x_temporal, x_spatial):
+        """Project and combine embeddings.
+
+        Args:
+            x_temporal: Temporal embeddings (B, P, D).
+            x_spatial: Spatial embeddings (B, C, D).
+
+        Returns:
+            Combined spatiotemporal embeddings (B, C, P, D).
+        """
+        z_t = self.shared_projection(x_temporal)
+        z_s = self.shared_projection(x_spatial)
+        return self.addition(z_t, z_s)
+
+
+# =============================================================================
+# Spectrogram Estimation
+# =============================================================================
+
+
+class SpectrogramEstimator(nn.Module):
+    """Maps spatiotemporal embeddings to spectrogram estimates.
+
+    Converts embedding representations to spectrogram format using various methods:
+    - st_addition: MLP-based estimation from STAddition output
+    - st_addition_projection: MLP-based estimation from STAdditionProjection output
+    - stf_attention_temporal_values: Attention-weighted estimation with temporal values
+    - filter_banks: Element-wise product of temporal and spatial embeddings
+
+    Args:
+        method: Estimation method ('st_addition', 'st_addition_projection',
+                'stf_attention_temporal_values', 'filter_banks').
+        emb_size: Embedding dimension D.
+        n_freqs: Number of frequency bins F.
+        num_channels: Number of channels C.
+        num_patches: Number of temporal patches P.
+        use_ct_shared_projection: Whether to use shared projection for filter_banks.
+
+    Input shapes (vary by method):
+        z_st: (B, C, P, D) or (B, F, C, P, D) - spatiotemporal embeddings
+        x_embed_temporal: (B, P, D) or (B, F, P, D) - temporal embeddings
+        x_embed_spatial: (B, C, D) - spatial embeddings
+
+    Output shape:
+        (B, C, P, F) - estimated spectrogram
+    """
+
+    def __init__(
+        self,
+        method,
+        emb_size,
+        n_freqs,
+        num_channels,
+        num_patches,
+        use_ct_shared_projection=False,
+    ):
+        super().__init__()
+        self.method = method
+        self.C = num_channels
+        self.P = num_patches
+        self.F = n_freqs
+
+        if method in ["st_addition", "st_addition_projection"]:
+            self.mlp = nn.Sequential(
+                nn.Linear(emb_size, emb_size**2),
+                nn.ELU(),
+                nn.Linear(emb_size**2, n_freqs),
+                nn.ELU(),
+            )
+        elif method == "stf_attention_temporal_values":
+            self.mlp = nn.Sequential(
+                nn.Linear(emb_size, emb_size**2),
+                nn.ELU(),
+                nn.Linear(emb_size**2, 1),
+                nn.ELU(),
+            )
+        elif method == "filter_banks" and use_ct_shared_projection:
+            self.ct_shared_projection = ST_SharedProjection(emb_size)
+
+    def forward(self, z_st, x_embed_temporal, x_embed_spatial):
+        """Estimate spectrogram from embeddings.
+
+        Args:
+            z_st: Spatiotemporal embeddings (method-dependent shape).
+            x_embed_temporal: Temporal embeddings.
+            x_embed_spatial: Spatial embeddings.
+
+        Returns:
+            Spectrogram estimate of shape (B, C, P, F).
+        """
+        if self.method in ["st_addition", "st_addition_projection"]:
+            return self.mlp(z_st)
+
+        elif self.method == "stf_attention_temporal_values":
+            return self.mlp(z_st).squeeze(dim=-1).permute(0, 2, 3, 1)
+
+        elif self.method == "filter_banks":
+            z_t = x_embed_temporal.unsqueeze(3).expand(-1, -1, -1, self.C, -1)
+            z_s = (
+                x_embed_spatial.unsqueeze(1)
+                .unsqueeze(2)
+                .expand(-1, self.F, self.P, -1, -1)
+            )
+            if hasattr(self, "ct_shared_projection"):
+                z_t = self.ct_shared_projection(z_t)
+                z_s = self.ct_shared_projection(z_s)
+            return torch.abs(torch.sum(z_s * z_t, dim=-1)).permute(0, 3, 2, 1)
+
+        raise ValueError(f"Unknown spectrogram estimator method: {self.method}")
+
+
+class FilterBanksPatchEmbeddingTemporal(nn.Module):
+    """Patch embedding with multiple filter bank branches.
+
+    Creates parallel patch embedding branches, each optimized for a different
+    frequency band. Outputs embeddings for all frequency bands simultaneously.
+
+    Args:
+        args: Configuration object with data_name, chn, patch_size,
+              time_sample_num, class_num.
+        n_filter_banks: Number of filter bank branches.
+        emb_size: Output embedding dimension.
+        fs: Sampling frequency for kernel size computation.
+
+    Input shape:
+        x: (B, C, T) - EEG signals (channels x time points)
+
+    Output shape:
+        (B, F, P, D) - embeddings for F bands, P patches, D dimensions
+    """
+
+    def __init__(self, args, n_filter_banks=6, emb_size=40, fs=250):
+        super().__init__()
+        self.n_filter_banks = n_filter_banks
+        filter_banks = create_filter_banks(n_filter_banks, fs=fs, start_freq=1.0)
+
+        self.patch_embeddings = nn.ModuleList(
+            [
+                PatchEmbeddingTemporal(
+                    data_name=args.data_name,
+                    in_planes=args.chn,
+                    out_planes=emb_size,
+                    kernel_size=band_kernel_size(fs, filter_banks[i][0]),
+                    radix=1,
+                    patch_size=args.patch_size,
+                    time_points=args.time_sample_num,
+                    num_classes=args.class_num,
+                )
+                for i in range(self.n_filter_banks)
+            ]
+        )
+
+    def forward(self, x):
+        """Apply parallel filter bank patch embeddings.
+
+        Args:
+            x: EEG signals (B, C, T).
+
+        Returns:
+            Filter bank embeddings (B, F, P, D).
+        """
+        out = torch.cat(
+            [
+                self.patch_embeddings[i](x).unsqueeze(1)
+                for i in range(self.n_filter_banks)
+            ],
+            dim=1,
+        )
         return out
+
+
+# =============================================================================
+# Main Model
+# =============================================================================
 
 
 class MTFC(nn.Module):
+    """Multi-Scale Temporal Frequency Conformer for EEG classification.
 
-    def __init__(self, args, n_filter_banks= 4, wsize_divisor=2, freq_downsample=2,
-    n_times=1000, patch_emb_size=40, n_heads_patch=4, sst_emb_size=40, 
-            depth=5, n_classes=2, fs=250) -> None:
+    MTFC is a transformer-based architecture that combines spectral-spatio-temporal
+    embeddings with frequency-specific attention mechanisms for EEG signal classification.
+    It supports multiple spectral-spatio-temporal (SST) methods:
+    - st_addition: Simple addition of spatial and temporal embeddings
+    - st_addition_projection: Addition of psatial and temporal embeddiongs with shared projection
+    - stf_attention_temporal_values: Cross-attention between spatiotemporal and temporal embeddings
+    - filter_banks: Multi-band patch embeddings with element-wise combination
+
+    Args:
+        args: Configuration object containing:
+            - data_name: Dataset name
+            - chn: Number of EEG channels
+            - time_sample_num: Number of time samples
+            - patch_size: Temporal patch size
+            - class_num: Number of classification classes
+            - gate_flag: Gating mechanism flag
+            - posemb_flag: Positional embedding flag
+            - branch: Branch selection ('all', 'temporal')
+            - chn_atten_flag: Channel attention flag
+            - fts_atten_flag: FTS attention flag
+            - sst_method: Spectral-spatio-temporal method
+            - stft_reconstruction: STFT reconstruction flag
+            - spa_dim: Spatial dimension
+        n_filter_banks: Number of filter banks.
+        wsize_divisor: Window size divisor for STFT.
+        freq_downsample: Frequency downsampling factor.
+        n_times: Number of time points.
+        patch_emb_size: Patch embedding dimension.
+        n_heads_patch: Number of attention heads for patch embeddings.
+        sst_emb_size: SST embedding dimension (FTS).
+        depth: Transformer encoder depth.
+        n_classes: Number of output classes.
+        fs: Sampling frequency.
+
+    Input shape:
+        x: (B, 1, C, T) - EEG signals with dummy frequency dimension
+
+    Output shapes:
+        If stft_reconstruction=True:
+            loomed_stft: (B, C, F, T) - reconstructed STFT
+            x_embed: (B, FTS) - embedding for classification
+            out: (B, n_classes) - class logits
+        Otherwise:
+            None, x_embed, out
+    """
+
+    def __init__(
+        self,
+        args,
+        n_filter_banks=4,
+        wsize_divisor=2,
+        freq_downsample=2,
+        n_times=1000,
+        patch_emb_size=40,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=5,
+        n_classes=2,
+        fs=250,
+    ):
         super().__init__()
-
-        self.P = (args.time_sample_num - 1) // args.patch_size  # Example: 1000 // 125 = 8
-        self.C = args.chn  # number of channels
+        self.P = (args.time_sample_num - 1) // args.patch_size
+        self.C = args.chn
         self.D = patch_emb_size
         self.H = n_heads_patch
         self.FTS = sst_emb_size
         self.F = ((n_filter_banks // 2) * 2) // freq_downsample
         self.FP = self.F * self.P
         self.fs = fs
-        self.gate_flag = args.gate_flag  # Default False, due to the reduced performance
-        self.posemb_flag = args.posemb_flag  # Default True
-        self.branch = args.branch  # Default 'all', options=[all, temporal]
-        self.chn_atten_flag = args.chn_atten_flag  # Default True
-        self.fts_atten_flag = args.fts_atten_flag   # Default True
+        self.gate_flag = args.gate_flag
+        self.posemb_flag = args.posemb_flag
+        self.branch = args.branch
+        self.chn_atten_flag = args.chn_atten_flag
+        self.fts_atten_flag = args.fts_atten_flag
         self.sst_method = args.sst_method
         self.stft_reconstruction = args.stft_reconstruction
 
-
-        # Match STFT Temporal Length
-        # if args.stft_reconstruction is True:
         wsize = int((self.F - 1) * 2)
         tstep = math.ceil(wsize / wsize_divisor)
         self.stft_length = math.ceil(n_times / tstep)
-        # self.stft_temporal_loom = nn.Linear(self.P, self.stft_length)
         self.stft_temporal_loom = nn.Linear(self.P, self.P)
 
-        
-        # Layers Based on Spectral-Spatio-Temporal Method Selected
-        if args.sst_method in ['st_addition', 'st_addition_projection', 'stf_attention_temporal_values', 'filter_banks']:
-            # self.frequency_embedding = nn.Linear(self.C * self.P, self.D)
+        self._build_sst_layers(args)
+        self._build_shared_layers(args)
+        self._build_positional_embeddings(args)
+
+        self.fts_transformer = TransformerEncoder(depth, self.FTS)
+        self.classifier = ClassificationHead(self.FTS, n_classes)
+
+    def _build_sst_layers(self, args):
+        """Build spectral-spatio-temporal method specific layers.
+
+        Creates temporal embeddings, ST mixers, attention heads, and spectrogram
+        estimators based on the selected sst_method.
+        """
+        if self.sst_method in [
+            "st_addition",
+            "st_addition_projection",
+            "stf_attention_temporal_values",
+            "filter_banks",
+        ]:
             self.frequency_embedding = nn.Sequential(
                 nn.Linear(self.C * self.P, self.D),
                 nn.ELU(),
                 nn.Linear(self.D, self.D),
-                nn.ELU())
-
-        if args.sst_method in ['st_addition', 'st_addition_projection', 'stf_attention_temporal_values']:
-            if args.sst_method in ['st_addition', 'st_addition_projection']:
-                self.spectrogram_generator = nn.Sequential(
-                    nn.Linear(self.D, self.D**2),
-                    nn.ELU(),
-                    nn.Linear(self.D**2, self.F),
-                    nn.ELU())
-            elif args.sst_method in ['stf_attention_temporal_values']:
-                self.spectrogram_generator = nn.Sequential(
-                    nn.Linear(self.D, self.D**2),
-                    nn.ELU(),
-                    nn.Linear(self.D**2, 1),
-                    nn.ELU())
-
-            self.temporal_embedding = PatchEmbeddingTemporal(
-                data_name=args.data_name,
-                in_planes=args.chn,  # number of channels
-                out_planes=patch_emb_size,  # Default 40
-                kernel_size=63,
-                radix=1,
-                patch_size=args.patch_size,  # needs to be divisible by the number of time points
-                time_points=args.time_sample_num,  # number of time points
-                num_classes=args.class_num  # number of classes
+                nn.ELU(),
             )
 
-            if args.sst_method == 'st_addition_projection':
-                self.ct_shared_projection = nn.Sequential(
-                    nn.Linear(self.D, self.D*2),
-                    nn.ELU(),
-                    nn.Linear(self.D*2, self.D),
-                    nn.ELU()
-                )
-            elif args.sst_method == 'stf_attention_temporal_values':
+        if self.sst_method in [
+            "st_addition",
+            "st_addition_projection",
+            "stf_attention_temporal_values",
+        ]:
+            self.temporal_embedding = PatchEmbeddingTemporal(
+                data_name=args.data_name,
+                in_planes=args.chn,
+                out_planes=self.D,
+                kernel_size=63,
+                radix=1,
+                patch_size=args.patch_size,
+                time_points=args.time_sample_num,
+                num_classes=args.class_num,
+            )
+
+            if self.sst_method == "st_addition":
+                self.st_mixer = STAddition(self.C, self.P)
+            elif self.sst_method == "st_addition_projection":
+                self.st_mixer = STAdditionProjection(self.C, self.P, self.D)
+            elif self.sst_method == "stf_attention_temporal_values":
+                self.st_mixer = STAddition(self.C, self.P)
                 self.stf_attention_head = N_CrossAttentionHeads(
-                    emb_size = self.D,
-                    num_heads = self.H,
-                    n_comps = self.F,
-                    AttnClass = SpatioTemporal_Temporal_AttentionHead
-                )
-    
-        elif args.sst_method in ['filter_banks']:
-            if args.stft_reconstruction:
-                self.ct_shared_projection = nn.Sequential(
-                    nn.Linear(self.D, self.D*2),
-                    nn.ELU(),
-                    nn.Linear(self.D*2, self.D),
-                    nn.ELU()
+                    emb_size=self.D,
+                    num_heads=self.H,
+                    n_comps=self.F,
+                    AttnClass=SpatioTemporal_Temporal_AttentionHead,
                 )
 
-            self.temporal_embedding = FilterBanksPatchEmbeddingTemporal(args, n_filter_banks=self.F , emb_size=patch_emb_size, fs=fs)
+            self.spectrogram_estimator = SpectrogramEstimator(
+                method=self.sst_method,
+                emb_size=self.D,
+                n_freqs=self.F,
+                num_channels=self.C,
+                num_patches=self.P,
+            )
+
+        elif self.sst_method == "filter_banks":
+            self.temporal_embedding = FilterBanksPatchEmbeddingTemporal(
+                args, n_filter_banks=self.F, emb_size=self.D, fs=self.fs
+            )
+            self.spectrogram_estimator = SpectrogramEstimator(
+                method="filter_banks",
+                emb_size=self.D,
+                n_freqs=self.F,
+                num_channels=self.C,
+                num_patches=self.P,
+                use_ct_shared_projection=args.stft_reconstruction,
+            )
         else:
             self.temporal_embedding = PatchEmbeddingTemporal(
                 data_name=args.data_name,
-                in_planes=args.chn,  # number of channels
-                out_planes=patch_emb_size,  # Default 40
+                in_planes=args.chn,
+                out_planes=self.D,
                 kernel_size=63,
                 radix=1,
-                patch_size=args.patch_size,  # needs to be divisible by the number of time points
-                time_points=args.time_sample_num,  # number of time points
-                num_classes=args.class_num  # number of classes
+                patch_size=args.patch_size,
+                time_points=args.time_sample_num,
+                num_classes=args.class_num,
             )
 
+    def _build_shared_layers(self, args):
+        """Build spatial embedding and shared projection layers.
 
-        # Spatial Patch Embedding
-        self.channel_embedding = PatchEmbeddingSpatial(spa_dim=args.spa_dim, emb_size=patch_emb_size)  # Default 16
+        Creates channel embeddings, shared projection networks, and FTS attention
+        pooling layers.
+        """
+        self.channel_embedding = PatchEmbeddingSpatial(
+            spa_dim=args.spa_dim, emb_size=self.D
+        )
 
-
-        # Positional Encoding based on configurations
-        if args.posemb_flag:
-            if args.sst_method is not False:
-                if self.sst_method in ['st_addition', 'st_addition_projection', 'stf_attention_temporal_values']:
-                    self.pos_embedding_frequency = nn.Parameter(torch.randn(1, self.F, self.D))
-                    self.pos_embedding_temporal = nn.Parameter(torch.randn(1, self.P, self.D))
-                elif self.sst_method in ['filter_banks']:
-                    self.pos_embedding_frequency = nn.Parameter(torch.randn(1, self.F, 1, self.D))
-                    self.pos_embedding_temporal = nn.Parameter(torch.randn(1, 1, self.P, self.D))
-            else:
-                self.pos_embedding_temporal = nn.Parameter(torch.randn(1, self.P, self.D))
-            self.pos_embedding_spatial = nn.Parameter(torch.randn(1, self.C, self.D))
-
-
-        # Use Shared Spectral-Spatio-Temporal Space or Not
         if self.sst_method is not False:
             self.sst_shared_projection = nn.Sequential(
-                    nn.Linear(self.D, self.D*2),
-                    nn.ELU(),
-                    nn.Linear(self.D*2, self.FTS),
-                    nn.ELU()
-                )
-
+                nn.Linear(self.D, self.D * 2),
+                nn.ELU(),
+                nn.Linear(self.D * 2, self.FTS),
+                nn.ELU(),
+            )
 
         if args.fts_atten_flag:
             self.fts_attn_pool = nn.Sequential(
@@ -257,126 +653,179 @@ class MTFC(nn.Module):
                 nn.Linear(self.FTS, 1),
             )
 
+    def _build_positional_embeddings(self, args):
+        """Build positional embeddings if enabled.
 
-        self.fts_transformer = TransformerEncoder(depth, self.FTS)
-        self.classifier = ClassificationHead(self.FTS, n_classes)
+        Creates learnable positional embeddings for frequency, temporal,
+        and spatial dimensions based on the SST method.
+        """
+        if args.posemb_flag:
+            if args.sst_method is not False:
+                if self.sst_method in [
+                    "st_addition",
+                    "st_addition_projection",
+                    "stf_attention_temporal_values",
+                ]:
+                    self.pos_embedding_frequency = nn.Parameter(
+                        torch.randn(1, self.F, self.D)
+                    )
+                    self.pos_embedding_temporal = nn.Parameter(
+                        torch.randn(1, self.P, self.D)
+                    )
+                elif self.sst_method == "filter_banks":
+                    self.pos_embedding_frequency = nn.Parameter(
+                        torch.randn(1, self.F, 1, self.D)
+                    )
+                    self.pos_embedding_temporal = nn.Parameter(
+                        torch.randn(1, 1, self.P, self.D)
+                    )
+            else:
+                self.pos_embedding_temporal = nn.Parameter(
+                    torch.randn(1, self.P, self.D)
+                )
+            self.pos_embedding_spatial = nn.Parameter(torch.randn(1, self.C, self.D))
 
+    def forward(self, x):
+        """Forward pass of MTFC model.
 
-    def forward(self, x):   # x: (B, F, C, T)
-        # x_embed_fp = self.embedding(x[:, :, :self.F, :, :])    # --> (B, F*P, D)
-        # x_embed_spatial = self.channel_embedding(x[:, :, -1, :, :].squeeze(1, 2))     # --> (B, C, D)     
+        Args:
+            x: Input EEG signals (B, 1, C, T).
 
+        Returns:
+            If stft_reconstruction=True:
+                (loomed_stft, x_embed, out)
+            Otherwise:
+                (None, x_embed, out)
+        """
+        x_embed_temporal = self.temporal_embedding(x.squeeze(1))
+        x_embed_spatial = self.channel_embedding(x.squeeze(1))
 
-        # Get temporal and spatial components embedding
-        x_embed_temporal = self.temporal_embedding(x.squeeze(1))    # --> (B, P, D) or (B, F*P, D)
-        x_embed_spatial = self.channel_embedding(x.squeeze(1))     # --> (B, C, D)   
+        stft = self._compute_spectrogram(x_embed_temporal, x_embed_spatial)
+        x_embed_frequency = self._compute_frequency_embedding(stft)
 
+        x_embed_temporal, x_embed_frequency = self._apply_positional_encoding(
+            x_embed_temporal, x_embed_spatial, x_embed_frequency
+        )
 
-        # Get frequency components embdding if frequency components spatio_temporal reconstruction is being used
-        if self.sst_method in ['st_addition', 'st_addition_projection', 'stf_attention_temporal_values', 'filter_banks']:
-            if self.sst_method == 'st_addition_projection':
-                z_t = self.ct_shared_projection(x_embed_temporal)
-                z_s = self.ct_shared_projection(x_embed_spatial)
+        x_embed_frequency = self.sst_shared_projection(x_embed_frequency)
+        x_embed_temporal = self.sst_shared_projection(x_embed_temporal)
+        x_embed_spatial = self.sst_shared_projection(x_embed_spatial)
 
-                zt = z_t.unsqueeze(1).expand(-1, self.C, -1, -1)
-                zs = z_s.unsqueeze(2).expand(-1, -1, self.P, -1)
+        x_embed_fp = self._build_tf_embedding(x_embed_frequency, x_embed_temporal)
 
-                z_st = zs + zt      # Mixing spatial and temporal embeddings
-            elif self.sst_method == 'st_addition':
-                z_t = x_embed_temporal
-                z_s = x_embed_spatial
-
-                zt = z_t.unsqueeze(1).expand(-1, self.C, -1, -1)
-                zs = z_s.unsqueeze(2).expand(-1, -1, self.P, -1)
-
-                z_st = zs + zt      # Mixing spatial and temporal embeddings
-            elif self.sst_method == 'stf_attention_temporal_values':
-                z_t = x_embed_temporal
-                z_s = x_embed_spatial.unsqueeze(2).expand(-1, -1, self.P, -1)
-                z_st = z_s + x_embed_temporal.unsqueeze(1).expand(-1, self.C, -1, -1)
-                z_st = self.stf_attention_head(z_st, z_t)
-
-            # Within Transformer STFT Estimation
-            if self.sst_method in ['st_addition', 'st_addition_projection']:
-                stft = self.spectrogram_generator(z_st) # type: ignore
-            if self.sst_method in ['stf_attention_temporal_values']:
-                stft = self.spectrogram_generator(z_st).squeeze(dim=-1) # type: ignore
-                stft = rearrange(stft, 'b f c t -> b c t f')
-
-            if self.sst_method in ['filter_banks']:
-                z_t = x_embed_temporal.unsqueeze(3).expand(-1, -1, -1, self.C, -1)
-                z_s = x_embed_spatial.unsqueeze(1).unsqueeze(2).expand(-1, self.F, self.P, -1, -1)
-                if self.stft_reconstruction:
-                    z_t = nn.ELU()(self.ct_shared_projection(z_t))
-                    z_s = nn.ELU()(self.ct_shared_projection(z_s))
-
-                stft = torch.abs(torch.sum(z_s * z_t, dim=-1))
-                stft = rearrange(stft, 'b f p c -> b c p f')
-
-
-            # Out of Transformer STFT EStimation for STFT Reconstruction
-            if self.stft_reconstruction:
-                loomed_stft = nn.ELU()(self.stft_temporal_loom(rearrange(stft, 'b c t f -> b c f t'))) # type: ignore
-                
-            # Generate Embedding for Frequency Components
-            x_embed_frequency = rearrange(stft, 'b c p f-> b f (c p)') # type: ignore
-            x_embed_frequency = self.frequency_embedding(x_embed_frequency)
-
-
-        # Positional Encoding
-        if self.posemb_flag:
-            if self.sst_method in ['st_addition', 'st_addition_projection', 'stf_attention_temporal_values']:
-                x_embed_frequency = x_embed_frequency + self.pos_embedding_frequency  # type: ignore # frequency positional encoding
-            elif self.sst_method == 'filter_banks':
-                x_embed_temporal = x_embed_temporal + self.pos_embedding_frequency
-
-            x_embed_temporal = x_embed_temporal + self.pos_embedding_temporal  # temporal positional encoding
-            x_embed_spatial = x_embed_spatial + self.pos_embedding_spatial  # spatial positional encoding  
-
-
-        # Project time, space, frequency components embedding into the same empedding space
-        if self.sst_method in ['st_addition', 'st_addition_projection', 'stf_attention_temporal_values']:
-            x_embed_frequency = self.sst_shared_projection(x_embed_frequency)    # type: ignore # --> (B, F, FTS)
-        x_embed_temporal = self.sst_shared_projection(x_embed_temporal)  # --> (B, P, FTS) or (B, F, P, FTS)
-        x_embed_spatial = self.sst_shared_projection(x_embed_spatial)    # --> (B, C, FTS)
-        
-
-        # Make time-frequency embedding
-        if self.sst_method in ['st_addition', 'st_addition_projection', 'stf_attention_temporal_values']:
-            # using spatio-temporal embedding approach from 
-            z_hat_f = x_embed_frequency.unsqueeze(2).expand(-1, -1, self.P, -1) # type: ignore
-            z_hat_t = x_embed_temporal.unsqueeze(1).expand(-1, self.F, -1, -1)
-            x_embed_fp = rearrange(z_hat_f + z_hat_t, 'b f p d -> b (f p) d')
-        elif self.sst_method == 'filter_banks':
-            # Squash time and frequency axis if using filter-banks approach
-            x_embed_fp = rearrange(x_embed_temporal, 'b f p d -> b (f p) d') 
-        else:
-            x_embed_fp = x_embed_temporal
-
-
-        # Mixing TF and Spatial Embeddings
         x_embed_fp = x_embed_fp.unsqueeze(2).expand(-1, -1, self.C, -1)
         x_embed_spatial = x_embed_spatial.unsqueeze(1).expand(-1, self.FP, -1, -1)
-        x_embed_fts = (x_embed_fp + x_embed_spatial).contiguous()   # --> (B, F*P, C, FTS)
-        x_embed_fts = rearrange(x_embed_fts, 'b t c d -> b (t c) d')
+        x_embed_fts = (x_embed_fp + x_embed_spatial).contiguous()
+        x_embed_fts = rearrange(x_embed_fts, "b t c d -> b (t c) d")
 
-
-        # Transformer mixed FTS embeddings forward pass
         x_embed_fts = self.fts_transformer(x_embed_fts)
 
-
-        # Learning FTS Importance
         if self.fts_atten_flag:
-            attn_scores = self.fts_attn_pool(x_embed_fts)
-            attn_weights = torch.softmax(attn_scores, dim=1)
+            attn_weights = torch.softmax(self.fts_attn_pool(x_embed_fts), dim=1)
             x_embed_fts = attn_weights * x_embed_fts
-        
 
-        # Classification Head
         x_embed = torch.sum(x_embed_fts, dim=1)
         _, out = self.classifier(x_embed)
 
         if self.stft_reconstruction:
-            return loomed_stft, x_embed, out # type: ignore
+            loomed_stft = F.elu(self.stft_temporal_loom(stft.permute(0, 2, 3, 1)))  # type: ignore
+            return loomed_stft, x_embed, out
         return None, x_embed, out
 
+    def _compute_spectrogram(self, x_embed_temporal, x_embed_spatial):
+        """Compute spectrogram based on SST method.
+
+        Args:
+            x_embed_temporal: Temporal embeddings.
+            x_embed_spatial: Spatial embeddings.
+
+        Returns:
+            Spectrogram estimate (B, C, P, F) or None.
+        """
+        if self.sst_method in ["st_addition", "st_addition_projection"]:
+            z_st = self.st_mixer(x_embed_temporal, x_embed_spatial)
+            return self.spectrogram_estimator(z_st, x_embed_temporal, x_embed_spatial)
+
+        elif self.sst_method == "stf_attention_temporal_values":
+            z_st = self.st_mixer(x_embed_temporal, x_embed_spatial)
+            z_st = self.stf_attention_head(z_st, x_embed_temporal)
+            return self.spectrogram_estimator(z_st, x_embed_temporal, x_embed_spatial)
+
+        elif self.sst_method == "filter_banks":
+            return self.spectrogram_estimator(None, x_embed_temporal, x_embed_spatial)
+
+        return None
+
+    def _compute_frequency_embedding(self, stft):
+        """Compute frequency embedding from spectrogram.
+
+        Args:
+            stft: Spectrogram estimate (B, C, P, F).
+
+        Returns:
+            Frequency embeddings (B, F, D) or None.
+        """
+        if (
+            self.sst_method
+            in [
+                "st_addition",
+                "st_addition_projection",
+                "stf_attention_temporal_values",
+                "filter_banks",
+            ]
+            and stft is not None
+        ):
+            return self.frequency_embedding(rearrange(stft, "b c p f -> b f (c p)"))
+        return None
+
+    def _apply_positional_encoding(
+        self, x_embed_temporal, x_embed_spatial, x_embed_frequency
+    ):
+        """Apply positional encodings to embeddings.
+
+        Args:
+            x_embed_temporal: Temporal embeddings.
+            x_embed_spatial: Spatial embeddings.
+            x_embed_frequency: Frequency embeddings.
+
+        Returns:
+            Tuple of (temporal, frequency) embeddings with positional encoding.
+        """
+        if self.posemb_flag:
+            x_embed_temporal = x_embed_temporal + self.pos_embedding_temporal
+            x_embed_spatial = x_embed_spatial + self.pos_embedding_spatial
+
+            if self.sst_method in [
+                "st_addition",
+                "st_addition_projection",
+                "stf_attention_temporal_values",
+            ]:
+                x_embed_frequency = x_embed_frequency + self.pos_embedding_frequency
+            elif self.sst_method == "filter_banks":
+                x_embed_temporal = x_embed_temporal + self.pos_embedding_frequency
+
+        return x_embed_temporal, x_embed_frequency
+
+    def _build_tf_embedding(self, x_embed_frequency, x_embed_temporal):
+        """Build time-frequency embedding for transformer input.
+
+        Args:
+            x_embed_frequency: Frequency embeddings (B, F, D).
+            x_embed_temporal: Temporal embeddings (B, P, D).
+
+        Returns:
+            Combined TF embeddings (B, F*P, D).
+        """
+        if self.sst_method in [
+            "st_addition",
+            "st_addition_projection",
+            "stf_attention_temporal_values",
+        ]:
+            z_hat_f = x_embed_frequency.unsqueeze(2).expand(-1, -1, self.P, -1)
+            z_hat_t = x_embed_temporal.unsqueeze(1).expand(-1, self.F, -1, -1)
+            return rearrange(z_hat_f + z_hat_t, "b f p d -> b (f p) d")
+
+        elif self.sst_method == "filter_banks":
+            return rearrange(x_embed_temporal, "b f p d -> b (f p) d")
+
+        return x_embed_temporal

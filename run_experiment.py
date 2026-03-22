@@ -112,10 +112,10 @@ def main():
                 all_kappas = all_kappas + kappa
                 all_stft = all_stft + stft_reconstruction_loss
             if args.model_name != 'mtf_c':
-                print(f"subject {subject} | Accuracy: {np.mean(accuracy):.2f}, Kappa: {np.mean(kappa):.2f}")
+                print(f"subject {subject} | Accuracy: {np.mean(accuracy):.2f}, Kappa: {np.mean(kappa):.2f}") # type: ignore
                 print("============================================")
             else:
-                print(f"subject {subject} | Accuracy: {np.mean(accuracy):.2f}, Kappa: {np.mean(kappa):.2f} | STFT Reconstruction Loss: {np.mean(stft_reconstruction_loss):.2f}")
+                print(f"subject {subject} | Accuracy: {np.mean(accuracy):.2f}, Kappa: {np.mean(kappa):.2f} | STFT Reconstruction Loss: {np.mean(stft_reconstruction_loss):.2f}") # type: ignore
                 print("============================================")
 
 
