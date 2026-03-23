@@ -2,6 +2,8 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
+from typing import Tuple
+
 from moabb.datasets import BNCI2014_001, BNCI2014_002, BNCI2014_004, BNCI2015_001, BNCI2015_004, Liu2024, AlexMI
 from moabb.paradigms import MotorImagery
 
@@ -21,7 +23,7 @@ class EEGDataset(Dataset):
 # ============================================================================
 # Liu2024
 # ============================================================================
-def load_Liu2024(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
+def load_Liu2024(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5) -> Tuple:
     """
     Liu2024 Dataset Loader
     - Recent motor imagery dataset
@@ -82,7 +84,7 @@ def load_Liu2024(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
         "class_names": unique_classes.tolist()
     }
     
-    return X, y, info
+    return (X, y, info)
 
 def get_subjects_Liu2024():
     dataset = Liu2024()
@@ -91,7 +93,7 @@ def get_subjects_Liu2024():
 # ============================================================================
 # BNCI2014_001 (Already provided, included for completeness)
 # ============================================================================
-def load_BNCI2014_001(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
+def load_BNCI2014_001(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5) -> Tuple:
     """
     BNCI2014_001 Dataset Loader
     - 9 subjects
@@ -142,7 +144,7 @@ def load_BNCI2014_001(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
         "fs": fs
     }
     
-    return X, y, info
+    return (X, y, info)
 
 def get_subjects_BNCI2014_001():
     dataset = BNCI2014_001()
@@ -152,7 +154,7 @@ def get_subjects_BNCI2014_001():
 # ============================================================================
 # BNCI2014_004
 # ============================================================================
-def load_BNCI2014_004(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
+def load_BNCI2014_004(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5) -> Tuple:
     """
     BNCI2014_004 Dataset Loader
     - 9 subjects
@@ -210,7 +212,7 @@ def load_BNCI2014_004(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
         "fs": fs
     }
     
-    return X, y, info
+    return (X, y, info)
 
 def get_subjects_BNCI2014_004():
     dataset = BNCI2014_004()
@@ -220,7 +222,7 @@ def get_subjects_BNCI2014_004():
 # ============================================================================
 # BNCI2015_001
 # ============================================================================
-def load_BNCI2015_001(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
+def load_BNCI2015_001(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5) -> Tuple:
     """
     BNCI2015_001 Dataset Loader
     - 12 subjects
@@ -283,7 +285,7 @@ def load_BNCI2015_001(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
         "fs": fs
     }
     
-    return X, y, info
+    return (X, y, info)
 
 def get_subjects_BNCI2015_001():
     dataset = BNCI2015_001()
@@ -293,7 +295,7 @@ def get_subjects_BNCI2015_001():
 # ============================================================================
 # BNCI2014_002
 # ============================================================================
-def load_BNCI2014_002(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
+def load_BNCI2014_002(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5) -> Tuple:
     """
     BNCI2014_002 Dataset Loader
     - 14 subjects
@@ -357,7 +359,7 @@ def load_BNCI2014_002(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
         "fs": fs
     }
     
-    return X, y, info
+    return (X, y, info)
 
 def get_subjects_BNCI2014_002():
     dataset = BNCI2014_002()
@@ -367,7 +369,7 @@ def get_subjects_BNCI2014_002():
 # ============================================================================
 # BNCI2015_004
 # ============================================================================
-def load_BNCI2015_004(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
+def load_BNCI2015_004(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5) -> Tuple:
     """
     BNCI2015_004 Dataset Loader
     - 9 subjects (users with disability - spinal cord injury and stroke)
@@ -432,7 +434,7 @@ def load_BNCI2015_004(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
         "class_names": unique_classes.tolist()
     }
     
-    return X, y, info
+    return (X, y, info)
 
 def get_subjects_BNCI2015_004():
     dataset = BNCI2015_004()
@@ -442,7 +444,7 @@ def get_subjects_BNCI2015_004():
 # ============================================================================
 # AlexMI
 # ============================================================================
-def load_AlexMI(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
+def load_AlexMI(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5) -> Tuple:
     """
     AlexMI Dataset Loader (Alexandre Motor Imagery)
     - 8 subjects
@@ -505,7 +507,7 @@ def load_AlexMI(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5):
         "class_names": unique_classes.tolist()
     }
     
-    return X, y, info
+    return (X, y, info)
 
 def get_subjects_AlexMI():
     dataset = AlexMI()

@@ -525,7 +525,7 @@ class MTFC(nn.Module):
         self.D = patch_emb_size
         self.H = n_heads_patch
         self.FTS = sst_emb_size
-        self.F = ((n_filter_banks // 2) * 2) // freq_downsample
+        self.F = n_filter_banks // freq_downsample
         self.FP = self.F * self.P
         self.fs = fs
         self.gate_flag = args.gate_flag
@@ -728,7 +728,10 @@ class MTFC(nn.Module):
         _, out = self.classifier(x_embed)
 
         if self.stft_reconstruction:
-            loomed_stft = F.elu(self.stft_temporal_loom(stft.permute(0, 2, 3, 1)))  # type: ignore
+            loomed_stft = F.elu(self.stft_temporal_loom(stft.permute(0, 3, 1, 2)))  # type: ignore
+            loomed_stft = loomed_stft.permute(
+                0, 2, 1, 3
+            )  # (B, F, C, P) -> (B, C, F, P)
             return loomed_stft, x_embed, out
         return None, x_embed, out
 

@@ -302,3 +302,73 @@ def test_SpectrogramEstimator_STF_AttentionTemporalValues():
     assert z_st.shape == (B, C, P, D)
     assert z_st_attended.shape == (B, F, C, P, D)
     assert stft.shape == (B, C, P, F)
+
+
+def test_mtfc_with_dummy_dataset():
+    """Test MTFC model with dummy_dataset using cross_validation script.
+
+    Verifies that:
+    1. The cross_validation main function runs successfully with dummy_dataset
+    2. MTFC model can process random data without errors
+    3. Returns valid accuracy, kappa, and stft_reconstruction_loss values
+    """
+    import yaml
+    from argparse import Namespace
+    from cross_validation import main as cv_main
+
+    quick_config = {
+        "training": {
+            "val_size": 0.0,
+            "n_iter": 2,
+            "eval_inter": 1,
+            "folds": 2,
+            "n_repeats": 1,
+            "lr": 1.0e-3,
+            "batch_size": 8,
+        },
+        "mtf_c": {
+            "patch_size": 6,
+            "filter_banks": 7,
+            "freq_downsample": 1,
+            "wsize_divisor": 2,
+            "spa_dim": 16,
+            "gate_flag": False,
+            "posemb_flag": True,
+            "branch": "all",
+            "chn_attn_flag": False,
+            "fts_attn_flag": True,
+            "sst_method": "stf_attention_temporal_values",
+            "stft_reconstruction": True,
+            "patch_emb_size": 80,
+            "n_heads_patch": 4,
+            "sst_emb_size": 40,
+            "tem_depth": 1,
+            "chn_depth": 1,
+        },
+    }
+
+    args = Namespace(
+        model_name="mtf_c",
+        dataset="dummy_dataset",
+        subject=1,
+        device="cpu",
+        verbose=False,
+    )
+
+    with open("./configs/test_cv_config.yaml", "w") as f:
+        yaml.dump(quick_config, f)
+
+    all_accuracies, all_kappas, all_stft_loss, _ = cv_main(
+        args=args, config="test_cv_config", model_configs=quick_config["mtf_c"]
+    )
+
+    assert isinstance(all_accuracies, list)
+    assert len(all_accuracies) == 1
+    assert 0.0 <= all_accuracies[0] <= 1.0
+
+    assert isinstance(all_kappas, list)
+    assert len(all_kappas) == 1
+    assert -1.0 <= all_kappas[0] <= 1.0
+
+    assert isinstance(all_stft_loss, list)
+    assert len(all_stft_loss) == 1
