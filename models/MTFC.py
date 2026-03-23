@@ -5,6 +5,7 @@ embeddings with a transformer-based conformer for EEG signal classification.
 """
 
 import math
+import re
 
 import torch
 import torch.nn as nn
@@ -18,6 +19,50 @@ from .DBConformer import TransformerEncoder, ClassificationHead
 # =============================================================================
 # Utility Functions
 # =============================================================================
+
+
+def parse_branch_config(branch):
+    """Parse branch configuration string into transformer branches.
+
+    The branch string describes which embeddings are processed by each transformer
+    and how they are combined. Format is sequence of letters: 'f' (frequency),
+    't' (temporal), 's' (spatial). Each letter represents an embedding type that
+    will be processed by a transformer, and underscores indicate concatenation points.
+
+    Args:
+        branch: String describing branch configuration. Examples:
+            - 'ft_s': one transformer processes freq-temporal (concatenated),
+                      then concatenated with spatial
+            - 'f_t_s': three separate transformers for freq, temporal, spatial
+            - 'all': legacy single transformer for all embeddings (FTS)
+
+    Returns:
+        List of tuples, each tuple contains which embedding dimensions to concatenate
+        before each transformer. E.g., [('f', 't'), ('s',)] for ft_s.
+
+    Raises:
+        ValueError: If branch string contains invalid characters or format.
+    """
+    if branch == "all":
+        return [("f", "t", "s")]
+
+    valid_chars = set("fts_")
+    if not all(c in valid_chars for c in branch):
+        raise ValueError(
+            f"Invalid branch config '{branch}'. Must contain only 'f', 't', 's', '_'"
+        )
+
+    tokens = re.split(r"_", branch)
+    tokens = [t for t in tokens if t]
+
+    if not tokens:
+        raise ValueError(f"Invalid branch config '{branch}'")
+
+    branch_spec = []
+    for token in tokens:
+        branch_spec.append(tuple(token))
+
+    return branch_spec
 
 
 def band_kernel_size(fs, low_freq):
@@ -476,9 +521,13 @@ class MTFC(nn.Module):
             - class_num: Number of classification classes
             - gate_flag: Gating mechanism flag
             - posemb_flag: Positional embedding flag
-            - branch: Branch selection ('all', 'temporal')
-            - chn_atten_flag: Channel attention flag
-            - fts_atten_flag: FTS attention flag
+            - branch: Branch configuration string:
+                - 'all': single transformer for all embeddings (legacy)
+                - 'ft_s': one transformer for freq-temporal, concatenated with spatial
+                - 'f_t_s': separate transformers for freq, temporal, spatial, all concatenated
+                - 'ft_s': one transformer for freq-temporal, concatenated with spatial
+            - chn_attn_flag: Channel attention flag
+            - fts_attn_flag: FTS attention flag
             - sst_method: Spectral-spatio-temporal method
             - stft_reconstruction: STFT reconstruction flag
             - spa_dim: Spatial dimension
@@ -528,13 +577,18 @@ class MTFC(nn.Module):
         self.F = n_filter_banks // freq_downsample
         self.FP = self.F * self.P
         self.fs = fs
+        self.n_classes = n_classes
         self.gate_flag = args.gate_flag
         self.posemb_flag = args.posemb_flag
         self.branch = args.branch
-        self.chn_atten_flag = args.chn_atten_flag
-        self.fts_atten_flag = args.fts_atten_flag
+        self.chn_attn_flag = args.chn_attn_flag
+        self.fts_attn_flag = args.fts_attn_flag
         self.sst_method = args.sst_method
         self.stft_reconstruction = args.stft_reconstruction
+        self.ct_shared_projection = getattr(args, "ct_shared_projection", True)
+        self.sst_shared_projection = getattr(args, "sst_shared_projection", True)
+
+        self.branch_spec = parse_branch_config(self.branch)
 
         wsize = int((self.F - 1) * 2)
         tstep = math.ceil(wsize / wsize_divisor)
@@ -544,9 +598,82 @@ class MTFC(nn.Module):
         self._build_sst_layers(args)
         self._build_shared_layers(args)
         self._build_positional_embeddings(args)
+        self._build_transformers(depth)
+        self._build_fts_attention_pooling(args)
+        self._build_classifier()
 
-        self.fts_transformer = TransformerEncoder(depth, self.FTS)
-        self.classifier = ClassificationHead(self.FTS, n_classes)
+    def _build_transformers(self, depth):
+        """Build transformer encoders based on branch configuration.
+
+        Creates separate transformer encoders for each branch specified in the
+        branch configuration. Each transformer processes concatenated embeddings
+        from its specified dimensions.
+        """
+        self.transformers = nn.ModuleDict()
+
+        transformer_dim = self.FTS if self.sst_shared_projection else self.D
+
+        for i, branch in enumerate(self.branch_spec):
+            key = f"branch_{i}"
+            self.transformers[key] = TransformerEncoder(depth, transformer_dim)
+
+        self.num_branches = len(self.branch_spec)
+        self.transformer_dim = transformer_dim
+
+    def _build_classifier(self):
+        """Build classifier head based on total concatenated embedding dimension.
+
+        The classifier input dimension is transformer_dim * num_branches since embeddings
+        from all branches are concatenated.
+        """
+        classifier_input_dim = self.transformer_dim * self.num_branches
+        self.classifier = ClassificationHead(classifier_input_dim, self.n_classes)
+
+    def _prepare_embeddings_for_branch(
+        self, x_embed_frequency, x_embed_temporal, x_embed_spatial, branch_dims
+    ):
+        """Prepare embeddings for a specific branch by concatenating specified dimensions.
+
+        Args:
+            x_embed_frequency: Frequency embeddings (B, F, D) or (B, FP, D) for filter_banks
+            x_embed_temporal: Temporal embeddings (B, P, D) or (B, F, P, D) for filter_banks
+            x_embed_spatial: Spatial embeddings (B, C, D)
+            branch_dims: Tuple of dimension letters, e.g., ('f', 't') or ('s',)
+
+        Returns:
+            Concatenated embeddings ready for transformer input (B, N, D) where N is
+            the total number of elements from all specified dimensions.
+        """
+        embeddings_to_cat = []
+
+        for dim in branch_dims:
+            if dim == "f":
+                emb = x_embed_frequency
+                if self.sst_method in [
+                    "st_addition",
+                    "st_addition_projection",
+                    "stf_attention_temporal_values",
+                ]:
+                    emb = rearrange(emb, "b f d -> b f d")
+                embeddings_to_cat.append(emb)
+
+            elif dim == "t":
+                emb = x_embed_temporal
+                if self.sst_method in [
+                    "st_addition",
+                    "st_addition_projection",
+                    "stf_attention_temporal_values",
+                ]:
+                    emb = rearrange(emb, "b p d -> b p d")
+                embeddings_to_cat.append(emb)
+
+            elif dim == "s":
+                emb = x_embed_spatial
+                emb = rearrange(emb, "b c d -> b c d")
+                embeddings_to_cat.append(emb)
+
+        concat_emb = torch.cat(embeddings_to_cat, dim=1)
+        return concat_emb
 
     def _build_sst_layers(self, args):
         """Build spectral-spatio-temporal method specific layers.
@@ -614,7 +741,7 @@ class MTFC(nn.Module):
                 n_freqs=self.F,
                 num_channels=self.C,
                 num_patches=self.P,
-                use_ct_shared_projection=args.stft_reconstruction,
+                use_ct_shared_projection=self.ct_shared_projection,
             )
         else:
             self.temporal_embedding = PatchEmbeddingTemporal(
@@ -638,19 +765,25 @@ class MTFC(nn.Module):
             spa_dim=args.spa_dim, emb_size=self.D
         )
 
-        if self.sst_method is not False:
-            self.sst_shared_projection = nn.Sequential(
+        if self.sst_method is not False and self.sst_shared_projection:
+            self.sst_shared_projection_layer = nn.Sequential(
                 nn.Linear(self.D, self.D * 2),
                 nn.ELU(),
                 nn.Linear(self.D * 2, self.FTS),
                 nn.ELU(),
             )
 
-        if args.fts_atten_flag:
+    def _build_fts_attention_pooling(self, args):
+        """Build FTS attention pooling layer.
+
+        Uses transformer_dim (which is FTS if sst_shared_projection is True, else D)
+        to ensure correct dimension matching.
+        """
+        if args.fts_attn_flag:
             self.fts_attn_pool = nn.Sequential(
-                nn.Linear(self.FTS, self.FTS),
+                nn.Linear(self.transformer_dim, self.transformer_dim),
                 nn.Tanh(),
-                nn.Linear(self.FTS, 1),
+                nn.Linear(self.transformer_dim, 1),
             )
 
     def _build_positional_embeddings(self, args):
@@ -707,24 +840,100 @@ class MTFC(nn.Module):
             x_embed_temporal, x_embed_spatial, x_embed_frequency
         )
 
-        x_embed_frequency = self.sst_shared_projection(x_embed_frequency)
-        x_embed_temporal = self.sst_shared_projection(x_embed_temporal)
-        x_embed_spatial = self.sst_shared_projection(x_embed_spatial)
+        if self.sst_shared_projection and self.sst_method is not False:
+            x_embed_frequency = self.sst_shared_projection_layer(x_embed_frequency)
+            x_embed_temporal = self.sst_shared_projection_layer(x_embed_temporal)
+            x_embed_spatial = self.sst_shared_projection_layer(x_embed_spatial)
 
-        x_embed_fp = self._build_tf_embedding(x_embed_frequency, x_embed_temporal)
+        if self.sst_method == "filter_banks":
+            x_embed_fp = rearrange(x_embed_temporal, "b f p d -> b (f p) d")
+        else:
+            x_embed_fp = self._build_tf_embedding(x_embed_frequency, x_embed_temporal)
 
-        x_embed_fp = x_embed_fp.unsqueeze(2).expand(-1, -1, self.C, -1)
-        x_embed_spatial = x_embed_spatial.unsqueeze(1).expand(-1, self.FP, -1, -1)
-        x_embed_fts = (x_embed_fp + x_embed_spatial).contiguous()
-        x_embed_fts = rearrange(x_embed_fts, "b t c d -> b (t c) d")
+        if self.branch == "all":
+            x_embed_fp_expanded = x_embed_fp.unsqueeze(2).expand(-1, -1, self.C, -1)
+            x_embed_spatial_expanded = x_embed_spatial.unsqueeze(1).expand(
+                -1, self.FP, -1, -1
+            )
+            x_embed_fts = (x_embed_fp_expanded + x_embed_spatial_expanded).contiguous()
+            x_embed_fts = rearrange(x_embed_fts, "b t c d -> b (t c) d")
+            x_embed_fts = self.transformers["branch_0"](x_embed_fts)
+            x_embed_fts = torch.sum(x_embed_fts, dim=1)
+            outputs = [x_embed_fts]
+        else:
+            outputs = []
+            for i, branch_dims in enumerate(self.branch_spec):
+                if branch_dims == ("f", "t"):
+                    branch_emb = x_embed_fp
+                elif branch_dims == ("t", "s"):
+                    if self.sst_method == "filter_banks":
+                        branch_emb_t = torch.sum(x_embed_temporal, dim=1)
+                        branch_emb_t = branch_emb_t.unsqueeze(2).expand(
+                            -1, -1, self.C, -1
+                        )
+                        branch_emb_spatial = x_embed_spatial.unsqueeze(1).expand(
+                            -1, self.P, -1, -1
+                        )
+                        branch_emb = (branch_emb_t + branch_emb_spatial).contiguous()
+                        branch_emb = rearrange(branch_emb, "b p c d -> b (p c) d")
+                    else:
+                        branch_emb_t = x_embed_temporal.unsqueeze(2).expand(
+                            -1, -1, self.C, -1
+                        )
+                        branch_emb_spatial = x_embed_spatial.unsqueeze(1).expand(
+                            -1, self.P, -1, -1
+                        )
+                        branch_emb = (branch_emb_t + branch_emb_spatial).contiguous()
+                        branch_emb = rearrange(branch_emb, "b p c d -> b (p c) d")
+                elif branch_dims == ("f", "s"):
+                    if self.sst_method == "filter_banks":
+                        branch_emb_f = torch.sum(x_embed_temporal, dim=2)
+                        branch_emb_f = branch_emb_f.unsqueeze(2).expand(
+                            -1, -1, self.C, -1
+                        )
+                        branch_emb_spatial = x_embed_spatial.unsqueeze(1).expand(
+                            -1, self.F, -1, -1
+                        )
+                        branch_emb = (branch_emb_f + branch_emb_spatial).contiguous()
+                        branch_emb = rearrange(branch_emb, "b f c d -> b (f c) d")
+                    else:
+                        branch_emb_f = x_embed_frequency.unsqueeze(2).expand(
+                            -1, -1, self.C, -1
+                        )
+                        branch_emb_spatial = x_embed_spatial.unsqueeze(1).expand(
+                            -1, self.F, -1, -1
+                        )
+                        branch_emb = (branch_emb_f + branch_emb_spatial).contiguous()
+                        branch_emb = rearrange(branch_emb, "b f c d -> b (f c) d")
+                elif branch_dims == ("t",):
+                    if self.sst_method == "filter_banks":
+                        branch_emb = rearrange(x_embed_temporal, "b f p d -> b (f p) d")
+                    else:
+                        branch_emb = x_embed_temporal
+                elif branch_dims == ("f",):
+                    if self.sst_method == "filter_banks":
+                        branch_emb = rearrange(x_embed_temporal, "b f p d -> b (f p) d")
+                    else:
+                        branch_emb = x_embed_frequency
+                elif branch_dims == ("s",):
+                    branch_emb = x_embed_spatial
+                else:
+                    branch_emb = x_embed_fp
 
-        x_embed_fts = self.fts_transformer(x_embed_fts)
+                branch_emb = self.transformers[f"branch_{i}"](branch_emb)
+                branch_sum = torch.sum(branch_emb, dim=1)
+                outputs.append(branch_sum)
 
-        if self.fts_atten_flag:
-            attn_weights = torch.softmax(self.fts_attn_pool(x_embed_fts), dim=1)
-            x_embed_fts = attn_weights * x_embed_fts
+            if self.fts_attn_flag:
+                for i in range(len(outputs)):
+                    attn_weights = torch.softmax(
+                        self.fts_attn_pool(outputs[i].unsqueeze(1)), dim=1
+                    )
+                    outputs[i] = outputs[i] * attn_weights.squeeze(1)
 
-        x_embed = torch.sum(x_embed_fts, dim=1)
+        x_embed_fts = torch.cat(outputs, dim=-1)
+
+        x_embed = x_embed_fts
         _, out = self.classifier(x_embed)
 
         if self.stft_reconstruction:

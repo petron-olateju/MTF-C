@@ -372,3 +372,629 @@ def test_mtfc_with_dummy_dataset():
 
     assert isinstance(all_stft_loss, list)
     assert len(all_stft_loss) == 1
+
+
+def test_parse_branch_config():
+    """Test parse_branch_config utility function.
+
+    Verifies that branch configuration strings are parsed correctly into
+    transformer branch specifications.
+    """
+    from models.MTFC import parse_branch_config
+
+    assert parse_branch_config("all") == [("f", "t", "s")]
+
+    assert parse_branch_config("ft_s") == [("f", "t"), ("s",)]
+
+    assert parse_branch_config("f_t_s") == [("f",), ("t",), ("s",)]
+
+    assert parse_branch_config("f_ts") == [("f",), ("t", "s")]
+
+    assert parse_branch_config("fs_t") == [("f", "s"), ("t",)]
+
+
+def test_mtfc_branch_all():
+    """Test MTFC with branch='all' (single transformer for all embeddings).
+
+    Verifies that:
+    1. Model creates single transformer branch
+    2. Classifier input dimension is FTS
+    3. Forward pass produces correct output shapes
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="all",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="stf_attention_temporal_values",
+        stft_reconstruction=True,
+        spa_dim=16,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=40,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert model.num_branches == 1
+    assert model.classifier.fc[0].in_features == 40
+    assert "branch_0" in model.transformers
+
+    x = torch.randn(2, 1, 22, 1001)
+    stft, embed, out = model(x)
+
+    assert stft.shape == (2, 22, 4, 8)
+    assert embed.shape == (2, 40)
+    assert out.shape == (2, 4)
+
+
+def test_mtfc_sst_shared_projection_true():
+    """Test MTFC with sst_shared_projection=True.
+
+    Verifies that:
+    1. sst_shared_projection_layer is created
+    2. transformer_dim equals FTS
+    3. Classifier input dimension is FTS * num_branches
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="f_t_s",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="stf_attention_temporal_values",
+        stft_reconstruction=True,
+        spa_dim=16,
+        ct_shared_projection=True,
+        sst_shared_projection=True,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=20,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert hasattr(model, "sst_shared_projection_layer")
+    assert model.transformer_dim == 40  # FTS
+    assert model.classifier.fc[0].in_features == 120  # FTS * 3
+
+    x = torch.randn(2, 1, 22, 1001)
+    stft, embed, out = model(x)
+
+    assert embed.shape == (2, 120)
+
+
+def test_mtfc_sst_shared_projection_false():
+    """Test MTFC with sst_shared_projection=False.
+
+    Verifies that:
+    1. sst_shared_projection_layer is NOT created
+    2. transformer_dim equals D (patch_emb_size)
+    3. Classifier input dimension is D * num_branches
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="f_t_s",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="stf_attention_temporal_values",
+        stft_reconstruction=True,
+        spa_dim=16,
+        ct_shared_projection=True,
+        sst_shared_projection=False,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=20,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert not hasattr(model, "sst_shared_projection_layer")
+    assert model.transformer_dim == 20  # D (patch_emb_size)
+    assert model.classifier.fc[0].in_features == 60  # D * 3
+
+    x = torch.randn(2, 1, 22, 1001)
+    stft, embed, out = model(x)
+
+    assert embed.shape == (2, 60)
+
+
+def test_mtfc_ct_shared_projection_true():
+    """Test MTFC with ct_shared_projection=True for filter_banks.
+
+    Verifies that:
+    1. spectrogram_estimator has ct_shared_projection
+    2. Model runs correctly
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="f_t_s",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="filter_banks",
+        stft_reconstruction=True,
+        spa_dim=16,
+        ct_shared_projection=True,
+        sst_shared_projection=True,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=40,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert hasattr(model.spectrogram_estimator, "ct_shared_projection")
+
+    x = torch.randn(2, 1, 22, 1001)
+    stft, embed, out = model(x)
+
+    assert stft.shape == (2, 22, 4, 8)
+    assert embed.shape == (2, 120)
+
+
+def test_mtfc_ct_shared_projection_false():
+    """Test MTFC with ct_shared_projection=False for filter_banks.
+
+    Verifies that:
+    1. spectrogram_estimator does NOT have ct_shared_projection
+    2. Model runs correctly
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="f_t_s",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="filter_banks",
+        stft_reconstruction=True,
+        spa_dim=16,
+        ct_shared_projection=False,
+        sst_shared_projection=True,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=40,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert not hasattr(model.spectrogram_estimator, "ct_shared_projection")
+
+    x = torch.randn(2, 1, 22, 1001)
+    stft, embed, out = model(x)
+
+    assert stft.shape == (2, 22, 4, 8)
+    assert embed.shape == (2, 120)
+
+
+def test_mtfc_branch_f_ts():
+    """Test MTFC with branch='f_ts' (freq + temporal-spatial transformers).
+
+    Verifies that:
+    1. Model creates 2 transformer branches
+    2. Classifier input dimension is FTS * 2
+    3. Forward pass produces correct output shapes
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="f_ts",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="stf_attention_temporal_values",
+        stft_reconstruction=True,
+        spa_dim=16,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=40,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert model.num_branches == 2
+    assert model.classifier.fc[0].in_features == 80
+    assert "branch_0" in model.transformers
+    assert "branch_1" in model.transformers
+
+    x = torch.randn(2, 1, 22, 1001)
+    stft, embed, out = model(x)
+
+    assert stft.shape == (2, 22, 4, 8)
+    assert embed.shape == (2, 80)
+    assert out.shape == (2, 4)
+
+
+def test_mtfc_branch_fs_t():
+    """Test MTFC with branch='fs_t' (freq-spatial + temporal transformers).
+
+    Verifies that:
+    1. Model creates 2 transformer branches
+    2. Classifier input dimension is FTS * 2
+    3. Forward pass produces correct output shapes
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="fs_t",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="stf_attention_temporal_values",
+        stft_reconstruction=True,
+        spa_dim=16,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=40,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert model.num_branches == 2
+    assert model.classifier.fc[0].in_features == 80
+    assert "branch_0" in model.transformers
+    assert "branch_1" in model.transformers
+
+    x = torch.randn(2, 1, 22, 1001)
+    stft, embed, out = model(x)
+
+    assert stft.shape == (2, 22, 4, 8)
+    assert embed.shape == (2, 80)
+    assert out.shape == (2, 4)
+
+
+def test_mtfc_branch_f_ts_filter_banks():
+    """Test MTFC with branch='f_ts' and filter_banks method.
+
+    Verifies that:
+    1. Model works with filter_banks SST method
+    2. Produces correct output shapes
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="f_ts",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="filter_banks",
+        stft_reconstruction=True,
+        spa_dim=16,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=40,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert model.num_branches == 2
+    assert model.classifier.fc[0].in_features == 80
+
+    x = torch.randn(2, 1, 22, 1001)
+    stft, embed, out = model(x)
+
+    assert stft.shape == (2, 22, 4, 8)
+    assert embed.shape == (2, 80)
+    assert out.shape == (2, 4)
+
+
+def test_mtfc_branch_fs_t_filter_banks():
+    """Test MTFC with branch='fs_t' and filter_banks method.
+
+    Verifies that:
+    1. Model works with filter_banks SST method
+    2. Produces correct output shapes
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="fs_t",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="filter_banks",
+        stft_reconstruction=True,
+        spa_dim=16,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=40,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert model.num_branches == 2
+    assert model.classifier.fc[0].in_features == 80
+
+    x = torch.randn(2, 1, 22, 1001)
+    stft, embed, out = model(x)
+
+    assert stft.shape == (2, 22, 4, 8)
+    assert embed.shape == (2, 80)
+    assert out.shape == (2, 4)
+
+
+def test_mtfc_branch_ft_s():
+    """Test MTFC with branch='ft_s' (freq-temporal + spatial transformers).
+
+    Verifies that:
+    1. Model creates 2 transformer branches
+    2. Classifier input dimension is FTS * 2
+    3. Forward pass produces correct output shapes
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="ft_s",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="stf_attention_temporal_values",
+        stft_reconstruction=True,
+        spa_dim=16,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=40,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert model.num_branches == 2
+    assert model.classifier.fc[0].in_features == 80
+    assert "branch_0" in model.transformers
+    assert "branch_1" in model.transformers
+
+    x = torch.randn(2, 1, 22, 1001)
+    stft, embed, out = model(x)
+
+    assert stft.shape == (2, 22, 4, 8)
+    assert embed.shape == (2, 80)
+    assert out.shape == (2, 4)
+
+
+def test_mtfc_branch_f_t_s():
+    """Test MTFC with branch='f_t_s' (separate freq, temporal, spatial transformers).
+
+    Verifies that:
+    1. Model creates 3 transformer branches
+    2. Classifier input dimension is FTS * 3
+    3. Forward pass produces correct output shapes
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="f_t_s",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="stf_attention_temporal_values",
+        stft_reconstruction=True,
+        spa_dim=16,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=40,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert model.num_branches == 3
+    assert model.classifier.fc[0].in_features == 120
+    assert "branch_0" in model.transformers
+    assert "branch_1" in model.transformers
+    assert "branch_2" in model.transformers
+
+    x = torch.randn(2, 1, 22, 1001)
+    stft, embed, out = model(x)
+
+    assert stft.shape == (2, 22, 4, 8)
+    assert embed.shape == (2, 120)
+    assert out.shape == (2, 4)
+
+
+def test_mtfc_branch_ft_s_filter_banks():
+    """Test MTFC with branch='ft_s' and filter_banks method.
+
+    Verifies that:
+    1. Model works with filter_banks SST method
+    2. Produces correct output shapes
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="ft_s",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="filter_banks",
+        stft_reconstruction=True,
+        spa_dim=16,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=40,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert model.num_branches == 2
+    assert model.classifier.fc[0].in_features == 80
+
+    x = torch.randn(2, 1, 22, 1001)
+    stft, embed, out = model(x)
+
+    assert stft.shape == (2, 22, 4, 8)
+    assert embed.shape == (2, 80)
+    assert out.shape == (2, 4)

@@ -1,0 +1,26 @@
+mtf_c:
+  branch: all
+  chn_attn_flag: false
+  chn_depth: 1
+  filter_banks: 7
+  freq_downsample: 1
+  fts_attn_flag: true
+  gate_flag: false
+  n_heads_patch: 4
+  patch_emb_size: 80
+  patch_size: 6
+  posemb_flag: true
+  spa_dim: 16
+  sst_emb_size: 40
+  sst_method: stf_attention_temporal_values
+  stft_reconstruction: true
+  tem_depth: 1
+  wsize_divisor: 2
+training:
+  batch_size: 8
+  eval_inter: 1
+  folds: 2
+  lr: 0.001
+  n_iter: 2
+  n_repeats: 1
+  val_size: 0.0

@@ -255,12 +255,14 @@ def main(
         branch=model_configs[
             "branch"
         ],  # Options: 'all', 'temporal', 'spatial' (paper default: 'all')
-        chn_atten_flag=model_configs[
+        chn_attn_flag=model_configs[
             "chn_attn_flag"
         ],  # Use channel attention (paper default: True)
-        fts_atten_flag=model_configs["fts_attn_flag"],
+        fts_attn_flag=model_configs["fts_attn_flag"],
         sst_method=model_configs["sst_method"],
         stft_reconstruction=model_configs["stft_reconstruction"],
+        ct_shared_projection=model_configs.get("ct_shared_projection", True),
+        sst_shared_projection=model_configs.get("sst_shared_projection", True),
     )
     if experiment is not None:
         experiment.add_params(

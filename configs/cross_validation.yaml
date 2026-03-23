@@ -31,11 +31,13 @@ mtf_c:
   spa_dim: 16
   gate_flag: False
   posemb_flag: True
-  branch: 'all'
+  branch: 'f_t_s'  # Options: 'all', 'ft_s', 'fs_t', 'f_t_s', 'f_ts'
   chn_attn_flag: False
   fts_attn_flag: True
   sst_method: 'stf_attention_temporal_values'
   stft_reconstruction: True
+  ct_shared_projection: True  # Use shared projection in spectrogram estimator (filter_banks only)
+  sst_shared_projection: True  # Project embeddings to SST dimension
   patch_emb_size: 80
   n_heads_patch: 4
   sst_emb_size: 40

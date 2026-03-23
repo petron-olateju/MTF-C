@@ -30,10 +30,12 @@ mtf_c:
   wsize_divisor: [2]
   sst_method: ['stf_attention_temporal_values']
   stft_reconstruction: [True]
+  ct_shared_projection: [True, False]  # Use shared projection in spectrogram estimator (filter_banks only)
+  sst_shared_projection: [True, False]  # Project embeddings to SST dimension
   patch_emb_size: [20]
   n_heads_patch: [5]
   sst_emb_size: [40]
-  branch: ['all']
+  branch: ['all', 'ft_s', 'fs_t', 'f_t_s', 'f_ts']
   chn_attn_flag: [False]
   fts_attn_flag: [True]
   tem_depth: [1]
