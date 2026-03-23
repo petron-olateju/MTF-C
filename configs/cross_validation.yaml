@@ -9,7 +9,8 @@ training:
 
 db_conformer:
   patch_size: 100
-  filter_banks: 5
+  filter_banks: 101
+  freq_downsample: 1
   wsize_divisor: 2
   spa_dim: 16
   gate_flag: False
@@ -25,7 +26,7 @@ db_conformer:
 
 mtf_c:
   patch_size: 100
-  filter_banks: 7
+  filter_banks: 101
   freq_downsample: 1
   wsize_divisor: 2
   spa_dim: 16
@@ -36,8 +37,8 @@ mtf_c:
   fts_attn_flag: True
   sst_method: 'stf_attention_temporal_values'
   stft_reconstruction: True
-  ct_shared_projection: True  # Use shared projection in spectrogram estimator (filter_banks only)
-  sst_shared_projection: True  # Project embeddings to SST dimension
+  ct_shared_projection: False  # Use shared projection in spectrogram estimator (filter_banks only)
+  sst_shared_projection: False  # Project embeddings to SST dimension
   patch_emb_size: 80
   n_heads_patch: 4
   sst_emb_size: 40

@@ -385,4 +385,4 @@ class DBConformer(nn.Module):
                         x_spatial.mean(dim=1)
                     ], dim=-1)  # → (B, 2*D)
             _, out = self.classifier(x_fused)  # out: (B, n_classes)
-        return x_fused, out
+        return None, x_fused, out
