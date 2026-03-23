@@ -567,7 +567,7 @@ def main(
         accuracy = np.mean(folds_acc)
         kappa = np.mean(folds_kappa)
         if (args.model_name == "mtf_c") and (stft is not None):  # type: ignore
-            _folds_stft_loss = [f for f in folds_stft_reconstruction_loss]
+            _folds_stft_loss = [f.item() for f in folds_stft_reconstruction_loss]
             stft_loss = np.mean(_folds_stft_loss)
         else:
             stft_loss = 0
