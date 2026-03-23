@@ -189,10 +189,11 @@ def test_SpectrogramEstimator_FilterBanks():
         use_ct_shared_projection=False,
     )
 
-    x_temporal = torch.randn(B, F, P, D)
-    x_spatial = torch.randn(B, C, D)
+    x_embed_frequency = torch.randn(B, F, D)
+    x_embed_temporal = torch.randn(B, P, D)
+    x_embed_spatial = torch.randn(B, C, D)
 
-    stft = estimator_no_proj(None, x_temporal, x_spatial)
+    stft = estimator_no_proj(x_embed_frequency, x_embed_temporal, x_embed_spatial)
 
     assert stft.shape == (B, C, P, F)
 
@@ -218,10 +219,11 @@ def test_SpectrogramEstimator_FilterBanksWithSharedProjection():
     assert hasattr(estimator_with_proj, "ct_shared_projection")
     assert isinstance(estimator_with_proj.ct_shared_projection, ST_SharedProjection)
 
-    x_temporal = torch.randn(B, F, P, D)
-    x_spatial = torch.randn(B, C, D)
+    x_embed_frequency = torch.randn(B, F, D)
+    x_embed_temporal = torch.randn(B, P, D)
+    x_embed_spatial = torch.randn(B, C, D)
 
-    stft = estimator_with_proj(None, x_temporal, x_spatial)
+    stft = estimator_with_proj(x_embed_frequency, x_embed_temporal, x_embed_spatial)
 
     assert stft.shape == (B, C, P, F)
 
@@ -382,7 +384,7 @@ def test_parse_branch_config():
     """
     from models.MTFC import parse_branch_config
 
-    assert parse_branch_config("all") == [("f", "t", "s")]
+    assert parse_branch_config("all") == ["fts"]
 
     assert parse_branch_config("ft_s") == [("f", "t"), ("s",)]
 

@@ -255,7 +255,7 @@ def main(
         branch=model_configs[
             "branch"
         ],  # Options: 'all', 'temporal', 'spatial' (paper default: 'all')
-        chn_atten_flag=model_configs[
+        chn_attn_flag=model_configs[
             "chn_attn_flag"
         ],  # Use channel attention (paper default: True)
         fts_attn_flag=model_configs["fts_attn_flag"],

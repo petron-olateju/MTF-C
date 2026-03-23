@@ -324,7 +324,7 @@ class DBConformer(nn.Module):
         self.gate_flag = args.gate_flag  # Default False, due to the reduced performance
         self.posemb_flag = args.posemb_flag  # Default True
         self.branch = args.branch  # Default 'all', options=[all, temporal]
-        self.chn_atten_flag = args.chn_atten_flag  # Default True
+        self.chn_attn_flag = args.chn_attn_flag  # Default True
 
         if args.posemb_flag:
             self.pos_embedding_temporal = nn.Parameter(torch.randn(1, self.P, self.D))
@@ -339,7 +339,7 @@ class DBConformer(nn.Module):
         else:
             self.classifier = ClassificationHead(emb_size * 2, n_classes)
 
-            if args.chn_atten_flag:
+            if args.chn_attn_flag:
                 self.spatial_attn_pool = nn.Sequential(
                     nn.Linear(emb_size, emb_size),  # D → D
                     nn.Tanh(),
@@ -371,7 +371,7 @@ class DBConformer(nn.Module):
                     self.gate_fc(torch.cat([x_temporal.mean(dim=1), x_spatial.mean(dim=1)], dim=-1)))  # shape: (B, D)
                 x_fused = gate * x_spatial.mean(dim=1) + (1 - gate) * x_temporal.mean(dim=1)
             else:
-                if self.chn_atten_flag:
+                if self.chn_attn_flag:
                     # Attention Scores
                     x_t = x_temporal.mean(dim=1)
                     attn_scores = self.spatial_attn_pool(x_spatial)  # (B, C, 1)
