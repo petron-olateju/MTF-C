@@ -25,8 +25,8 @@ db_conformer:
   chn_depth: 1
 
 mtf_c:
-  patch_size: 100
-  filter_banks: 101
+  patch_size: 10
+  filter_banks: 11
   freq_downsample: 1
   wsize_divisor: 2
   spa_dim: 16
@@ -36,7 +36,7 @@ mtf_c:
   chn_attn_flag: False
   fts_attn_flag: True
   sst_method: 'filter_banks'
-  stft_reconstruction: True
+  stft_reconstruction: False
   ct_shared_projection: False  # Use shared projection in spectrogram estimator (filter_banks only)
   sst_shared_projection: False  # Project embeddings to SST dimension
   patch_emb_size: 80

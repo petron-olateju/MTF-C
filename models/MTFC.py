@@ -659,7 +659,7 @@ class MTFC(nn.Module):
             attn_weights = torch.softmax(attn_pool(dim_output), dim=1)
             pooled = torch.sum(attn_weights * dim_output, dim=1)
         else:
-            pooled = torch.sum(dim_output, dim=1)
+            pooled = torch.mean(dim_output, dim=1)
         pooled_embeddings.append(pooled)
 
         return torch.stack(pooled_embeddings, dim=0).sum(dim=0)
