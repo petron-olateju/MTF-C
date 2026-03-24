@@ -784,6 +784,8 @@ class MTFC(nn.Module):
         self.num_branches = len(self.branch_spec)
         self.transformer_dim = transformer_dim
 
+        self.branch_fusion_transformer = TransformerEncoder(1, transformer_dim)
+
     def _build_classifier(self):
         """Build classifier head based on total concatenated embedding dimension.
 
@@ -1020,8 +1022,11 @@ class MTFC(nn.Module):
                 )
                 outputs.append(branch_pooled)
 
+        branch_tokens = torch.stack(outputs, dim=1)
+        branch_tokens = self.branch_fusion_transformer(branch_tokens)
+        x_embed_fts = rearrange(branch_tokens, "b t d -> b (t d)")
 
-        x_embed_fts = torch.cat(outputs, dim=-1)
+        # x_embed_fts = torch.cat(outputs, dim=-1)
 
         x_embed = x_embed_fts
         _, out = self.classifier(x_embed)
