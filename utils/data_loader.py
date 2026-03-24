@@ -7,6 +7,24 @@ from typing import Tuple
 from moabb.datasets import BNCI2014_001, BNCI2014_002, BNCI2014_004, BNCI2015_001, BNCI2015_004, Liu2024, AlexMI
 from moabb.paradigms import MotorImagery
 
+def chronological_stratified_kfold(y, n_splits=5):
+    """Split each class chronologically into n_splits, then merge."""
+    indices = np.arange(len(y))
+    fold_indices = [[] for _ in range(n_splits)]
+    for class_label in np.unique(y):
+        class_idx = indices[y == class_label]  # already in chronological order
+        splits = np.array_split(class_idx, n_splits)
+        for fold, split in enumerate(splits):
+            fold_indices[fold].extend(split)
+    
+    for test_fold in range(n_splits):
+        test_idx = np.array(fold_indices[test_fold])
+        train_idx = np.concatenate([
+            np.array(fold_indices[i]) 
+            for i in range(n_splits) if i != test_fold
+        ])
+        yield train_idx, test_idx
+
 class EEGDataset(Dataset):
     def __init__(self, data, labels, stft):
         self.signals = torch.tensor(data, dtype=torch.float32)
