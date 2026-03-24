@@ -866,6 +866,7 @@ class MTFC(nn.Module):
             self.frequency_embedding = FilterBanksEmbedding(
                 n_channels=self.C,
                 n_filter_banks=self.F,
+                emb_size=self.D
             )
             self.spectrogram_estimator = SpectrogramEstimator(
                 method="filter_banks",
