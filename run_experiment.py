@@ -54,8 +54,7 @@ def main():
     script = args.script
     model_name = args.model_name
     if args.dataset == 'all':
-        datasets = ['BNCI2014_001', 'BNCI2014_002', 'BNCI2014_004', 
-            'BNCI2015_001', 'BNCI2015_004', 'AlexMI',]
+        datasets = ['BNCI2014_001', 'BNCI2014_002', 'BNCI2014_004']
         # datasets = ['AlexMI',]
     else:
         datasets = [args.dataset]

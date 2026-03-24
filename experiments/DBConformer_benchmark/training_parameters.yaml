@@ -1,19 +1,8 @@
 baseline: null
-description: Spatio-Temporal Branches a+ Channel Importance benchmark on datasets
-  using DBConformer
+description: dbconformer bnchmark
 name: DBConformer_benchmark
 parameters:
   Dataset-Details:
-    AlexMI:
-      class_names:
-      - feet
-      - rest
-      - right_hand
-      fs: 512.0
-      n_ch: 16
-      n_classes: 3
-      n_times: 1281
-      n_trials: 60
     BNCI2014_001:
       fs: 250.0
       n_ch: 22
@@ -32,24 +21,6 @@ parameters:
       n_classes: 2
       n_times: 750
       n_trials: 120
-    BNCI2015_001:
-      fs: 512.0
-      n_ch: 13
-      n_classes: 2
-      n_times: 1536
-      n_trials: 200
-    BNCI2015_004:
-      class_names:
-      - feet
-      - navigation
-      - right_hand
-      - subtraction
-      - word_ass
-      fs: 256.0
-      n_ch: 30
-      n_classes: 5
-      n_times: 768
-      n_trials: 200
   Model-Hyperparameters:
     channel_depth: 1
     embedding_size: 40

@@ -35,7 +35,7 @@ mtf_c:
   branch: 'f_t_s'  # Options: 'all', 'ft_s', 'fs_t', 'f_t_s', 'f_ts'
   chn_attn_flag: False
   fts_attn_flag: True
-  sst_method: 'filter_banks'
+  sst_method: 'stf_attention_temporal_values'
   stft_reconstruction: False
   ct_shared_projection: False  # Use shared projection in spectrogram estimator (filter_banks only)
   sst_shared_projection: False  # Project embeddings to SST dimension
