@@ -305,6 +305,9 @@ def main(
         range(1, hyperparameters.n_repeats + 1), total=hyperparameters.n_repeats
     ):
         np.random.seed(seed)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        
         k = hyperparameters.folds
         skf = StratifiedKFold(n_splits=k, shuffle=False)
 
@@ -373,14 +376,15 @@ def main(
             _x_test, _y_test = X_train[test_idx], y_train[test_idx]
             _x_train, _y_train = X_train[train_idx], y_train[train_idx]
 
-            class_counts = np.bincount(
-                _y_train.astype(int), minlength=dataset_info["n_classes"]
-            )
-            total_samples = len(_y_train)
-            class_weights = total_samples / (dataset_info["n_classes"] * class_counts)
-            class_weights = torch.FloatTensor(class_weights).to(device)
+            # class_counts = np.bincount(
+            #     _y_train.astype(int), minlength=dataset_info["n_classes"]
+            # )
+            # total_samples = len(_y_train)
+            # class_weights = total_samples / (dataset_info["n_classes"] * class_counts)
+            # class_weights = torch.FloatTensor(class_weights).to(device)
 
-            loss_fn = nn.CrossEntropyLoss(weight=class_weights)
+            # loss_fn = nn.CrossEntropyLoss(weight=class_weights)
+            loss_fn = nn.CrossEntropyLoss()
 
             # Euclidean Alignemnt of epochs
             _x_train, sqrtRefEA = EA(_x_train)
@@ -477,9 +481,12 @@ def main(
             )
 
             # Training and Evaluate CV-fold for n_iter epochs
-            best_acc_per_fold = 0
-            best_kappa_per_fold = -1
-            best_stft_reconstruction_loss_per_fold = math.inf
+            # best_acc_per_fold = 0
+            # best_kappa_per_fold = -1
+            # best_stft_reconstruction_loss_per_fold = math.inf
+            last_acc_per_fold = 0
+            last_kappa_per_fold = -1
+            last_stft_reconstruction_loss_per_fold = math.inf
             for i in range(
                 n_iter
             ):  # tqdm(range(n_iter), total=n_iter): # desc=f"Training: fold {fold+1}/{k}"
@@ -550,21 +557,33 @@ def main(
                     if (args.model_name == "mtf_c") and (stft is not None):
                         fold_stft_loss = stft_loss
 
-                    if fold_acc > best_acc_per_fold:
-                        best_acc_per_fold = fold_acc
-                        best_kappa_per_fold = fold_kappa
-                        if (args.model_name == "mtf_c") and (stft is not None):
-                            best_stft_reconstruction_loss_per_fold = fold_stft_loss
+                    last_acc_per_fold = fold_acc
+                    last_kappa_per_fold = fold_kappa
+                    if (args.model_name == "mtf_c") and (stft is not None):
+                            last_stft_reconstruction_loss_per_fold = fold_stft_loss
                             start_stft_loss += fold_stft_loss.item()
+
+                    # if fold_acc > best_acc_per_fold:
+                    #     best_acc_per_fold = fold_acc
+                    #     best_kappa_per_fold = fold_kappa
+                    #     if (args.model_name == "mtf_c") and (stft is not None):
+                    #         best_stft_reconstruction_loss_per_fold = fold_stft_loss
+                    #         start_stft_loss += fold_stft_loss.item()
 
                     # if verbose:
                     #     print(f"Acc:{fold_acc}, Kappa:{fold_kappa}")
 
-            folds_acc.append(best_acc_per_fold)
-            folds_kappa.append(best_kappa_per_fold)
+            folds_acc.append(last_acc_per_fold)
+            folds_kappa.append(last_kappa_per_fold)
             folds_stft_reconstruction_loss.append(
-                best_stft_reconstruction_loss_per_fold
+                last_stft_reconstruction_loss_per_fold
             )
+
+            # folds_acc.append(best_acc_per_fold)
+            # folds_kappa.append(best_kappa_per_fold)
+            # folds_stft_reconstruction_loss.append(
+            #     best_stft_reconstruction_loss_per_fold
+            # )
 
         accuracy = np.mean(folds_acc)
         kappa = np.mean(folds_kappa)
