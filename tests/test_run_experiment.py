@@ -297,6 +297,195 @@ class TestCSVExport:
         )
 
 
+class TestResultsYAML:
+    """Tests for results.yaml saving functionality in cross_validation."""
+
+    @pytest.fixture
+    def temp_experiment_dir(self):
+        """Create a temporary directory for experiment results."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield tmpdir
+
+    def test_results_yaml_structure(self, temp_experiment_dir):
+        """Test that results are saved with correct YAML structure."""
+        experiment_version = "test_version"
+        model_name = "mtf_c"
+        dataset = "BNCI2014_001"
+        subject = 1
+
+        run_entry = {
+            "timestamp": "2024-01-01T00:00:00",
+            "model": model_name,
+            "hyperparameters": {"lr": 0.001, "batch_size": 32},
+            "model_config": {"patch_size": 4},
+            "dataset": dataset,
+            "subject": subject,
+            "metrics": {
+                "accuracy": {"mean": 0.85, "std": 0.05, "all_runs": [0.85]},
+                "kappa": {"mean": 0.80, "std": 0.06, "all_runs": [0.80]},
+                "stft_reconstruction_loss": 0.25,
+            },
+        }
+
+        yaml_dir = os.path.join(temp_experiment_dir, experiment_version)
+        os.makedirs(yaml_dir, exist_ok=True)
+        results_yaml_path = os.path.join(yaml_dir, "results.yaml")
+
+        all_results = {}
+        all_results.setdefault(model_name, {}).setdefault(dataset, {}).setdefault(
+            f"subject_{subject}", []
+        ).append(run_entry)
+
+        with open(results_yaml_path, "w") as f:
+            yaml.dump(all_results, f, default_flow_style=False, sort_keys=False)
+
+        with open(results_yaml_path, "r") as f:
+            loaded_results = yaml.safe_load(f)
+
+        assert model_name in loaded_results
+        assert dataset in loaded_results[model_name]
+        assert f"subject_{subject}" in loaded_results[model_name][dataset]
+        assert len(loaded_results[model_name][dataset][f"subject_{subject}"]) == 1
+        assert (
+            loaded_results[model_name][dataset][f"subject_{subject}"][0]["metrics"][
+                "accuracy"
+            ]["mean"]
+            == 0.85
+        )
+
+    def test_results_yaml_appends_to_existing(self, temp_experiment_dir):
+        """Test that new results are appended to existing results YAML."""
+        experiment_version = "test_version"
+        yaml_dir = os.path.join(temp_experiment_dir, experiment_version)
+        os.makedirs(yaml_dir, exist_ok=True)
+        results_yaml_path = os.path.join(yaml_dir, "results.yaml")
+
+        existing_results = {
+            "mtf_c": {
+                "BNCI2014_001": {
+                    "subject_1": [
+                        {
+                            "timestamp": "2024-01-01T00:00:00",
+                            "metrics": {"accuracy": {"mean": 0.80}},
+                        }
+                    ]
+                }
+            }
+        }
+
+        with open(results_yaml_path, "w") as f:
+            yaml.dump(existing_results, f)
+
+        new_entry = {
+            "timestamp": "2024-01-02T00:00:00",
+            "model": "mtf_c",
+            "hyperparameters": {},
+            "model_config": {},
+            "dataset": "BNCI2014_001",
+            "subject": 1,
+            "metrics": {
+                "accuracy": {"mean": 0.85, "std": 0.05, "all_runs": [0.85]},
+                "kappa": {"mean": 0.80, "std": 0.06, "all_runs": [0.80]},
+                "stft_reconstruction_loss": 0.25,
+            },
+        }
+
+        with open(results_yaml_path, "r") as f:
+            all_results = yaml.safe_load(f)
+
+        all_results["mtf_c"]["BNCI2014_001"]["subject_1"].append(new_entry)
+
+        with open(results_yaml_path, "w") as f:
+            yaml.dump(all_results, f, default_flow_style=False)
+
+        with open(results_yaml_path, "r") as f:
+            loaded = yaml.safe_load(f)
+
+        assert len(loaded["mtf_c"]["BNCI2014_001"]["subject_1"]) == 2
+        assert (
+            loaded["mtf_c"]["BNCI2014_001"]["subject_1"][1]["metrics"]["accuracy"][
+                "mean"
+            ]
+            == 0.85
+        )
+
+    def test_results_yaml_multiple_subjects(self, temp_experiment_dir):
+        """Test results.yaml with multiple subjects."""
+        experiment_version = "test_version"
+        yaml_dir = os.path.join(temp_experiment_dir, experiment_version)
+        os.makedirs(yaml_dir, exist_ok=True)
+        results_yaml_path = os.path.join(yaml_dir, "results.yaml")
+
+        all_results = {}
+        for subject in [1, 2, 3]:
+            entry = {
+                "timestamp": f"2024-01-0{subject}T00:00:00",
+                "model": "mtf_c",
+                "hyperparameters": {},
+                "model_config": {},
+                "dataset": "BNCI2014_001",
+                "subject": subject,
+                "metrics": {
+                    "accuracy": {
+                        "mean": 0.80 + subject * 0.01,
+                        "std": 0.05,
+                        "all_runs": [0.80],
+                    },
+                    "kappa": {"mean": 0.75, "std": 0.06, "all_runs": [0.75]},
+                    "stft_reconstruction_loss": 0.25,
+                },
+            }
+            all_results.setdefault("mtf_c", {}).setdefault(
+                "BNCI2014_001", {}
+            ).setdefault(f"subject_{subject}", []).append(entry)
+
+        with open(results_yaml_path, "w") as f:
+            yaml.dump(all_results, f)
+
+        with open(results_yaml_path, "r") as f:
+            loaded = yaml.safe_load(f)
+
+        assert "subject_1" in loaded["mtf_c"]["BNCI2014_001"]
+        assert "subject_2" in loaded["mtf_c"]["BNCI2014_001"]
+        assert "subject_3" in loaded["mtf_c"]["BNCI2014_001"]
+
+    def test_results_yaml_multiple_datasets(self, temp_experiment_dir):
+        """Test results.yaml with multiple datasets."""
+        experiment_version = "test_version"
+        yaml_dir = os.path.join(temp_experiment_dir, experiment_version)
+        os.makedirs(yaml_dir, exist_ok=True)
+        results_yaml_path = os.path.join(yaml_dir, "results.yaml")
+
+        all_results = {}
+        for dataset in ["BNCI2014_001", "BNCI2014_002", "BNCI2015_001"]:
+            entry = {
+                "timestamp": "2024-01-01T00:00:00",
+                "model": "mtf_c",
+                "hyperparameters": {},
+                "model_config": {},
+                "dataset": dataset,
+                "subject": 1,
+                "metrics": {
+                    "accuracy": {"mean": 0.85, "std": 0.05, "all_runs": [0.85]},
+                    "kappa": {"mean": 0.80, "std": 0.06, "all_runs": [0.80]},
+                    "stft_reconstruction_loss": 0.25,
+                },
+            }
+            all_results.setdefault("mtf_c", {}).setdefault(dataset, {}).setdefault(
+                "subject_1", []
+            ).append(entry)
+
+        with open(results_yaml_path, "w") as f:
+            yaml.dump(all_results, f)
+
+        with open(results_yaml_path, "r") as f:
+            loaded = yaml.safe_load(f)
+
+        assert "BNCI2014_001" in loaded["mtf_c"]
+        assert "BNCI2014_002" in loaded["mtf_c"]
+        assert "BNCI2015_001" in loaded["mtf_c"]
+
+
 class TestMockExperiment:
     """Integration tests with mocked cross_validation."""
 

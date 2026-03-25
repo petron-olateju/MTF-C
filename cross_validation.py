@@ -1,6 +1,8 @@
 import yaml
 from tqdm import tqdm
 from typing import Tuple, List, Union
+from datetime import datetime
+import os
 
 import numpy as np
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
@@ -60,6 +62,18 @@ def parse_args():
     parser.add_argument(
         "--verbose", action="store_true", help="Print training progress"
     )
+    parser.add_argument(
+        "--experiment_folder",
+        type=str,
+        default="./experiments",
+        help="Folder to save experiment results",
+    )
+    parser.add_argument(
+        "--experiment_version",
+        type=str,
+        default=None,
+        help="Experiment version name for versioning results",
+    )
 
     return parser.parse_args()
 
@@ -69,6 +83,7 @@ def main(
     experiment: Union["Experiment", None] = None,
     config=None,
     model_configs=None,
+    save_yaml: bool = True,
 ):
     if args is None:
         args = parse_args()
@@ -576,6 +591,64 @@ def main(
     print(
         f"START STFT RECONSTRUCTION LOSS: {start_stft_loss / (hyperparameters.n_repeats * hyperparameters.folds)}"
     )
+
+    if save_yaml and experiment is not None:
+        experiment_version = (
+            args.experiment_version
+            if args.experiment_version
+            else datetime.now().strftime("%Y%m%d_%H%M%S")
+        )
+        yaml_dir = f"{args.experiment_folder}/{experiment_version}"
+        os.makedirs(yaml_dir, exist_ok=True)
+
+        run_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "model": args.model_name,
+            "hyperparameters": {
+                "val_size": hyperparameters.val_size,
+                "n_iter": hyperparameters.n_iter,
+                "eval_inter": hyperparameters.eval_inter,
+                "folds": hyperparameters.folds,
+                "n_repeats": hyperparameters.n_repeats,
+                "lr": hyperparameters.lr,
+                "batch_size": hyperparameters.batch_size,
+            },
+            "model_config": model_configs if model_configs else {},
+            "dataset": args.dataset,
+            "subject": args.subject,
+            "metrics": {
+                "accuracy": {
+                    "mean": float(np.mean(all_accuracies)),
+                    "std": float(np.std(all_accuracies)),
+                    "all_runs": [float(a) for a in all_accuracies],
+                },
+                "kappa": {
+                    "mean": float(np.mean(all_kappas)),
+                    "std": float(np.std(all_kappas)),
+                    "all_runs": [float(k) for k in all_kappas],
+                },
+                "stft_reconstruction_loss": float(np.mean(all_stft_reconstruction_loss))
+                if all_stft_reconstruction_loss
+                else None,
+            },
+        }
+
+        results_yaml_path = f"{yaml_dir}/results.yaml"
+
+        if os.path.exists(results_yaml_path):
+            with open(results_yaml_path, "r") as f:
+                all_results = yaml.safe_load(f) or {}
+        else:
+            all_results = {}
+
+        all_results.setdefault(args.model_name, {}).setdefault(
+            args.dataset, {}
+        ).setdefault(f"subject_{args.subject}", []).append(run_entry)
+
+        with open(results_yaml_path, "w") as f:
+            yaml.dump(all_results, f, default_flow_style=False, sort_keys=False)
+
+        print(f"Results saved to {results_yaml_path}")
 
     return all_accuracies, all_kappas, all_stft_reconstruction_loss, experiment
 
