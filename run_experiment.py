@@ -18,7 +18,7 @@ from utils.data_loader import (
     get_subjects_BNCI2015_004,
     get_subjects_Liu2024,
 )
-from utils.data_loader import get_subjects_AlexMI
+from utils.data_loader import get_subjects_AlexMI, SSVEP_DataLoader
 from utils.experiment_recorder import Parameter, Experiment
 from cross_validation import main as cross_validation
 
@@ -54,6 +54,8 @@ def parse_args():
             "BNCI2015_004",
             "AlexMI",
             "all",
+            "mi",
+            "ssvep",
         ],
     )
     parser.add_argument("--device", type=str, default="cpu", choices=["cpu", "cuda"])
@@ -84,9 +86,11 @@ def main():
 
     script = args.script
     model_name = args.model_name
-    if args.dataset == "all":
+    if (args.dataset == "all") or (args.dataset == "mi"):
         datasets = ["BNCI2014_001", "BNCI2014_002", "BNCI2014_004"]
         # datasets = ['AlexMI',]
+    elif args.dataset == "ssvep":
+        datasets = ["Kalunga2016", "MAMEM2", "MAMEM3", "Nakanishi2015", "Wang2016"]
     else:
         datasets = [args.dataset]
     device = args.device
@@ -122,6 +126,21 @@ def main():
             print(f"{dataset} subjects: {subjects}")
         elif dataset == "AlexMI":
             subjects = get_subjects_AlexMI()
+            print(f"{dataset} subjects: {subjects}")
+        elif dataset == "Kalunga2016":
+            subjects = SSVEP_DataLoader.get_subjects("Kalunga2016")
+            print(f"{dataset} subjects: {subjects}")
+        elif dataset == "MAMEM2":
+            subjects = SSVEP_DataLoader.get_subjects("MAMEM2")
+            print(f"{dataset} subjects: {subjects}")
+        elif dataset == "MAMEM3":
+            subjects = SSVEP_DataLoader.get_subjects("MAMEM3")
+            print(f"{dataset} subjects: {subjects}")
+        elif dataset == "Nakanishi2015":
+            subjects = SSVEP_DataLoader.get_subjects("Nakanishi2015")
+            print(f"{dataset} subjects: {subjects}")
+        elif dataset == "Wang2016":
+            subjects = SSVEP_DataLoader.get_subjects("Wang2016")
             print(f"{dataset} subjects: {subjects}")
         else:
             subjects = [1]  # Default for dummy_dataset or unknown datasets

@@ -277,7 +277,7 @@ class TestSSVEPDataLoader:
         assert X.shape[1] == info["n_ch"]
         assert X.shape[2] == info["n_times"]
 
-    @pytest.mark.skip(reason="Large dataset - takes too long")
+    @pytest.mark.skip(reason="Slow - requires MOABB data download")
     def test_label_range(self):
         """Test that labels are in valid range."""
         loader = SSVEP_DataLoader("MAMEM2", subject=1)
@@ -287,7 +287,7 @@ class TestSSVEPDataLoader:
         assert np.min(unique_labels) >= 0
         assert np.max(unique_labels) < info["n_classes"]
 
-    @pytest.mark.skip(reason="Large dataset - takes too long")
+    @pytest.mark.skip(reason="Slow - requires MOABB data download")
     def test_info_contains_frequencies(self):
         """Test that info dict contains frequency information."""
         loader = SSVEP_DataLoader("Wang2016", subject=1)
@@ -296,8 +296,7 @@ class TestSSVEPDataLoader:
         assert "freqs" in info
         assert isinstance(info["freqs"], list)
 
-    @pytest.mark.skip(reason="Large dataset - takes too long")
-    @pytest.mark.skip(reason="Large dataset - takes too long")
+    @pytest.mark.skip(reason="Slow - requires MOABB data download")
     def test_preprocessing_pipeline_applied(self):
         """Test that preprocessing pipeline is applied."""
 
@@ -313,8 +312,7 @@ class TestSSVEPDataLoader:
 
         assert X is not None
 
-    @pytest.mark.skip(reason="Large dataset - takes too long")
-    @pytest.mark.skip(reason="Large dataset - takes too long")
+    @pytest.mark.skip(reason="Slow - requires MOABB data download")
     def test_different_time_windows(self):
         """Test loading with different time windows."""
         loader1 = SSVEP_DataLoader("Kalunga2016", subject=1, t0=0.5, tmax=3.0)
@@ -326,7 +324,7 @@ class TestSSVEPDataLoader:
         assert X1.shape != X2.shape
         assert info1["n_times"] != info2["n_times"]
 
-    @pytest.mark.skip(reason="Large dataset - takes too long")
+    @pytest.mark.skip(reason="Slow - requires MOABB data download")
     @pytest.mark.parametrize("dataset", SSVEP_DataLoader.get_available_datasets())
     def test_all_datasets_loadable(self, dataset):
         """Test that all datasets can be loaded."""
