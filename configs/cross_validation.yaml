@@ -9,7 +9,7 @@ training:
 
 db_conformer:
   patch_size: 100
-  filter_banks: 101
+  filter_banks: 11
   freq_downsample: 1
   wsize_divisor: 2
   spa_dim: 16

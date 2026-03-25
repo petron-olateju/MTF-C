@@ -500,6 +500,57 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
             dim=1,
         )
         return out
+
+class FilterBanksEmbedding_v3(nn.Module):
+    def __init__(self, n_channels, n_filter_banks, emb_size=40,
+                 temporal_kernel=25, dropout=0.5):
+        super().__init__()
+        self.F = n_filter_banks
+        self.D = emb_size
+
+        # Heavy backbone runs once
+        self.backbone = nn.Sequential(
+            nn.Conv1d(n_channels, n_channels, kernel_size=temporal_kernel,
+                      padding=temporal_kernel // 2, groups=n_channels, bias=False),
+            nn.BatchNorm1d(n_channels),
+            nn.ELU(),
+            nn.Dropout(dropout),
+            nn.AdaptiveAvgPool1d(1),
+            nn.Flatten(),   # (B, n_channels)
+        )
+        self.bank_heads = nn.Linear(n_channels, n_filter_banks * emb_size)
+
+    def forward(self, x):  # x: (B, C, T)
+        z = self.backbone(x)                         # (B, D)
+        out = self.bank_heads(z)                     # (B, F*D)
+        return out.view(x.size(0), self.F, self.D)   # (B, F, D)
+
+class FilterBanksEmbedding_v2(nn.Module):
+    def __init__(self, n_channels, n_filter_banks, emb_size=40,
+                 temporal_kernel=25, dropout=0.5):
+        super().__init__()
+        self.F = n_filter_banks
+        self.D = emb_size
+
+        # Shared depthwise temporal conv — processes all C channels at once, no replication
+        self.temporal_conv = nn.Conv1d(
+            n_channels, n_channels,
+            kernel_size=temporal_kernel,
+            padding=temporal_kernel // 2,
+            groups=n_channels,  # depthwise — one filter per channel
+            bias=False
+        )
+        self.bn = nn.BatchNorm1d(n_channels)
+        self.drop = nn.Dropout(dropout)
+
+        # Cheap linear mixer: C channels → F*D, then AdaptivePool collapses T
+        self.channel_mixer = nn.Conv1d(n_channels, n_filter_banks * emb_size, kernel_size=1, bias=False)
+        self.pool = nn.AdaptiveAvgPool1d(1)
+
+    def forward(self, x):  # x: (B, C, T)
+        x = self.drop(F.elu(self.bn(self.temporal_conv(x))))  # (B, C, T)
+        x = self.pool(self.channel_mixer(x))                  # (B, F*D, 1)
+        return x.view(x.size(0), self.F, self.D)              # (B, F, D)
     
 class FilterBanksEmbedding_v1(nn.Module):
     """Learnable 2D filter bank embedding for EEG signals.
@@ -935,7 +986,7 @@ class MTFC(nn.Module):
                 time_points=args.time_sample_num,
                 num_classes=args.class_num,
             )
-            self.frequency_embedding = FilterBanksEmbedding(
+            self.frequency_embedding = FilterBanksEmbedding_v3(
                 n_channels=self.C,
                 n_filter_banks=self.F,
                 emb_size=self.D
