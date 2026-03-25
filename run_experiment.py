@@ -158,7 +158,7 @@ def main():
         acc_mean = np.mean(all_accuracies)
         acc_std = np.std(all_accuracies)
         kappa_mean = np.mean(all_kappas)
-        kappa_std = np.mean(all_kappas)
+        kappa_std = np.std(all_kappas)
         stft_result = np.mean(all_stft)
 
         if args.model_name not in accuracy_results:
@@ -203,11 +203,11 @@ def main():
                     if stft_result
                     else None,
                 },
-                "subject_results": {
-                    "accuracies": [float(a) for a in all_accuracies],
-                    "kappas": [float(k) for k in all_kappas],
-                    "stft_losses": [float(s) for s in all_stft] if all_stft else [],
-                },
+                # "subject_results": {
+                #     "accuracies": [float(a) for a in all_accuracies],
+                #     "kappas": [float(k) for k in all_kappas],
+                #     "stft_losses": [float(s) for s in all_stft] if all_stft else [],
+                # },
             }
 
             if os.path.exists(results_yaml_path):
