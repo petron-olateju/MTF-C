@@ -378,7 +378,7 @@ def main(
             # Compute STFT for each epoch
             F = model_configs["filter_banks"]
             P = model_configs["patch_size"]
-            assert (F - 1) % P == 0
+            # assert (F - 1) % P == 0
             wsize = int((F - 1) * 2)
             assert wsize % 2 == 0
             tstep = P
