@@ -19,15 +19,7 @@ from utils.metrics import accuracy_score
 from utils.preprocessing import EA, EA_online, bandpass_filtering
 from utils.data_loader import (
     EEGDataset,
-    load_BNCI2014_001,
-    load_BNCI2014_002,
-    load_BNCI2014_004,
-)
-from utils.data_loader import (
-    load_BNCI2015_001,
-    load_BNCI2015_004,
-    load_Liu2024,
-    load_AlexMI,
+    MI_DataLoader,
 )
 from utils.experiment_recorder import Parameter, Experiment
 from models.DBConformer import DBConformer
@@ -91,41 +83,19 @@ def main(
     ]
 
     if args.dataset == "dummy_dataset":
-        X = np.random.randn(
-            5, 3, 1000
-        )  # --> Replacce with loader class from utils.dataset_loader
+        X = np.random.randn(5, 3, 1000)
         y = np.random.randint(0, 2, size=5)
 
         dataset_info = {"n_ch": 3, "n_times": 1000, "n_classes": 2, "fs": 250}
     else:
-        if args.dataset == "BNCI2014_001":
-            X, y, dataset_info = load_BNCI2014_001(
-                subject=args.subject, preprocessing_pipeline=PREPROCESSING
-            )
-        elif args.dataset == "BNCI2014_002":
-            X, y, dataset_info = load_BNCI2014_002(
-                subject=args.subject, preprocessing_pipeline=PREPROCESSING
-            )
-        elif args.dataset == "BNCI2014_004":
-            X, y, dataset_info = load_BNCI2014_004(
-                subject=args.subject, preprocessing_pipeline=PREPROCESSING
-            )
-        elif args.dataset == "BNCI2015_001":
-            X, y, dataset_info = load_BNCI2015_001(
-                subject=args.subject, preprocessing_pipeline=PREPROCESSING
-            )
-        elif args.dataset == "BNCI2015_004":
-            X, y, dataset_info = load_BNCI2015_004(
-                subject=args.subject, preprocessing_pipeline=PREPROCESSING
-            )
-        elif args.dataset == "Liu2024":
-            X, y, dataset_info = load_Liu2024(
-                subject=args.subject, preprocessing_pipeline=PREPROCESSING
-            )
-        elif args.dataset == "AlexMI":
-            X, y, dataset_info = load_AlexMI(
-                subject=args.subject, preprocessing_pipeline=PREPROCESSING
-            )
+        loader = MI_DataLoader(
+            dataset_name=args.dataset,
+            subject=args.subject,
+            preprocessing_pipeline=PREPROCESSING,
+            t0=0.5,
+            t1=3.5,
+        )
+        X, y, dataset_info = loader.get_data()
 
     # ====================
     # CONFIGS & HYPERPARAMETERS
@@ -307,7 +277,7 @@ def main(
         np.random.seed(seed)
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
-        
+
         k = hyperparameters.folds
         skf = StratifiedKFold(n_splits=k, shuffle=False)
 
@@ -560,8 +530,8 @@ def main(
                     last_acc_per_fold = fold_acc
                     last_kappa_per_fold = fold_kappa
                     if (args.model_name == "mtf_c") and (stft is not None):
-                            last_stft_reconstruction_loss_per_fold = fold_stft_loss
-                            start_stft_loss += fold_stft_loss.item()
+                        last_stft_reconstruction_loss_per_fold = fold_stft_loss
+                        start_stft_loss += fold_stft_loss.item()
 
                     # if fold_acc > best_acc_per_fold:
                     #     best_acc_per_fold = fold_acc

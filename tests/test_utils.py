@@ -16,7 +16,7 @@ import pytest
 import torch
 import yaml
 
-from utils.data_loader import EEGDataset
+from utils.data_loader import EEGDataset, MI_DataLoader
 from utils.experiment_recorder import Experiment, Parameter
 from utils.preprocessing import EA, EA_online, bandpass_filtering
 
@@ -82,6 +82,69 @@ class TestEEGDataset:
         signal, label, stft_sample = dataset[0]
 
         assert signal.shape == (1, 500)
+
+
+class TestMI_DataLoader:
+    """Tests for MI_DataLoader class."""
+
+    def test_mi_dataloader_available_datasets(self):
+        """Test get_available_datasets returns expected datasets."""
+        datasets = MI_DataLoader.get_available_datasets()
+
+        assert isinstance(datasets, list)
+        assert "BNCI2014_001" in datasets
+        assert "BNCI2014_002" in datasets
+        assert "BNCI2014_004" in datasets
+        assert "BNCI2015_001" in datasets
+        assert "BNCI2015_004" in datasets
+        assert "Liu2024" in datasets
+        assert "AlexMI" in datasets
+
+    def test_mi_dataloader_invalid_dataset(self):
+        """Test that invalid dataset raises ValueError."""
+        with pytest.raises(ValueError, match="Unknown dataset"):
+            MI_DataLoader("InvalidDataset", subject=1)
+
+    def test_mi_dataloader_get_subjects(self):
+        """Test get_subjects returns a list."""
+        subjects = MI_DataLoader.get_subjects("BNCI2014_001")
+        assert isinstance(subjects, list)
+
+    def test_mi_dataloader_invalid_dataset_get_subjects(self):
+        """Test that get_subjects raises ValueError for invalid dataset."""
+        with pytest.raises(ValueError, match="Unknown dataset"):
+            MI_DataLoader.get_subjects("InvalidDataset")
+
+    def test_mi_dataloader_init_invalid_subject(self):
+        """Test that non-integer subject raises ValueError."""
+        with pytest.raises(ValueError):
+            MI_DataLoader("BNCI2014_001", subject="invalid")
+
+    def test_mi_dataloader_preprocessing_pipeline_validation(self):
+        """Test preprocessing pipeline validation."""
+
+        def dummy_preprocess(x):
+            return x
+
+        loader = MI_DataLoader(
+            "BNCI2014_001", subject=1, preprocessing_pipeline=[dummy_preprocess]
+        )
+        assert loader.preprocessing_pipeline == [dummy_preprocess]
+
+    def test_mi_dataloader_preprocessing_pipeline_invalid_type(self):
+        """Test that non-list preprocessing pipeline raises ValueError."""
+        with pytest.raises(
+            ValueError, match="preprocessing_pipeline argument should be a list"
+        ):
+            MI_DataLoader(
+                "BNCI2014_001", subject=1, preprocessing_pipeline="not_a_list"
+            )
+
+    def test_mi_dataloader_t0_t1_params(self):
+        """Test t0 and t1 parameters are stored correctly."""
+        loader = MI_DataLoader("BNCI2014_001", subject=1, t0=1.0, t1=4.0)
+        assert loader.t0 == 1.0
+        assert loader.t1 == 4.0
 
 
 class TestDataLoaderValidation:
