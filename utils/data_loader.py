@@ -12,8 +12,15 @@ from moabb.datasets import (
     BNCI2015_004,
     Liu2024,
     AlexMI,
+    Lee2019_SSVEP,
+    Kalunga2016,
+    MAMEM1,
+    MAMEM2,
+    MAMEM3,
+    Nakanishi2015,
+    Wang2016,
 )
-from moabb.paradigms import MotorImagery
+from moabb.paradigms import MotorImagery, SSVEP
 
 
 def chronological_stratified_kfold(y, n_splits=5):
@@ -435,6 +442,433 @@ class MI_DataLoader:
     def get_available_datasets():
         """Get list of available dataset names."""
         return list(MI_DataLoader.DATASETS.keys())
+
+
+class SSVEP_DataLoader:
+    """SSVEP Data Loader class for loading various SSVEP datasets."""
+
+    DATASETS = {
+        "Lee2019_SSVEP": Lee2019_SSVEP,
+        "Kalunga2016": Kalunga2016,
+        "MAMEM1": MAMEM1,
+        "MAMEM2": MAMEM2,
+        "MAMEM3": MAMEM3,
+        "Nakanishi2015": Nakanishi2015,
+        "Wang2016": Wang2016,
+    }
+
+    def __init__(
+        self,
+        dataset_name,
+        subject,
+        preprocessing_pipeline=None,
+        t0=0.0,
+        tmax=None,
+        fmin=7,
+        fmax=45,
+    ):
+        """Initialize SSVEP_DataLoader.
+
+        Args:
+            dataset_name: Name of the dataset ('Lee2019_SSVEP', 'Kalunga2016', etc.)
+            subject: Subject ID (integer)
+            preprocessing_pipeline: Optional list of preprocessing functions
+            t0: Start time for epoching (seconds)
+            tmax: End time for epoching (seconds, default is None)
+            fmin: Low cutoff frequency for bandpass filter (Hz)
+            fmax: High cutoff frequency for bandpass filter (Hz)
+        """
+        self.dataset_name = dataset_name
+        self.subject = subject
+        self.preprocessing_pipeline = preprocessing_pipeline
+        self.t0 = t0
+        self.tmax = tmax
+        self.fmin = fmin
+        self.fmax = fmax
+
+        if dataset_name not in self.DATASETS:
+            raise ValueError(
+                f"Unknown dataset: {dataset_name}. Available: {list(self.DATASETS.keys())}"
+            )
+
+        self.dataset = self.DATASETS[dataset_name]()
+        self._load_data()
+
+    def _load_data(self):
+        """Load data based on dataset name."""
+        load_methods = {
+            "Lee2019_SSVEP": self._load_Lee2019_SSVEP,
+            "Kalunga2016": self._load_Kalunga2016,
+            "MAMEM1": self._load_MAMEM1,
+            "MAMEM2": self._load_MAMEM2,
+            "MAMEM3": self._load_MAMEM3,
+            "Nakanishi2015": self._load_Nakanishi2015,
+            "Wang2016": self._load_Wang2016,
+        }
+
+        self.X, self.y, self.info = load_methods[self.dataset_name]()
+
+    def _get_paradigm(self, resample_rate):
+        """Get SSVEP paradigm."""
+        return SSVEP(
+            fmin=self.fmin,
+            fmax=self.fmax,
+            tmin=self.t0,
+            tmax=self.tmax,
+            resample=resample_rate,
+        )
+
+    def _apply_preprocessing(self, X):
+        """Apply preprocessing pipeline to data."""
+        if self.preprocessing_pipeline is not None:
+            if not isinstance(self.preprocessing_pipeline, list):
+                raise ValueError(
+                    "preprocessing_pipeline argument should be a list of preprocessing functions"
+                )
+            for fn in self.preprocessing_pipeline:
+                X = fn(X)
+        return X
+
+    def _get_fs(self, subject):
+        """Get sampling frequency dynamically."""
+        raw = self.dataset.get_data(subjects=[subject])
+        first_session_key = list(raw[subject].keys())[0]
+        first_run_key = list(raw[subject][first_session_key].keys())[0]
+        return raw[subject][first_session_key][first_run_key].info["sfreq"]
+
+    def _load_Lee2019_SSVEP(self) -> Tuple:
+        """Load Lee2019_SSVEP dataset."""
+        paradigm = self._get_paradigm(250)
+
+        s_x, s_y, metadata = paradigm.get_data(self.dataset, subjects=[self.subject])
+        s_x = np.array(s_x)
+
+        fs = self._get_fs(self.subject)
+        t0_idx = int(fs * self.t0)
+        tmax_idx = int(fs * self.tmax) if self.tmax is not None else s_x.shape[2]
+
+        unique_classes = np.unique(s_y)
+        class_data = []
+        class_labels = []
+
+        for idx, class_name in enumerate(unique_classes):
+            class_idx = np.where(s_y == class_name)[0]
+            class_data.append(np.array(s_x[class_idx]))
+            class_labels.append(np.full(len(class_idx), idx))
+
+        X = np.vstack(class_data)
+        X = X[:, :, t0_idx:tmax_idx]
+        y = np.hstack(class_labels)
+
+        X = self._apply_preprocessing(X)
+
+        n_trials, n_ch, n_times = X.shape
+        info = {
+            "n_trials": n_trials,
+            "n_ch": n_ch,
+            "n_times": n_times,
+            "n_classes": len(np.unique(y)),
+            "fs": fs,
+            "class_names": unique_classes.tolist(),
+            "freqs": [13.0, 17.0, 21.0, 25.0],
+        }
+
+        return (X, y, info)
+
+    def _load_Kalunga2016(self) -> Tuple:
+        """Load Kalunga2016 dataset."""
+        paradigm = self._get_paradigm(256)
+
+        s_x, s_y, metadata = paradigm.get_data(self.dataset, subjects=[self.subject])
+        s_x = np.array(s_x)
+
+        fs = self._get_fs(self.subject)
+        t0_idx = int(fs * self.t0)
+        tmax_idx = int(fs * self.tmax) if self.tmax is not None else s_x.shape[2]
+
+        unique_classes = np.unique(s_y)
+        class_data = []
+        class_labels = []
+
+        for idx, class_name in enumerate(unique_classes):
+            class_idx = np.where(s_y == class_name)[0]
+            class_data.append(np.array(s_x[class_idx]))
+            class_labels.append(np.full(len(class_idx), idx))
+
+        X = np.vstack(class_data)
+        X = X[:, :, t0_idx:tmax_idx]
+        y = np.hstack(class_labels)
+
+        X = self._apply_preprocessing(X)
+
+        n_trials, n_ch, n_times = X.shape
+        freq_classes = [c for c in unique_classes if c.startswith("freq_")]
+        if freq_classes:
+            freqs = sorted([float(c.replace("freq_", "")) for c in freq_classes])
+        else:
+            freqs = []
+        info = {
+            "n_trials": n_trials,
+            "n_ch": n_ch,
+            "n_times": n_times,
+            "n_classes": len(np.unique(y)),
+            "fs": fs,
+            "class_names": unique_classes.tolist(),
+            "freqs": freqs,
+        }
+
+        return (X, y, info)
+
+    def _load_MAMEM1(self) -> Tuple:
+        """Load MAMEM1 dataset."""
+        paradigm = self._get_paradigm(256)
+
+        s_x, s_y, metadata = paradigm.get_data(self.dataset, subjects=[self.subject])
+        s_x = np.array(s_x)
+
+        fs = self._get_fs(self.subject)
+        t0_idx = int(fs * self.t0)
+        tmax_idx = int(fs * self.tmax) if self.tmax is not None else s_x.shape[2]
+
+        unique_classes = np.unique(s_y)
+        class_data = []
+        class_labels = []
+
+        for idx, class_name in enumerate(unique_classes):
+            class_idx = np.where(s_y == class_name)[0]
+            class_data.append(np.array(s_x[class_idx]))
+            class_labels.append(np.full(len(class_idx), idx))
+
+        X = np.vstack(class_data)
+        X = X[:, :, t0_idx:tmax_idx]
+        y = np.hstack(class_labels)
+
+        X = self._apply_preprocessing(X)
+
+        n_trials, n_ch, n_times = X.shape
+        freq_classes = [c for c in unique_classes if c.startswith("freq_")]
+        if freq_classes:
+            freqs = sorted([float(c.replace("freq_", "")) for c in freq_classes])
+        else:
+            freqs = []
+        info = {
+            "n_trials": n_trials,
+            "n_ch": n_ch,
+            "n_times": n_times,
+            "n_classes": len(np.unique(y)),
+            "fs": fs,
+            "class_names": unique_classes.tolist(),
+            "freqs": freqs,
+        }
+
+        return (X, y, info)
+
+    def _load_MAMEM2(self) -> Tuple:
+        """Load MAMEM2 dataset."""
+        paradigm = self._get_paradigm(256)
+
+        s_x, s_y, metadata = paradigm.get_data(self.dataset, subjects=[self.subject])
+        s_x = np.array(s_x)
+
+        fs = self._get_fs(self.subject)
+        t0_idx = int(fs * self.t0)
+        tmax_idx = int(fs * self.tmax) if self.tmax is not None else s_x.shape[2]
+
+        unique_classes = np.unique(s_y)
+        class_data = []
+        class_labels = []
+
+        for idx, class_name in enumerate(unique_classes):
+            class_idx = np.where(s_y == class_name)[0]
+            class_data.append(np.array(s_x[class_idx]))
+            class_labels.append(np.full(len(class_idx), idx))
+
+        X = np.vstack(class_data)
+        X = X[:, :, t0_idx:tmax_idx]
+        y = np.hstack(class_labels)
+
+        X = self._apply_preprocessing(X)
+
+        n_trials, n_ch, n_times = X.shape
+        freq_classes = [c for c in unique_classes if c.startswith("freq_")]
+        if freq_classes:
+            freqs = sorted([float(c.replace("freq_", "")) for c in freq_classes])
+        else:
+            freqs = []
+        info = {
+            "n_trials": n_trials,
+            "n_ch": n_ch,
+            "n_times": n_times,
+            "n_classes": len(np.unique(y)),
+            "fs": fs,
+            "class_names": unique_classes.tolist(),
+            "freqs": freqs,
+        }
+
+        return (X, y, info)
+
+    def _load_MAMEM3(self) -> Tuple:
+        """Load MAMEM3 dataset."""
+        paradigm = self._get_paradigm(256)
+
+        s_x, s_y, metadata = paradigm.get_data(self.dataset, subjects=[self.subject])
+        s_x = np.array(s_x)
+
+        fs = self._get_fs(self.subject)
+        t0_idx = int(fs * self.t0)
+        tmax_idx = int(fs * self.tmax) if self.tmax is not None else s_x.shape[2]
+
+        unique_classes = np.unique(s_y)
+        class_data = []
+        class_labels = []
+
+        for idx, class_name in enumerate(unique_classes):
+            class_idx = np.where(s_y == class_name)[0]
+            class_data.append(np.array(s_x[class_idx]))
+            class_labels.append(np.full(len(class_idx), idx))
+
+        X = np.vstack(class_data)
+        X = X[:, :, t0_idx:tmax_idx]
+        y = np.hstack(class_labels)
+
+        X = self._apply_preprocessing(X)
+
+        n_trials, n_ch, n_times = X.shape
+        freq_classes = [c for c in unique_classes if c.startswith("freq_")]
+        if freq_classes:
+            freqs = sorted([float(c.replace("freq_", "")) for c in freq_classes])
+        else:
+            freqs = []
+        info = {
+            "n_trials": n_trials,
+            "n_ch": n_ch,
+            "n_times": n_times,
+            "n_classes": len(np.unique(y)),
+            "fs": fs,
+            "class_names": unique_classes.tolist(),
+            "freqs": freqs,
+        }
+
+        return (X, y, info)
+
+    def _load_Nakanishi2015(self) -> Tuple:
+        """Load Nakanishi2015 dataset."""
+        paradigm = self._get_paradigm(256)
+
+        s_x, s_y, metadata = paradigm.get_data(self.dataset, subjects=[self.subject])
+        s_x = np.array(s_x)
+
+        fs = self._get_fs(self.subject)
+        t0_idx = int(fs * self.t0)
+        tmax_idx = int(fs * self.tmax) if self.tmax is not None else s_x.shape[2]
+
+        unique_classes = np.unique(s_y)
+        class_data = []
+        class_labels = []
+
+        for idx, class_name in enumerate(unique_classes):
+            class_idx = np.where(s_y == class_name)[0]
+            class_data.append(np.array(s_x[class_idx]))
+            class_labels.append(np.full(len(class_idx), idx))
+
+        X = np.vstack(class_data)
+        X = X[:, :, t0_idx:tmax_idx]
+        y = np.hstack(class_labels)
+
+        X = self._apply_preprocessing(X)
+
+        n_trials, n_ch, n_times = X.shape
+        freq_classes = [c for c in unique_classes if c.startswith("freq_")]
+        if freq_classes:
+            freqs = sorted([float(c.replace("freq_", "")) for c in freq_classes])
+        else:
+            freqs = []
+        info = {
+            "n_trials": n_trials,
+            "n_ch": n_ch,
+            "n_times": n_times,
+            "n_classes": len(np.unique(y)),
+            "fs": fs,
+            "class_names": unique_classes.tolist(),
+            "freqs": freqs,
+        }
+
+        return (X, y, info)
+
+    def _load_Wang2016(self) -> Tuple:
+        """Load Wang2016 dataset."""
+        paradigm = self._get_paradigm(256)
+
+        s_x, s_y, metadata = paradigm.get_data(self.dataset, subjects=[self.subject])
+        s_x = np.array(s_x)
+
+        fs = self._get_fs(self.subject)
+        t0_idx = int(fs * self.t0)
+        tmax_idx = int(fs * self.tmax) if self.tmax is not None else s_x.shape[2]
+
+        unique_classes = np.unique(s_y)
+        class_data = []
+        class_labels = []
+
+        for idx, class_name in enumerate(unique_classes):
+            class_idx = np.where(s_y == class_name)[0]
+            class_data.append(np.array(s_x[class_idx]))
+            class_labels.append(np.full(len(class_idx), idx))
+
+        X = np.vstack(class_data)
+        X = X[:, :, t0_idx:tmax_idx]
+        y = np.hstack(class_labels)
+
+        X = self._apply_preprocessing(X)
+
+        n_trials, n_ch, n_times = X.shape
+        freq_classes = [c for c in unique_classes if c.startswith("freq_")]
+        if freq_classes:
+            freqs = sorted([float(c.replace("freq_", "")) for c in freq_classes])
+        else:
+            freqs = []
+        info = {
+            "n_trials": n_trials,
+            "n_ch": n_ch,
+            "n_times": n_times,
+            "n_classes": len(np.unique(y)),
+            "fs": fs,
+            "class_names": unique_classes.tolist(),
+            "freqs": freqs,
+        }
+
+        return (X, y, info)
+
+    def get_data(self):
+        """Return loaded data.
+
+        Returns:
+            Tuple: (X, y, info) where X is the data, y are labels, info is metadata dict
+        """
+        return self.X, self.y, self.info
+
+    @staticmethod
+    def get_subjects(dataset_name):
+        """Get list of available subjects for a dataset.
+
+        Args:
+            dataset_name: Name of the dataset
+
+        Returns:
+            List of subject IDs
+        """
+        if dataset_name not in SSVEP_DataLoader.DATASETS:
+            raise ValueError(
+                f"Unknown dataset: {dataset_name}. Available: {list(SSVEP_DataLoader.DATASETS.keys())}"
+            )
+
+        dataset = SSVEP_DataLoader.DATASETS[dataset_name]()
+        return dataset.subject_list
+
+    @staticmethod
+    def get_available_datasets():
+        """Get list of available dataset names."""
+        return list(SSVEP_DataLoader.DATASETS.keys())
 
 
 # ============================================================================
