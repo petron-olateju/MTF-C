@@ -34,7 +34,7 @@ mtf_c:
   posemb_flag: True
   branch: 'f_t_s'  # Options: 'all', 'ft_s', 'fs_t', 'f_t_s', 'f_ts'
   chn_attn_flag: False
-  fts_attn_flag: True
+  fts_attn_flag: False
   sst_method: 'filter_banks'
   stft_reconstruction: False
   ct_shared_projection: False  # Use shared projection in spectrogram estimator (filter_banks only)
