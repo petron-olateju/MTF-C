@@ -1,5 +1,5 @@
 baseline: null
-description: dbconformer bnchmark
+description: dbconformer benchmark
 name: DBConformer_benchmark
 parameters:
   Dataset-Details:
