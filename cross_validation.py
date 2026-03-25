@@ -376,55 +376,30 @@ def main(
             _x_test = EA_online(_x_test, sqrtRefEA)
 
             # Compute STFT for each epoch
-            F = model_configs["filter_banks"]
-            P = model_configs["patch_size"]
-            # assert (F - 1) % P == 0
-            wsize = int((F - 1) * 2)
-            assert wsize % 2 == 0
-            tstep = wsize // 2
-            # tstep = math.ceil(wsize / model_configs['wsize_divisor'])
-            _stft_train = np.array(
-                [mne.time_frequency.stft(x, wsize, tstep) for x in _x_train]
-            )
-            _stft_test = np.array(
-                [mne.time_frequency.stft(x, wsize, tstep) for x in _x_test]
-            )
-            _stft_train = abs(_stft_train)
-            _stft_test = abs(_stft_test)
-
-            # Trim to match model's P = (n_times - 1) // patch_size
-            target_T = (dataset_info["n_times"] - 1) // P  # 176
-            _stft_train = _stft_train[:, :, :, :target_T]  # (B, C, F, target_T)
-            _stft_test = _stft_test[:, :, :, :target_T]
-
-            freq_downsample = model_configs["freq_downsample"]
-            F_bins_trimmed = (
-                _stft_train.shape[2] // freq_downsample
-            ) * freq_downsample  # 51 → 50
-
-            _stft_train = (
-                _stft_train[:, :, :F_bins_trimmed, :]
-                .reshape(
-                    _stft_train.shape[0],
-                    _stft_train.shape[1],
-                    -1,
-                    freq_downsample,
-                    _stft_train.shape[3],
-                )
-                .mean(axis=3)
-            )
-
-            _stft_test = (
-                _stft_test[:, :, :F_bins_trimmed, :]
-                .reshape(
-                    _stft_test.shape[0],
-                    _stft_test.shape[1],
-                    -1,
-                    freq_downsample,
-                    _stft_test.shape[3],
-                )
-                .mean(axis=3)
-            )
+            if model_configs.get("stft_reconstruction", False):
+                F_cfg = model_configs["filter_banks"]
+                P_cfg = model_configs["patch_size"]
+                wsize = int((F_cfg - 1) * 2)
+                assert wsize % 2 == 0
+                tstep = wsize // 2
+                _stft_train = np.array([mne.time_frequency.stft(x, wsize, tstep) for x in _x_train])
+                _stft_test  = np.array([mne.time_frequency.stft(x, wsize, tstep) for x in _x_test])
+                _stft_train = abs(_stft_train)
+                _stft_test  = abs(_stft_test)
+                target_T = (dataset_info["n_times"] - 1) // P_cfg
+                _stft_train = _stft_train[:, :, :, :target_T]
+                _stft_test  = _stft_test[:, :, :, :target_T]
+                freq_downsample = model_configs["freq_downsample"]
+                F_bins_trimmed = (_stft_train.shape[2] // freq_downsample) * freq_downsample
+                _stft_train = _stft_train[:, :, :F_bins_trimmed, :].reshape(
+                    _stft_train.shape[0], _stft_train.shape[1], -1, freq_downsample, _stft_train.shape[3]
+                ).mean(axis=3)
+                _stft_test = _stft_test[:, :, :F_bins_trimmed, :].reshape(
+                    _stft_test.shape[0], _stft_test.shape[1], -1, freq_downsample, _stft_test.shape[3]
+                ).mean(axis=3)
+            else:
+                _stft_train = np.zeros((len(_x_train), 1, 1, 1), dtype=np.float32)
+                _stft_test  = np.zeros((len(_x_test),  1, 1, 1), dtype=np.float32)
 
             # if args.model_name=='mtf_c':
             #     mne.set_log_level('WARNING')  # suppress INFO logs

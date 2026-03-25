@@ -504,41 +504,16 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
 class FilterBanksEmbedding(nn.Module):
     """Learnable 2D filter bank embedding for EEG signals.
 
-    Applies F learned 2D convolutional filters over (C, T) to produce
-    F frequency-like embeddings of shape (B, F, D). Each filter learns
-    to extract a different spectral-spatial pattern without requiring
-    hand-crafted bandpass preprocessing.
+    Runs all F filter banks in two grouped Conv2d calls instead of
+    F sequential forward passes, eliminating the Python loop bottleneck.
 
-    The design uses depthwise-separable convolutions:
-      - A spatial conv across channels (kernel: C_kernel x 1) captures
-        cross-channel patterns per filter bank.
-      - A temporal conv along time (kernel: 1 x T_kernel) captures
-        oscillatory structure at a given scale.
-      - Global average pooling collapses (C', T') → a single D-dim vector
-        per filter bank.
-
-    Args:
-        n_channels: Number of EEG channels C.
-        n_times: Number of time points T.
-        n_filter_banks: Number of learned filter banks F.
-        emb_size: Output embedding dimension D.
-        spatial_kernel: Kernel height covering channel dimension.
-                        Defaults to n_channels (full spatial extent).
-        temporal_kernel: Kernel width covering time dimension.
-                         Larger → sensitive to lower frequencies.
-        dropout: Dropout probability applied after each block.
-
-    Input shape:
-        x: (B, C, T)
-
-    Output shape:
-        (B, F, D)
+    Input:  (B, C, T)
+    Output: (B, F, D)
     """
 
     def __init__(
         self,
         n_channels,
-        # n_times,
         n_filter_banks,
         emb_size=40,
         spatial_kernel=None,
@@ -548,60 +523,55 @@ class FilterBanksEmbedding(nn.Module):
         super().__init__()
         self.F = n_filter_banks
         self.D = emb_size
-        spatial_kernel = spatial_kernel or n_channels  # default: full spatial extent
+        spatial_kernel = spatial_kernel or n_channels
 
-        # Each filter bank is an independent 2D conv pipeline so filters
-        # cannot share weights and are forced to specialise.
-        self.filter_banks = nn.ModuleList([
-            nn.Sequential(
-                # Treat input as (B, 1, C, T) — single in-channel 2D image
-                # Spatial conv: learns cross-channel weighting
-                nn.Conv2d(
-                    in_channels=1,
-                    out_channels=emb_size,
-                    kernel_size=(spatial_kernel, 1),
-                    padding=(spatial_kernel // 2, 0),
-                    bias=False,
-                ),
-                nn.BatchNorm2d(emb_size),
-                nn.ELU(),
-                nn.Dropout2d(dropout),
-                # Temporal conv: learns oscillatory structure at this bank's scale
-                nn.Conv2d(
-                    in_channels=emb_size,
-                    out_channels=emb_size,
-                    kernel_size=(1, temporal_kernel),
-                    padding=(0, temporal_kernel // 2),
-                    groups=emb_size,          # depthwise — each feature evolves independently
-                    bias=False,
-                ),
-                nn.BatchNorm2d(emb_size),
-                nn.ELU(),
-                nn.Dropout2d(dropout),
-                # Collapse spatial and temporal dims → single vector per filter bank
-                nn.AdaptiveAvgPool2d((1, 1)),
-                nn.Flatten(),                 # (B, emb_size)
-            )
-            for _ in range(n_filter_banks)
-        ])
+        # All F banks fused: groups=F keeps each bank's filters independent
+        # Input treated as (B, F, C, T) — F copies of the same signal
+        self.spatial_conv = nn.Conv2d(
+            in_channels=self.F,
+            out_channels=self.F * emb_size,
+            kernel_size=(spatial_kernel, 1),
+            padding=(spatial_kernel // 2, 0),
+            groups=self.F,
+            bias=False,
+        )
+        self.spatial_bn = nn.BatchNorm2d(self.F * emb_size)
+        self.spatial_drop = nn.Dropout2d(dropout)
+
+        self.temporal_conv = nn.Conv2d(
+            in_channels=self.F * emb_size,
+            out_channels=self.F * emb_size,
+            kernel_size=(1, temporal_kernel),
+            padding=(0, temporal_kernel // 2),
+            groups=self.F * emb_size,  # fully depthwise
+            bias=False,
+        )
+        self.temporal_bn = nn.BatchNorm2d(self.F * emb_size)
+        self.temporal_drop = nn.Dropout2d(dropout)
+
+        self.pool = nn.AdaptiveAvgPool2d((1, 1))
 
         self.apply(self._init_weights)
 
     def _init_weights(self, m):
-        if isinstance(m, (nn.Conv2d,)):
+        if isinstance(m, nn.Conv2d):
             nn.init.trunc_normal_(m.weight, std=0.01)
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)
-        elif isinstance(m, (nn.BatchNorm2d,)):
+        elif isinstance(m, nn.BatchNorm2d):
             nn.init.constant_(m.weight, 1.0)
             nn.init.constant_(m.bias, 0)
 
     def forward(self, x):  # x: (B, C, T)
-        x = x.unsqueeze(1)  # → (B, 1, C, T)
-        out = torch.stack(
-            [fb(x) for fb in self.filter_banks], dim=1
-        )  # → (B, F, D)
-        return out
+        B, C, T = x.shape
+        # Give each filter bank its own copy of the input: (B, F, C, T)
+        x = x.unsqueeze(1).expand(-1, self.F, -1, -1).contiguous()
+
+        x = self.spatial_drop(F.elu(self.spatial_bn(self.spatial_conv(x))))   # (B, F*D, C', T)
+        x = self.temporal_drop(F.elu(self.temporal_bn(self.temporal_conv(x)))) # (B, F*D, 1', T')
+        x = self.pool(x)          # (B, F*D, 1, 1)
+        x = x.view(B, self.F, self.D)  # (B, F, D)
+        return x
 
 
 # =============================================================================
