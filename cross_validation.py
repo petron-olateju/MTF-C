@@ -1,8 +1,6 @@
 import yaml
 from tqdm import tqdm
 from typing import Tuple, List, Union
-from datetime import datetime
-import os
 
 import numpy as np
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
@@ -382,24 +380,46 @@ def main(
                 wsize = int((F_cfg - 1) * 2)
                 assert wsize % 2 == 0
                 tstep = wsize // 2
-                _stft_train = np.array([mne.time_frequency.stft(x, wsize, tstep) for x in _x_train])
-                _stft_test  = np.array([mne.time_frequency.stft(x, wsize, tstep) for x in _x_test])
+                _stft_train = np.array(
+                    [mne.time_frequency.stft(x, wsize, tstep) for x in _x_train]
+                )
+                _stft_test = np.array(
+                    [mne.time_frequency.stft(x, wsize, tstep) for x in _x_test]
+                )
                 _stft_train = abs(_stft_train)
-                _stft_test  = abs(_stft_test)
+                _stft_test = abs(_stft_test)
                 target_T = (dataset_info["n_times"] - 1) // P_cfg
                 _stft_train = _stft_train[:, :, :, :target_T]
-                _stft_test  = _stft_test[:, :, :, :target_T]
+                _stft_test = _stft_test[:, :, :, :target_T]
                 freq_downsample = model_configs["freq_downsample"]
-                F_bins_trimmed = (_stft_train.shape[2] // freq_downsample) * freq_downsample
-                _stft_train = _stft_train[:, :, :F_bins_trimmed, :].reshape(
-                    _stft_train.shape[0], _stft_train.shape[1], -1, freq_downsample, _stft_train.shape[3]
-                ).mean(axis=3)
-                _stft_test = _stft_test[:, :, :F_bins_trimmed, :].reshape(
-                    _stft_test.shape[0], _stft_test.shape[1], -1, freq_downsample, _stft_test.shape[3]
-                ).mean(axis=3)
+                F_bins_trimmed = (
+                    _stft_train.shape[2] // freq_downsample
+                ) * freq_downsample
+                _stft_train = (
+                    _stft_train[:, :, :F_bins_trimmed, :]
+                    .reshape(
+                        _stft_train.shape[0],
+                        _stft_train.shape[1],
+                        -1,
+                        freq_downsample,
+                        _stft_train.shape[3],
+                    )
+                    .mean(axis=3)
+                )
+                _stft_test = (
+                    _stft_test[:, :, :F_bins_trimmed, :]
+                    .reshape(
+                        _stft_test.shape[0],
+                        _stft_test.shape[1],
+                        -1,
+                        freq_downsample,
+                        _stft_test.shape[3],
+                    )
+                    .mean(axis=3)
+                )
             else:
                 _stft_train = np.zeros((len(_x_train), 1, 1, 1), dtype=np.float32)
-                _stft_test  = np.zeros((len(_x_test),  1, 1, 1), dtype=np.float32)
+                _stft_test = np.zeros((len(_x_test), 1, 1, 1), dtype=np.float32)
 
             # if args.model_name=='mtf_c':
             #     mne.set_log_level('WARNING')  # suppress INFO logs
@@ -566,64 +586,6 @@ def main(
     print(
         f"START STFT RECONSTRUCTION LOSS: {start_stft_loss / (hyperparameters.n_repeats * hyperparameters.folds)}"
     )
-
-    if save_yaml and experiment is not None:
-        experiment_version = (
-            args.experiment_version
-            if args.experiment_version
-            else datetime.now().strftime("%Y%m%d_%H%M%S")
-        )
-        yaml_dir = f"{args.experiment_folder}/{experiment_version}"
-        os.makedirs(yaml_dir, exist_ok=True)
-
-        run_entry = {
-            "timestamp": datetime.now().isoformat(),
-            "model": args.model_name,
-            "hyperparameters": {
-                "val_size": hyperparameters.val_size,
-                "n_iter": hyperparameters.n_iter,
-                "eval_inter": hyperparameters.eval_inter,
-                "folds": hyperparameters.folds,
-                "n_repeats": hyperparameters.n_repeats,
-                "lr": hyperparameters.lr,
-                "batch_size": hyperparameters.batch_size,
-            },
-            "model_config": model_configs if model_configs else {},
-            "dataset": args.dataset,
-            "subject": args.subject,
-            "metrics": {
-                "accuracy": {
-                    "mean": float(np.mean(all_accuracies)),
-                    "std": float(np.std(all_accuracies)),
-                    "all_runs": [float(a) for a in all_accuracies],
-                },
-                "kappa": {
-                    "mean": float(np.mean(all_kappas)),
-                    "std": float(np.std(all_kappas)),
-                    "all_runs": [float(k) for k in all_kappas],
-                },
-                "stft_reconstruction_loss": float(np.mean(all_stft_reconstruction_loss))
-                if all_stft_reconstruction_loss
-                else None,
-            },
-        }
-
-        results_yaml_path = f"{yaml_dir}/results.yaml"
-
-        if os.path.exists(results_yaml_path):
-            with open(results_yaml_path, "r") as f:
-                all_results = yaml.safe_load(f) or {}
-        else:
-            all_results = {}
-
-        all_results.setdefault(args.model_name, {}).setdefault(
-            args.dataset, {}
-        ).setdefault(f"subject_{args.subject}", []).append(run_entry)
-
-        with open(results_yaml_path, "w") as f:
-            yaml.dump(all_results, f, default_flow_style=False, sort_keys=False)
-
-        print(f"Results saved to {results_yaml_path}")
 
     return all_accuracies, all_kappas, all_stft_reconstruction_loss, experiment
 

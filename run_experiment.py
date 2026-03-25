@@ -1,8 +1,11 @@
 from tqdm import tqdm
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
 import argparse
+import yaml
+import os
 from argparse import Namespace
 
 from utils.data_loader import (
@@ -177,6 +180,48 @@ def main():
             f"Accuracy: {np.mean(all_accuracies):.2f} +- {np.std(all_accuracies):.2f}"
         )
         print(f"Kappa: {np.mean(all_kappas):.2f} +- {np.std(all_kappas):.2f}")
+
+        if experiment is not None:
+            yaml_dir = f"{args.experiment_folder}/{args.experiment_version}"
+            os.makedirs(yaml_dir, exist_ok=True)
+            results_yaml_path = f"{yaml_dir}/results.yaml"
+
+            run_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "model": args.model_name,
+                "dataset": dataset,
+                "metrics": {
+                    "accuracy": {
+                        "mean": float(acc_mean),
+                        "std": float(acc_std),
+                    },
+                    "kappa": {
+                        "mean": float(kappa_mean),
+                        "std": float(kappa_std),
+                    },
+                    "stft_reconstruction_loss": float(stft_result)
+                    if stft_result
+                    else None,
+                },
+                "subject_results": {
+                    "accuracies": [float(a) for a in all_accuracies],
+                    "kappas": [float(k) for k in all_kappas],
+                    "stft_losses": [float(s) for s in all_stft] if all_stft else [],
+                },
+            }
+
+            if os.path.exists(results_yaml_path):
+                with open(results_yaml_path, "r") as f:
+                    all_results = yaml.safe_load(f) or {}
+            else:
+                all_results = {}
+
+            all_results.setdefault(args.model_name, {}).setdefault(dataset, []).append(
+                run_entry
+            )
+
+            with open(results_yaml_path, "w") as f:
+                yaml.dump(all_results, f, default_flow_style=False, sort_keys=False)
 
     if experiment is not None:
         experiment.save()
