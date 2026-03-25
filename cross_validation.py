@@ -381,7 +381,7 @@ def main(
             # assert (F - 1) % P == 0
             wsize = int((F - 1) * 2)
             assert wsize % 2 == 0
-            tstep = P
+            tstep = wsize // 2
             # tstep = math.ceil(wsize / model_configs['wsize_divisor'])
             _stft_train = np.array(
                 [mne.time_frequency.stft(x, wsize, tstep) for x in _x_train]
