@@ -90,7 +90,7 @@ def main():
         datasets = ["BNCI2014_001", "BNCI2014_002", "BNCI2014_004"]
         # datasets = ['AlexMI',]
     elif args.dataset == "ssvep":
-        datasets = ["Kalunga2016", "MAMEM2", "MAMEM3", "Nakanishi2015", "Wang2016"]
+        datasets = ["Kalunga2016", "Nakanishi2015", "Wang2016"]
     else:
         datasets = [args.dataset]
     device = args.device
