@@ -287,7 +287,23 @@ class TestMockGridSearch:
             kappa = [acc_base - 0.05]
             stft_reconstruction_loss = [1.0 - (call_count[0] * 0.1)]
 
-            return accuracy, kappa, stft_reconstruction_loss, experiment
+            hyperparameters = Namespace(
+                val_size=0.2,
+                n_iter=100,
+                eval_inter=10,
+                folds=5,
+                n_repeats=1,
+                lr=0.001,
+                batch_size=64,
+            )
+
+            return (
+                accuracy,
+                kappa,
+                stft_reconstruction_loss,
+                experiment,
+                hyperparameters,
+            )
 
         return mock_cv, call_count
 

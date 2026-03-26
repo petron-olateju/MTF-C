@@ -604,7 +604,13 @@ def main(
         f"START STFT RECONSTRUCTION LOSS: {start_stft_loss / (hyperparameters.n_repeats * hyperparameters.folds)}"
     )
 
-    return all_accuracies, all_kappas, all_stft_reconstruction_loss, experiment
+    return (
+        all_accuracies,
+        all_kappas,
+        all_stft_reconstruction_loss,
+        experiment,
+        hyperparameters,
+    )
 
 
 if __name__ == "__main__":

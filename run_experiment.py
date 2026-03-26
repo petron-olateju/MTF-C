@@ -105,6 +105,10 @@ def main():
     kappa_std_results = {}
     stft_reconstruction_results = {}
 
+    run_timestamp = datetime.now().isoformat()
+    dataset_results = {}
+    run_config = {}
+
     for dataset in datasets:
         if dataset == "BNCI2014_001":
             subjects = get_subjects_BNCI2014_001()
@@ -157,12 +161,30 @@ def main():
             )
 
             if script == "cross_validation":
-                accuracy, kappa, stft_reconstruction_loss, experiment = (
-                    cross_validation(mthd_args, experiment)
-                )
+                (
+                    accuracy,
+                    kappa,
+                    stft_reconstruction_loss,
+                    experiment,
+                    hyperparameters,
+                ) = cross_validation(mthd_args, experiment)
                 all_accuracies = all_accuracies + accuracy
                 all_kappas = all_kappas + kappa
                 all_stft = all_stft + stft_reconstruction_loss
+
+                if not run_config:
+                    run_config.update(
+                        {
+                            "val_size": hyperparameters.val_size,
+                            "n_iter": hyperparameters.n_iter,
+                            "eval_inter": hyperparameters.eval_inter,
+                            "folds": hyperparameters.folds,
+                            "n_repeats": hyperparameters.n_repeats,
+                            "lr": hyperparameters.lr,
+                            "batch_size": hyperparameters.batch_size,
+                        }
+                    )
+
             if args.model_name != "mtf_c":
                 print(
                     f"subject {subject} | Accuracy: {np.mean(accuracy):.2f}, Kappa: {np.mean(kappa):.2f}"
@@ -179,6 +201,18 @@ def main():
         kappa_mean = np.mean(all_kappas)
         kappa_std = np.std(all_kappas)
         stft_result = np.mean(all_stft)
+
+        dataset_results[dataset] = {
+            "accuracy": {
+                "mean": float(acc_mean),
+                "std": float(acc_std),
+            },
+            "kappa": {
+                "mean": float(kappa_mean),
+                "std": float(kappa_std),
+            },
+            "stft_reconstruction_loss": float(stft_result) if stft_result else None,
+        }
 
         if args.model_name not in accuracy_results:
             accuracy_results[args.model_name] = {}
@@ -205,39 +239,15 @@ def main():
             os.makedirs(yaml_dir, exist_ok=True)
             results_yaml_path = f"{yaml_dir}/results.yaml"
 
-            run_entry = {
-                "timestamp": datetime.now().isoformat(),
-                "model": args.model_name,
-                "dataset": dataset,
-                "metrics": {
-                    "accuracy": {
-                        "mean": float(acc_mean),
-                        "std": float(acc_std),
-                    },
-                    "kappa": {
-                        "mean": float(kappa_mean),
-                        "std": float(kappa_std),
-                    },
-                    "stft_reconstruction_loss": float(stft_result)
-                    if stft_result
-                    else None,
-                },
-                # "subject_results": {
-                #     "accuracies": [float(a) for a in all_accuracies],
-                #     "kappas": [float(k) for k in all_kappas],
-                #     "stft_losses": [float(s) for s in all_stft] if all_stft else [],
-                # },
-            }
-
             if os.path.exists(results_yaml_path):
                 with open(results_yaml_path, "r") as f:
                     all_results = yaml.safe_load(f) or {}
             else:
                 all_results = {}
 
-            all_results.setdefault(args.model_name, {}).setdefault(dataset, []).append(
-                run_entry
-            )
+            all_results.setdefault(args.model_name, {}).setdefault(
+                run_timestamp, {}
+            ).update({"config": run_config, "results": dataset_results})
 
             with open(results_yaml_path, "w") as f:
                 yaml.dump(all_results, f, default_flow_style=False, sort_keys=False)
