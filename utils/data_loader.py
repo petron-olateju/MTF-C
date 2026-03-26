@@ -972,9 +972,9 @@ class RestingState_DataLoader:
     }
 
     DEFAULT_EVENTS = {
-        "Cattan2019_PHMD": {"rest": 1},
+        "Cattan2019_PHMD": {"off": 1, "on": 2},
         "Hinss2021": {"easy": 2, "diff": 3},
-        "Rodrigues2017": {"eyes_open": 1, "eyes_closed": 2},
+        "Rodrigues2017": {"closed": 1, "open": 2},
     }
 
     def __init__(
