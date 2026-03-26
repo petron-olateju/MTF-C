@@ -90,7 +90,7 @@ def main():
         datasets = ["BNCI2014_001", "BNCI2014_002", "BNCI2014_004"]
         # datasets = ['AlexMI',]
     elif args.dataset == "ssvep":
-        datasets = ["Kalunga2016", "Nakanishi2015", "Wang2016"]
+        datasets = ["Kalunga2016", "Nakanishi2015", "Wang2021Combined"]
     else:
         datasets = [args.dataset]
     device = args.device
@@ -139,8 +139,8 @@ def main():
         elif dataset == "Nakanishi2015":
             subjects = SSVEP_DataLoader.get_subjects("Nakanishi2015")
             print(f"{dataset} subjects: {subjects}")
-        elif dataset == "Wang2016":
-            subjects = SSVEP_DataLoader.get_subjects("Wang2016")
+        elif dataset == "Wang2021Combined":
+            subjects = SSVEP_DataLoader.get_subjects("Wang2021Combined")
             print(f"{dataset} subjects: {subjects}")
         else:
             subjects = [1]  # Default for dummy_dataset or unknown datasets

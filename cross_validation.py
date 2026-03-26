@@ -58,7 +58,7 @@ def parse_args():
             "MAMEM2",
             "MAMEM3",
             "Nakanishi2015",
-            "Wang2016",
+            "Wang2021Combined",
         ],
     )
     parser.add_argument("--subject", type=int, default=1)
@@ -101,7 +101,7 @@ def main(
         bandpass_filtering,
     ]
 
-    SSVEP_DATASETS = ["Kalunga2016", "Nakanishi2015", "Wang2016"]
+    SSVEP_DATASETS = ["Kalunga2016", "Nakanishi2015", "Wang2021Combined"]
 
     if args.dataset == "dummy_dataset":
         X = np.random.randn(5, 3, 1000)

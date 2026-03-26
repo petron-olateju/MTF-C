@@ -195,7 +195,7 @@ class TestSSVEPDataLoader:
         assert "MAMEM2" in datasets
         assert "MAMEM3" in datasets
         assert "Nakanishi2015" in datasets
-        assert "Wang2016" in datasets
+        assert "Wang2021Combined" in datasets
 
     def test_get_subjects_returns_list(self):
         """Test that get_subjects returns a list of subject IDs."""
@@ -290,7 +290,7 @@ class TestSSVEPDataLoader:
     @pytest.mark.skip(reason="Slow - requires MOABB data download")
     def test_info_contains_frequencies(self):
         """Test that info dict contains frequency information."""
-        loader = SSVEP_DataLoader("Wang2016", subject=1)
+        loader = SSVEP_DataLoader("Wang2021Combined", subject=1)
         X, y, info = loader.get_data()
 
         assert "freqs" in info
