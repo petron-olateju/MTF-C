@@ -36,7 +36,7 @@ mtf_c:
   chn_attn_flag: False
   fts_attn_flag: False
   sst_method: 'filter_banks'
-  stft_reconstruction: False
+  stft_reconstruction: 'frequency'
   ct_shared_projection: False  # Use shared projection in spectrogram estimator (filter_banks only)
   sst_shared_projection: False  # Project embeddings to SST dimension
   patch_emb_size: 40

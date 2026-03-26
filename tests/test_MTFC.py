@@ -446,6 +446,108 @@ def test_mtfc_branch_all():
     assert out.shape == (2, 4)
 
 
+def test_mtfc_frequency_reconstruction_sst_shared_projection_true():
+    """Test MTFC with frequency reconstruction and sst_shared_projection=True.
+
+    Verifies that:
+    1. freq_to_bandpowers MLP is created with correct input dimension (FTS)
+    2. Model outputs band powers of shape (B, F)
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="f_t_s",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="filter_banks",
+        stft_reconstruction="frequency",
+        spa_dim=16,
+        ct_shared_projection=True,
+        sst_shared_projection=True,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=20,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert hasattr(model, "freq_to_bandpowers")
+    assert isinstance(model.freq_to_bandpowers, torch.nn.Sequential)
+
+    x = torch.randn(2, 1, 22, 1001)
+    band_powers, embed, out = model(x)
+
+    assert band_powers.shape == (2, 4)  # (B, F)
+    assert embed.shape == (2, 120)  # FTS * 3 branches
+    assert out.shape == (2, 4)
+
+
+def test_mtfc_frequency_reconstruction_sst_shared_projection_false():
+    """Test MTFC with frequency reconstruction and sst_shared_projection=False.
+
+    Verifies that:
+    1. freq_to_bandpowers MLP is created with correct input dimension (D)
+    2. Model outputs band powers of shape (B, F)
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="f_t_s",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="filter_banks",
+        stft_reconstruction="frequency",
+        spa_dim=16,
+        ct_shared_projection=False,
+        sst_shared_projection=False,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=20,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert hasattr(model, "freq_to_bandpowers")
+    assert isinstance(model.freq_to_bandpowers, torch.nn.Sequential)
+
+    x = torch.randn(2, 1, 22, 1001)
+    band_powers, embed, out = model(x)
+
+    assert band_powers.shape == (2, 4)  # (B, F)
+    assert embed.shape == (2, 60)  # D * 3 branches
+    assert out.shape == (2, 4)
+
+
 def test_mtfc_sst_shared_projection_true():
     """Test MTFC with sst_shared_projection=True.
 

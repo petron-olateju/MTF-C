@@ -16,7 +16,7 @@ from torch.utils.data import DataLoader
 # from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from utils.metrics import accuracy_score
-from utils.preprocessing import EA, EA_online, bandpass_filtering
+from utils.preprocessing import EA, EA_online, bandpass_filtering, compute_band_powers
 from utils.data_loader import (
     EEGDataset,
     MI_DataLoader,
@@ -417,8 +417,10 @@ def main(
             _x_train, sqrtRefEA = EA(_x_train)
             _x_test = EA_online(_x_test, sqrtRefEA)
 
-            # Compute STFT for each epoch
-            if model_configs.get("stft_reconstruction", False):
+            # Compute STFT or band powers for each epoch
+            stft_reconstruction_type = model_configs.get("stft_reconstruction", False)
+
+            if stft_reconstruction_type == "STFT" or stft_reconstruction_type is True:
                 F_cfg = model_configs["filter_banks"]
                 P_cfg = model_configs["patch_size"]
                 wsize = int((F_cfg - 1) * 2)
@@ -460,6 +462,14 @@ def main(
                         _stft_test.shape[3],
                     )
                     .mean(axis=3)
+                )
+            elif stft_reconstruction_type == "frequency":
+                F_cfg = model_configs["filter_banks"]
+                _stft_train = compute_band_powers(
+                    _x_train, n_filter_banks=F_cfg, fs=dataset_info["fs"]
+                )
+                _stft_test = compute_band_powers(
+                    _x_test, n_filter_banks=F_cfg, fs=dataset_info["fs"]
                 )
             else:
                 _stft_train = np.zeros((len(_x_train), 1, 1, 1), dtype=np.float32)

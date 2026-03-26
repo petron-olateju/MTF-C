@@ -1,0 +1,35 @@
+mtf_c:
+  '2026-03-26T10:03:09.965282':
+    config:
+      val_size: 0.0
+      n_iter: 100
+      eval_inter: 5
+      folds: 5
+      n_repeats: 1
+      lr: 0.001
+      batch_size: 32
+    results:
+      Kalunga2016:
+        accuracy:
+          mean: 0.7840080246329308
+          std: 0.128411079395043
+        kappa:
+          mean: 0.5680160492658616
+          std: 0.256822158790086
+        stft_reconstruction_loss: null
+      Nakanishi2015:
+        accuracy:
+          mean: 0.7753855378854843
+          std: 0.15261176741928026
+        kappa:
+          mean: 0.5507710757709684
+          std: 0.3052235348385605
+        stft_reconstruction_loss: null
+      Wang2021Combined:
+        accuracy:
+          mean: 0.6669027455921831
+          std: 0.22092796134851866
+        kappa:
+          mean: 0.3338054911843661
+          std: 0.4418559226970373
+        stft_reconstruction_loss: null
