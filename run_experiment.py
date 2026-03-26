@@ -18,7 +18,7 @@ from utils.data_loader import (
     get_subjects_BNCI2015_004,
     get_subjects_Liu2024,
 )
-from utils.data_loader import get_subjects_AlexMI, SSVEP_DataLoader
+from utils.data_loader import get_subjects_AlexMI, SSVEP_DataLoader, Sleep_Loader
 from utils.experiment_recorder import Parameter, Experiment
 from cross_validation import main as cross_validation
 
@@ -53,9 +53,17 @@ def parse_args():
             "BNCI2015_001",
             "BNCI2015_004",
             "AlexMI",
+            "Liu2024",
+            "Kalunga2016",
+            "MAMEM2",
+            "MAMEM3",
+            "Nakanishi2015",
+            "Wang2021Combined",
+            "SleepPhysionet",
             "all",
             "mi",
             "ssvep",
+            "sleep",
         ],
     )
     parser.add_argument("--device", type=str, default="cpu", choices=["cpu", "cuda"])
@@ -88,9 +96,10 @@ def main():
     model_name = args.model_name
     if (args.dataset == "all") or (args.dataset == "mi"):
         datasets = ["BNCI2014_001", "BNCI2014_002", "BNCI2014_004"]
-        # datasets = ['AlexMI',]
     elif args.dataset == "ssvep":
         datasets = ["Kalunga2016", "Nakanishi2015", "Wang2021Combined"]
+    elif args.dataset == "sleep":
+        datasets = ["SleepPhysionet"]
     else:
         datasets = [args.dataset]
     device = args.device
@@ -145,6 +154,9 @@ def main():
             print(f"{dataset} subjects: {subjects}")
         elif dataset == "Wang2021Combined":
             subjects = SSVEP_DataLoader.get_subjects("Wang2021Combined")
+            print(f"{dataset} subjects: {subjects}")
+        elif dataset == "SleepPhysionet":
+            subjects = Sleep_Loader.get_subjects("SleepPhysionet")
             print(f"{dataset} subjects: {subjects}")
         else:
             subjects = [1]  # Default for dummy_dataset or unknown datasets
