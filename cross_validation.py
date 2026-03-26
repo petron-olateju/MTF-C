@@ -101,7 +101,7 @@ def main(
         bandpass_filtering,
     ]
 
-    SSVEP_DATASETS = {"Kalunga2016" "Nakanishi2015", "Wang2016"}
+    SSVEP_DATASETS = ["Kalunga2016", "Nakanishi2015", "Wang2016"]
 
     if args.dataset == "dummy_dataset":
         X = np.random.randn(5, 3, 1000)
