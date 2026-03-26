@@ -167,6 +167,7 @@ def main():
                     stft_reconstruction_loss,
                     experiment,
                     hyperparameters,
+                    model_configs,
                 ) = cross_validation(mthd_args, experiment)
                 all_accuracies = all_accuracies + accuracy
                 all_kappas = all_kappas + kappa
@@ -175,13 +176,16 @@ def main():
                 if not run_config:
                     run_config.update(
                         {
-                            "val_size": hyperparameters.val_size,
-                            "n_iter": hyperparameters.n_iter,
-                            "eval_inter": hyperparameters.eval_inter,
-                            "folds": hyperparameters.folds,
-                            "n_repeats": hyperparameters.n_repeats,
-                            "lr": hyperparameters.lr,
-                            "batch_size": hyperparameters.batch_size,
+                            "training": {
+                                "val_size": hyperparameters.val_size,
+                                "n_iter": hyperparameters.n_iter,
+                                "eval_inter": hyperparameters.eval_inter,
+                                "folds": hyperparameters.folds,
+                                "n_repeats": hyperparameters.n_repeats,
+                                "lr": hyperparameters.lr,
+                                "batch_size": hyperparameters.batch_size,
+                            },
+                            "model": model_configs,
                         }
                     )
 
@@ -247,7 +251,13 @@ def main():
 
             all_results.setdefault(args.model_name, {}).setdefault(
                 run_timestamp, {}
-            ).update({"config": run_config, "results": dataset_results})
+            ).update(
+                {
+                    "experiment_description": args.experiment_description,
+                    "config": run_config,
+                    "results": dataset_results,
+                }
+            )
 
             with open(results_yaml_path, "w") as f:
                 yaml.dump(all_results, f, default_flow_style=False, sort_keys=False)

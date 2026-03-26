@@ -297,12 +297,15 @@ class TestMockGridSearch:
                 batch_size=64,
             )
 
+            model_configs = {"patch_size": 6, "filter_banks": 7}
+
             return (
                 accuracy,
                 kappa,
                 stft_reconstruction_loss,
                 experiment,
                 hyperparameters,
+                model_configs,
             )
 
         return mock_cv, call_count

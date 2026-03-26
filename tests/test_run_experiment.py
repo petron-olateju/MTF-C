@@ -314,11 +314,14 @@ class TestResultsYAML:
         timestamp = "2024-01-01T00:00:00"
 
         run_config = {
-            "val_size": 0.2,
-            "n_iter": 100,
-            "folds": 5,
-            "lr": 0.001,
-            "batch_size": 64,
+            "training": {
+                "val_size": 0.2,
+                "n_iter": 100,
+                "folds": 5,
+                "lr": 0.001,
+                "batch_size": 64,
+            },
+            "model": {"patch_size": 6, "filter_banks": 7},
         }
         dataset_results = {
             dataset: {
@@ -357,7 +360,10 @@ class TestResultsYAML:
             ]
             == 0.85
         )
-        assert loaded_results[model_name][timestamp]["config"]["folds"] == 5
+        assert loaded_results[model_name][timestamp]["config"]["training"]["folds"] == 5
+        assert (
+            loaded_results[model_name][timestamp]["config"]["model"]["patch_size"] == 6
+        )
 
         with open(results_yaml_path, "w") as f:
             yaml.dump(all_results, f, default_flow_style=False, sort_keys=False)
@@ -387,9 +393,13 @@ class TestResultsYAML:
         existing_results = {
             "mtf_c": {
                 "2024-01-01T00:00:00": {
+                    "experiment_description": "Test experiment",
                     "config": {
-                        "val_size": 0.2,
-                        "folds": 5,
+                        "training": {
+                            "val_size": 0.2,
+                            "folds": 5,
+                        },
+                        "model": {"patch_size": 6},
                     },
                     "results": {
                         "BNCI2014_001": {
@@ -406,9 +416,12 @@ class TestResultsYAML:
 
         new_timestamp = "2024-01-02T00:00:00"
         new_config = {
-            "val_size": 0.2,
-            "folds": 5,
-            "lr": 0.001,
+            "training": {
+                "val_size": 0.2,
+                "folds": 5,
+                "lr": 0.001,
+            },
+            "model": {"patch_size": 6, "filter_banks": 7},
         }
         new_dataset_results = {
             "BNCI2014_001": {
@@ -423,6 +436,7 @@ class TestResultsYAML:
 
         all_results.setdefault("mtf_c", {}).setdefault(new_timestamp, {}).update(
             {
+                "experiment_description": "New experiment",
                 "config": new_config,
                 "results": new_dataset_results,
             }
@@ -442,7 +456,9 @@ class TestResultsYAML:
             ]["mean"]
             == 0.85
         )
-        assert loaded["mtf_c"]["2024-01-02T00:00:00"]["config"]["lr"] == 0.001
+        assert (
+            loaded["mtf_c"]["2024-01-02T00:00:00"]["config"]["training"]["lr"] == 0.001
+        )
 
         with open(results_yaml_path, "w") as f:
             yaml.dump(all_results, f, default_flow_style=False)
@@ -468,9 +484,8 @@ class TestResultsYAML:
 
         timestamp = "2024-01-01T00:00:00"
         run_config = {
-            "folds": 5,
-            "lr": 0.001,
-            "batch_size": 64,
+            "training": {"folds": 5, "lr": 0.001, "batch_size": 64},
+            "model": {"patch_size": 6, "filter_banks": 7},
         }
         dataset_results = {}
         for dataset in ["BNCI2014_001", "BNCI2014_002"]:
@@ -499,27 +514,7 @@ class TestResultsYAML:
         assert "results" in loaded["mtf_c"][timestamp]
         assert "BNCI2014_001" in loaded["mtf_c"][timestamp]["results"]
         assert "BNCI2014_002" in loaded["mtf_c"][timestamp]["results"]
-        assert loaded["mtf_c"][timestamp]["config"]["folds"] == 5
-        assert (
-            loaded["mtf_c"][timestamp]["results"]["BNCI2014_001"]["accuracy"]["mean"]
-            == 0.85
-        )
-        assert (
-            loaded["mtf_c"][timestamp]["results"]["BNCI2014_002"]["accuracy"]["mean"]
-            == 0.85
-        )
-
-        with open(results_yaml_path, "w") as f:
-            yaml.dump(all_results, f, default_flow_style=False, sort_keys=False)
-
-        with open(results_yaml_path, "r") as f:
-            loaded = yaml.safe_load(f)
-
-        assert timestamp in loaded["mtf_c"]
-        assert "config" in loaded["mtf_c"][timestamp]
-        assert "results" in loaded["mtf_c"][timestamp]
-        assert "BNCI2014_001" in loaded["mtf_c"][timestamp]["results"]
-        assert "BNCI2014_002" in loaded["mtf_c"][timestamp]["results"]
+        assert loaded["mtf_c"][timestamp]["config"]["training"]["folds"] == 5
         assert (
             loaded["mtf_c"][timestamp]["results"]["BNCI2014_001"]["accuracy"]["mean"]
             == 0.85
@@ -537,7 +532,11 @@ class TestResultsYAML:
         results_yaml_path = os.path.join(yaml_dir, "results.yaml")
 
         timestamp = "2024-01-01T00:00:00"
-        run_config = {"folds": 5, "lr": 0.001}
+        run_config = {
+            "training": {"folds": 5, "lr": 0.001},
+            "model": {"patch_size": 6, "filter_banks": 7},
+        }
+        experiment_description = "Test run"
         dataset_results = {
             "BNCI2014_001": {
                 "accuracy": {"mean": 0.85, "std": 0.05},
@@ -570,27 +569,7 @@ class TestResultsYAML:
         assert "results" in loaded["mtf_c"][timestamp]
         assert "BNCI2014_001" in loaded["mtf_c"][timestamp]["results"]
         assert "BNCI2014_002" in loaded["mtf_c"][timestamp]["results"]
-        assert loaded["mtf_c"][timestamp]["config"]["folds"] == 5
-        assert (
-            loaded["mtf_c"][timestamp]["results"]["BNCI2014_001"]["accuracy"]["mean"]
-            == 0.85
-        )
-        assert (
-            loaded["mtf_c"][timestamp]["results"]["BNCI2014_002"]["accuracy"]["mean"]
-            == 0.80
-        )
-
-        with open(results_yaml_path, "w") as f:
-            yaml.dump(all_results, f, default_flow_style=False)
-
-        with open(results_yaml_path, "r") as f:
-            loaded = yaml.safe_load(f)
-
-        assert timestamp in loaded["mtf_c"]
-        assert "config" in loaded["mtf_c"][timestamp]
-        assert "results" in loaded["mtf_c"][timestamp]
-        assert "BNCI2014_001" in loaded["mtf_c"][timestamp]["results"]
-        assert "BNCI2014_002" in loaded["mtf_c"][timestamp]["results"]
+        assert loaded["mtf_c"][timestamp]["config"]["training"]["folds"] == 5
         assert (
             loaded["mtf_c"][timestamp]["results"]["BNCI2014_001"]["accuracy"]["mean"]
             == 0.85
@@ -608,7 +587,10 @@ class TestResultsYAML:
         results_yaml_path = os.path.join(yaml_dir, "results.yaml")
 
         timestamp = "2024-01-01T00:00:00"
-        run_config = {"folds": 5, "lr": 0.001, "batch_size": 32}
+        run_config = {
+            "training": {"folds": 5, "lr": 0.001, "batch_size": 32},
+            "model": {"patch_size": 6},
+        }
         dataset_results = {
             "BNCI2014_001": {
                 "accuracy": {"mean": 0.75, "std": 0.08},
@@ -643,7 +625,9 @@ class TestResultsYAML:
             ]
             is None
         )
-        assert loaded["db_conformer"][timestamp]["config"]["batch_size"] == 32
+        assert (
+            loaded["db_conformer"][timestamp]["config"]["training"]["batch_size"] == 32
+        )
 
         with open(results_yaml_path, "w") as f:
             yaml.dump(all_results, f, default_flow_style=False)
@@ -687,12 +671,14 @@ class TestMockExperiment:
                 lr=0.001,
                 batch_size=64,
             )
+            model_configs = {"patch_size": 6, "filter_banks": 7}
             return (
                 accuracy,
                 kappa,
                 stft_reconstruction_loss,
                 experiment,
                 hyperparameters,
+                model_configs,
             )
 
         return mock_cv, call_count
