@@ -110,7 +110,7 @@ def main():
     elif args.dataset == "sleep":
         datasets = ["SleepPhysionet"]
     elif args.dataset == "resting_state":
-        datasets = ["Cattan2019_PHMD", "Rodrigues2017"]     # Excluded Hinss2021, too short (2s length)
+        datasets = ["Cattan2019_PHMD"]     # Excluded Hinss2021, too short (2s length), Rodrigues2017 (too short for five-fold CV)
     else:
         datasets = [args.dataset]
     device = args.device
