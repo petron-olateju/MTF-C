@@ -327,3 +327,171 @@ mtf_c:
           mean: 0.35000000000000003
           std: 0.32787192621510003
         stft_reconstruction_loss: null
+  '2026-03-26T21:21:16.026554':
+    experiment_description: MTFC + FilterBanks (No STFT reconstruction, f_t_s branch
+      method) base performance on Resting datasets, frequency spectrum reconstruction
+      included
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 32
+      model:
+        patch_size: 100
+        filter_banks: 11
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: f_t_s
+        chn_attn_flag: false
+        fts_attn_flag: false
+        sst_method: filter_banks
+        stft_reconstruction: frequency
+        ct_shared_projection: false
+        sst_shared_projection: false
+        patch_emb_size: 40
+        n_heads_patch: 4
+        sst_emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+    results:
+      Cattan2019_PHMD:
+        accuracy:
+          mean: 0.6666666666666666
+          std: 0.20548046676563253
+        kappa:
+          mean: 0.3333333333333334
+          std: 0.41096093353126506
+        stft_reconstruction_loss: 0.05119398011205096
+  '2026-03-26T21:25:24.178327':
+    experiment_description: MTFC + FilterBanks (No STFT reconstruction, f_t_s branch
+      method) base performance on Resting datasets, frequency spectrum reconstruction
+      included
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 32
+      model:
+        patch_size: 100
+        filter_banks: 100
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: f_t_s
+        chn_attn_flag: false
+        fts_attn_flag: false
+        sst_method: filter_banks
+        stft_reconstruction: frequency
+        ct_shared_projection: false
+        sst_shared_projection: false
+        patch_emb_size: 40
+        n_heads_patch: 4
+        sst_emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+    results:
+      Cattan2019_PHMD:
+        accuracy:
+          mean: 0.7166666666666667
+          std: 0.151840559652405
+        kappa:
+          mean: 0.4333333333333333
+          std: 0.30368111930480995
+        stft_reconstruction_loss: 0.1540295410901308
+  '2026-03-26T21:31:45.401878':
+    experiment_description: MTFC + FilterBanks (No STFT reconstruction, f_t_s branch
+      method) base performance on Resting datasets, frequency spectrum reconstruction
+      included
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 32
+      model:
+        patch_size: 100
+        filter_banks: 125
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: f_t_s
+        chn_attn_flag: false
+        fts_attn_flag: false
+        sst_method: filter_banks
+        stft_reconstruction: frequency
+        ct_shared_projection: false
+        sst_shared_projection: false
+        patch_emb_size: 40
+        n_heads_patch: 4
+        sst_emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+    results:
+      Cattan2019_PHMD:
+        accuracy:
+          mean: 0.6833333333333332
+          std: 0.16244657241348273
+        kappa:
+          mean: 0.3666666666666667
+          std: 0.32489314482696546
+        stft_reconstruction_loss: 0.21886293279627958
+  '2026-03-26T21:34:09.271806':
+    experiment_description: MTFC + FilterBanks (No STFT reconstruction, f_t_s branch
+      method) base performance on Resting datasets, frequency spectrum reconstruction
+      included
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 32
+      model:
+        patch_size: 100
+        filter_banks: 250
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: f_t_s
+        chn_attn_flag: false
+        fts_attn_flag: false
+        sst_method: filter_banks
+        stft_reconstruction: frequency
+        ct_shared_projection: false
+        sst_shared_projection: false
+        patch_emb_size: 40
+        n_heads_patch: 4
+        sst_emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+    results:
+      Cattan2019_PHMD:
+        accuracy:
+          mean: 0.6666666666666666
+          std: 0.17950549357115014
+        kappa:
+          mean: 0.3333333333333334
+          std: 0.35901098714230023
+        stft_reconstruction_loss: 0.24188545880218348

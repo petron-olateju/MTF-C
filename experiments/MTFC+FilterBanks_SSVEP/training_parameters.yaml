@@ -1,6 +1,6 @@
 baseline: null
 description: MTFC + FilterBanks (No STFT reconstruction, f_t_s branch method) base
-  performance on SSVEP datasets
+  performance on SSVEP datasets, frequency spectrum reconstruction included
 name: MTFC+FilterBanks_SSVEP
 parameters:
   Dataset-Details:
@@ -50,7 +50,7 @@ parameters:
       n_trials: 800
   Model-Hyperparameters:
     channel_depth: 1
-    filter_banks: 11
+    filter_banks: 100
     freq_downsample: 1
     patch_embedding_size: 40
     patch_size: 100

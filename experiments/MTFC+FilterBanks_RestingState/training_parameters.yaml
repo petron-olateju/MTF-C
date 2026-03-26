@@ -1,6 +1,6 @@
 baseline: null
 description: MTFC + FilterBanks (No STFT reconstruction, f_t_s branch method) base
-  performance on Resting datasets
+  performance on Resting datasets, frequency spectrum reconstruction included
 name: MTFC+FilterBanks_RestingState
 parameters:
   Dataset-Details:
