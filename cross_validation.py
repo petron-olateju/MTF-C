@@ -20,6 +20,7 @@ from utils.preprocessing import EA, EA_online, bandpass_filtering
 from utils.data_loader import (
     EEGDataset,
     MI_DataLoader,
+    SSVEP_DataLoader,
 )
 from utils.experiment_recorder import Parameter, Experiment
 from models.DBConformer import DBConformer
@@ -53,6 +54,11 @@ def parse_args():
             "BNCI2015_004",
             "Liu2024",
             "AlexMI",
+            "Kalunga2016",
+            "MAMEM2",
+            "MAMEM3",
+            "Nakanishi2015",
+            "Wang2016",
         ],
     )
     parser.add_argument("--subject", type=int, default=1)
@@ -95,11 +101,22 @@ def main(
         bandpass_filtering,
     ]
 
+    SSVEP_DATASETS = {"Kalunga2016", "MAMEM2", "MAMEM3", "Nakanishi2015", "Wang2016"}
+
     if args.dataset == "dummy_dataset":
         X = np.random.randn(5, 3, 1000)
         y = np.random.randint(0, 2, size=5)
 
         dataset_info = {"n_ch": 3, "n_times": 1000, "n_classes": 2, "fs": 250}
+    elif args.dataset in SSVEP_DATASETS:
+        loader = SSVEP_DataLoader(
+            dataset_name=args.dataset,
+            subject=args.subject,
+            preprocessing_pipeline=PREPROCESSING,
+            t0=0.0,
+            tmax=4.0,
+        )
+        X, y, dataset_info = loader.get_data()
     else:
         loader = MI_DataLoader(
             dataset_name=args.dataset,
