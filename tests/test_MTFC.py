@@ -360,7 +360,7 @@ def test_mtfc_with_dummy_dataset():
     with open("./configs/test_cv_config.yaml", "w") as f:
         yaml.dump(quick_config, f)
 
-    all_accuracies, all_kappas, all_stft_loss, _, _ = cv_main(
+    all_accuracies, all_kappas, all_stft_loss, _, _, _ = cv_main(
         args=args, config="test_cv_config", model_configs=quick_config["mtf_c"]
     )
 
