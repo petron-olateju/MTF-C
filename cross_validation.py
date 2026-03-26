@@ -610,6 +610,7 @@ def main(
         all_stft_reconstruction_loss,
         experiment,
         hyperparameters,
+        model_configs,
     )
 
 
