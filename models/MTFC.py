@@ -499,6 +499,55 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
             dim=1,
         )
         return out
+    
+
+class FilterBanksEmbedding_v4(nn.Module):
+    def __init__(
+        self, n_channels, n_filter_banks, emb_size=40,
+        dropout=0.5, fs=250
+    ):
+        super().__init__()
+        self.F = n_filter_banks
+        self.D = emb_size
+
+        # Multiple kernel sizes covering different frequency scales
+        # Small kernel → sensitive to high frequencies
+        # Large kernel → sensitive to low frequencies
+        kernel_sizes = [
+            max(3, int(fs / 30)),   # ~8 samples @ 250Hz → gamma range
+            max(3, int(fs / 13)),   # ~19 samples → beta range
+            max(3, int(fs / 8)),    # ~31 samples → alpha range
+            max(3, int(fs / 4)),    # ~62 samples → theta range
+            max(3, int(fs / 1)),    # ~250 samples → delta range
+        ]
+        # Make all odd for symmetric padding
+        kernel_sizes = [k if k % 2 == 1 else k + 1 for k in kernel_sizes]
+        self.n_scales = len(kernel_sizes)
+
+        # One depthwise conv per scale — each sensitive to a different frequency range
+        self.scale_convs = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv1d(n_channels, n_channels, kernel_size=k,
+                          padding=k // 2, groups=n_channels, bias=False),
+                nn.BatchNorm1d(n_channels),
+                nn.ELU(),
+                nn.Dropout(dropout),
+                nn.AdaptiveAvgPool1d(1),
+                nn.Flatten(),   # (B, n_channels)
+            )
+            for k in kernel_sizes
+        ])
+
+        # Project concatenated multi-scale features to F*D
+        # Input dim: n_channels * n_scales
+        self.bank_heads = nn.Linear(n_channels * self.n_scales, n_filter_banks * emb_size)
+
+    def forward(self, x):  # x: (B, C, T)
+        # Extract features at each temporal scale independently
+        scale_features = [conv(x) for conv in self.scale_convs]  # list of (B, C)
+        z = torch.cat(scale_features, dim=-1)                     # (B, C * n_scales)
+        out = self.bank_heads(z)                                   # (B, F*D)
+        return out.view(x.size(0), self.F, self.D)                 # (B, F, D)
 
 
 class FilterBanksEmbedding_v3(nn.Module):
@@ -1004,8 +1053,8 @@ class MTFC(nn.Module):
                 time_points=args.time_sample_num,
                 num_classes=args.class_num,
             )
-            self.frequency_embedding = FilterBanksEmbedding_v3(
-                n_channels=self.C, n_filter_banks=self.F, emb_size=self.D
+            self.frequency_embedding = FilterBanksEmbedding_v4(
+                n_channels=self.C, n_filter_banks=self.F, emb_size=self.D, fs=self.fs
             )
             if self.stft_reconstruction == "frequency":
                 freq_dim = self.FTS if self.sst_shared_projection else self.D
