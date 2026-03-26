@@ -21,6 +21,9 @@ from moabb.datasets import (
 )
 from moabb.paradigms import MotorImagery, SSVEP
 
+from braindecode.datasets import SleepPhysionet
+from braindecode.preprocessing import create_windows_from_events
+
 
 def chronological_stratified_kfold(y, n_splits=5):
     """Split each class chronologically into n_splits, then merge."""
@@ -827,6 +830,133 @@ class SSVEP_DataLoader:
     def get_available_datasets():
         """Get list of available dataset names."""
         return list(SSVEP_DataLoader.DATASETS.keys())
+
+
+class Sleep_Loader:
+    """Sleep Data Loader class for loading sleep stage classification datasets from braindecode."""
+
+    DATASETS = {
+        "SleepPhysionet": SleepPhysionet,
+    }
+
+    def __init__(
+        self,
+        dataset_name,
+        subject,
+        preprocessing_pipeline=None,
+        window_size_s=30,
+        window_stride_s=30,
+        crop_wake_mins=30,
+        crop=None,
+    ):
+        """Initialize Sleep_Loader.
+
+        Args:
+            dataset_name: Name of the dataset ('SleepPhysionet')
+            subject: Subject ID (integer)
+            preprocessing_pipeline: Optional list of preprocessing functions
+            window_size_s: Window size in seconds (default: 30)
+            window_stride_s: Window stride in seconds (default: 30)
+            crop_wake_mins: Minutes of wake time to keep at start/end (default: 30)
+            crop: Tuple (start, end) to crop raw files, e.g. (0, 3600*3)
+        """
+        self.dataset_name = dataset_name
+        self.subject = subject
+        self.preprocessing_pipeline = preprocessing_pipeline
+        self.window_size_s = window_size_s
+        self.window_stride_s = window_stride_s
+        self.crop_wake_mins = crop_wake_mins
+        self.crop = crop
+
+        if dataset_name not in self.DATASETS:
+            raise ValueError(
+                f"Unknown dataset: {dataset_name}. Available: {list(self.DATASETS.keys())}"
+            )
+
+        self.dataset = self.DATASETS[dataset_name](
+            subject_ids=[subject],
+            crop_wake_mins=crop_wake_mins,
+            crop=crop,
+        )
+        self._load_data()
+
+    def _load_data(self):
+        """Load data based on dataset name."""
+        load_methods = {
+            "SleepPhysionet": self._load_SleepPhysionet,
+        }
+
+        self.X, self.y, self.info = load_methods[self.dataset_name]()
+
+    def _apply_preprocessing(self, X):
+        """Apply preprocessing pipeline to data."""
+        if self.preprocessing_pipeline is not None:
+            if not isinstance(self.preprocessing_pipeline, list):
+                raise ValueError(
+                    "preprocessing_pipeline argument should be a list of preprocessing functions"
+                )
+            for fn in self.preprocessing_pipeline:
+                X = fn(X)
+        return X
+
+    def _load_SleepPhysionet(self) -> Tuple:
+        """Load SleepPhysionet dataset."""
+        sfreq = self.dataset.datasets[0].raw.info["sfreq"]
+
+        windows_dataset = create_windows_from_events(
+            self.dataset,
+            window_size_s=self.window_size_s,
+            window_stride_s=self.window_stride_s,
+            preload=True,
+        )
+
+        window_idx = windows_dataset.description["original_index"].values
+        X = np.array([windows_dataset[i][0] for i in range(len(windows_dataset))])
+        y = np.array([windows_dataset[i][1] for i in range(len(windows_dataset))])
+
+        X = self._apply_preprocessing(X)
+
+        n_trials, n_ch, n_times = X.shape
+        info = {
+            "n_trials": n_trials,
+            "n_ch": n_ch,
+            "n_times": n_times,
+            "n_classes": len(np.unique(y)),
+            "fs": sfreq,
+        }
+
+        return (X, y, info)
+
+    def get_data(self):
+        """Return loaded data.
+
+        Returns:
+            Tuple: (X, y, info) where X is the data, y are labels, info is metadata dict
+        """
+        return self.X, self.y, self.info
+
+    @staticmethod
+    def get_subjects(dataset_name):
+        """Get list of available subjects for a dataset.
+
+        Args:
+            dataset_name: Name of the dataset
+
+        Returns:
+            List of subject IDs
+        """
+        if dataset_name not in Sleep_Loader.DATASETS:
+            raise ValueError(
+                f"Unknown dataset: {dataset_name}. Available: {list(Sleep_Loader.DATASETS.keys())}"
+            )
+
+        dataset = Sleep_Loader.DATASETS[dataset_name]()
+        return dataset.subject_ids
+
+    @staticmethod
+    def get_available_datasets():
+        """Get list of available dataset names."""
+        return list(Sleep_Loader.DATASETS.keys())
 
 
 # ============================================================================
