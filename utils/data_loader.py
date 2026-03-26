@@ -18,8 +18,11 @@ from moabb.datasets import (
     Nakanishi2015,
     Wang2016,
     Wang2021Combined,
+    Cattan2019_PHMD,
+    Hinss2021,
+    Rodrigues2017,
 )
-from moabb.paradigms import MotorImagery, SSVEP
+from moabb.paradigms import MotorImagery, SSVEP, RestingStateToP300Adapter
 
 from braindecode.datasets import SleepPhysionet
 from braindecode.preprocessing import create_windows_from_events
@@ -957,6 +960,168 @@ class Sleep_Loader:
     def get_available_datasets():
         """Get list of available dataset names."""
         return list(Sleep_Loader.DATASETS.keys())
+
+
+class RestingState_DataLoader:
+    """Resting State Data Loader class for loading resting state EEG datasets from moabb."""
+
+    DATASETS = {
+        "Cattan2019_PHMD": Cattan2019_PHMD,
+        "Hinss2021": Hinss2021,
+        "Rodrigues2017": Rodrigues2017,
+    }
+
+    DEFAULT_EVENTS = {
+        "Cattan2019_PHMD": {"rest": 1},
+        "Hinss2021": {"easy": 2, "diff": 3},
+        "Rodrigues2017": {"eyes_open": 1, "eyes_closed": 2},
+    }
+
+    def __init__(
+        self,
+        dataset_name,
+        subject,
+        preprocessing_pipeline=None,
+        tmin=10,
+        tmax=50,
+        fmin=1,
+        fmax=35,
+        resample=128,
+    ):
+        """Initialize RestingState_DataLoader.
+
+        Args:
+            dataset_name: Name of the dataset ('Cattan2019_PHMD', 'Hinss2021', 'Rodrigues2017')
+            subject: Subject ID (integer)
+            preprocessing_pipeline: Optional list of preprocessing functions
+            tmin: Start time for epoching (seconds, default: 10)
+            tmax: End time for epoching (seconds, default: 50)
+            fmin: Low cutoff frequency for bandpass filter (Hz, default: 1)
+            fmax: High cutoff frequency for bandpass filter (Hz, default: 35)
+            resample: Resampling rate (Hz, default: 128)
+        """
+        self.dataset_name = dataset_name
+        self.subject = subject
+        self.preprocessing_pipeline = preprocessing_pipeline
+        self.tmin = tmin
+        self.tmax = tmax
+        self.fmin = fmin
+        self.fmax = fmax
+        self.resample = resample
+
+        if dataset_name not in self.DATASETS:
+            raise ValueError(
+                f"Unknown dataset: {dataset_name}. Available: {list(self.DATASETS.keys())}"
+            )
+
+        self.dataset = self.DATASETS[dataset_name]()
+        self._load_data()
+
+    def _load_data(self):
+        """Load data based on dataset name."""
+        load_methods = {
+            "Cattan2019_PHMD": self._load_resting_state,
+            "Hinss2021": self._load_resting_state,
+            "Rodrigues2017": self._load_resting_state,
+        }
+
+        self.X, self.y, self.info = load_methods[self.dataset_name]()
+
+    def _get_paradigm(self):
+        """Get RestingState paradigm."""
+        events = self.DEFAULT_EVENTS.get(self.dataset_name)
+        return RestingStateToP300Adapter(
+            fmin=self.fmin,
+            fmax=self.fmax,
+            tmin=self.tmin,
+            tmax=self.tmax,
+            resample=self.resample,
+            events=events,
+        )
+
+    def _apply_preprocessing(self, X):
+        """Apply preprocessing pipeline to data."""
+        if self.preprocessing_pipeline is not None:
+            if not isinstance(self.preprocessing_pipeline, list):
+                raise ValueError(
+                    "preprocessing_pipeline argument should be a list of preprocessing functions"
+                )
+            for fn in self.preprocessing_pipeline:
+                X = fn(X)
+        return X
+
+    def _get_fs(self, subject):
+        """Get sampling frequency dynamically."""
+        raw = self.dataset.get_data(subjects=[subject])
+        first_session_key = list(raw[subject].keys())[0]
+        first_run_key = list(raw[subject][first_session_key].keys())[0]
+        return raw[subject][first_session_key][first_run_key].info["sfreq"]
+
+    def _load_resting_state(self) -> Tuple:
+        """Load resting state dataset."""
+        paradigm = self._get_paradigm()
+
+        s_x, s_y, metadata = paradigm.get_data(self.dataset, subjects=[self.subject])
+        s_x = np.array(s_x)
+
+        fs = self._get_fs(self.subject)
+
+        unique_classes = np.unique(s_y)
+        class_data = []
+        class_labels = []
+
+        for idx, class_name in enumerate(unique_classes):
+            class_idx = np.where(s_y == class_name)[0]
+            class_data.append(np.array(s_x[class_idx]))
+            class_labels.append(np.full(len(class_idx), idx))
+
+        X = np.vstack(class_data)
+        y = np.hstack(class_labels)
+
+        X = self._apply_preprocessing(X)
+
+        n_trials, n_ch, n_times = X.shape
+        info = {
+            "n_trials": n_trials,
+            "n_ch": n_ch,
+            "n_times": n_times,
+            "n_classes": len(np.unique(y)),
+            "fs": fs,
+            "class_names": unique_classes.tolist(),
+        }
+
+        return (X, y, info)
+
+    def get_data(self):
+        """Return loaded data.
+
+        Returns:
+            Tuple: (X, y, info) where X is the data, y are labels, info is metadata dict
+        """
+        return self.X, self.y, self.info
+
+    @staticmethod
+    def get_subjects(dataset_name):
+        """Get list of available subjects for a dataset.
+
+        Args:
+            dataset_name: Name of the dataset
+
+        Returns:
+            List of subject IDs
+        """
+        if dataset_name not in RestingState_DataLoader.DATASETS:
+            raise ValueError(
+                f"Unknown dataset: {dataset_name}. Available: {list(RestingState_DataLoader.DATASETS.keys())}"
+            )
+
+        dataset = RestingState_DataLoader.DATASETS[dataset_name]()
+        return dataset.subject_list
+
+    @staticmethod
+    def get_available_datasets():
+        """Get list of available dataset names."""
+        return list(RestingState_DataLoader.DATASETS.keys())
 
 
 # ============================================================================

@@ -29,6 +29,7 @@ from utils.data_loader import (
     get_subjects_Liu2024,
     get_subjects_AlexMI,
     SSVEP_DataLoader,
+    RestingState_DataLoader,
 )
 
 
@@ -330,6 +331,165 @@ class TestSSVEPDataLoader:
         """Test that all datasets can be loaded."""
         subjects = SSVEP_DataLoader.get_subjects(dataset)
         loader = SSVEP_DataLoader(dataset, subject=subjects[0])
+        X, y, info = loader.get_data()
+
+        assert X is not None
+        assert y is not None
+        assert info is not None
+        assert X.shape[0] > 0
+
+
+class TestRestingStateDataLoader:
+    """Tests for RestingState_DataLoader class."""
+
+    def test_get_available_datasets(self):
+        """Test that get_available_datasets returns correct list."""
+        datasets = RestingState_DataLoader.get_available_datasets()
+        assert isinstance(datasets, list)
+        assert "Cattan2019_PHMD" in datasets
+        assert "Hinss2021" in datasets
+        assert "Rodrigues2017" in datasets
+
+    def test_get_subjects_returns_list(self):
+        """Test that get_subjects returns a list of subject IDs."""
+        subjects = RestingState_DataLoader.get_subjects("Hinss2021")
+        assert isinstance(subjects, list)
+        assert len(subjects) > 0
+
+    def test_get_subjects_all_datasets(self):
+        """Test that get_subjects works for all resting state datasets."""
+        datasets = RestingState_DataLoader.get_available_datasets()
+        for ds in datasets:
+            subjects = RestingState_DataLoader.get_subjects(ds)
+            assert isinstance(subjects, list)
+            assert len(subjects) > 0
+
+    def test_invalid_dataset_raises_error(self):
+        """Test that invalid dataset name raises ValueError."""
+        with pytest.raises(ValueError):
+            RestingState_DataLoader("InvalidDataset", subject=1)
+
+    def test_invalid_subject_raises_error(self):
+        """Test that invalid subject raises appropriate error."""
+        with pytest.raises(Exception):
+            RestingState_DataLoader("Hinss2021", subject=9999)
+
+    def test_init_parameters(self):
+        """Test that RestingState_DataLoader accepts all parameters."""
+        loader = RestingState_DataLoader(
+            dataset_name="Hinss2021",
+            subject=1,
+            preprocessing_pipeline=None,
+            tmin=10,
+            tmax=50,
+            fmin=1,
+            fmax=35,
+            resample=128,
+        )
+        assert loader.dataset_name == "Hinss2021"
+        assert loader.subject == 1
+        assert loader.tmin == 10
+        assert loader.tmax == 50
+        assert loader.fmin == 1
+        assert loader.fmax == 35
+        assert loader.resample == 128
+
+    def test_default_parameters(self):
+        """Test default parameter values."""
+        loader = RestingState_DataLoader(
+            dataset_name="Hinss2021",
+            subject=1,
+        )
+        assert loader.tmin == 10
+        assert loader.tmax == 50
+        assert loader.fmin == 1
+        assert loader.fmax == 35
+        assert loader.resample == 128
+
+    @pytest.mark.skip(reason="Slow - requires MOABB data download")
+    def test_get_data_returns_tuple(self):
+        """Test that get_data returns tuple of (X, y, info)."""
+        loader = RestingState_DataLoader("Hinss2021", subject=1)
+        X, y, info = loader.get_data()
+
+        assert isinstance(X, np.ndarray)
+        assert isinstance(y, np.ndarray)
+        assert isinstance(info, dict)
+
+        assert X.ndim == 3
+        assert len(X) == len(y)
+
+        assert "n_trials" in info
+        assert "n_ch" in info
+        assert "n_times" in info
+        assert "n_classes" in info
+        assert "fs" in info
+
+    @pytest.mark.skip(reason="Slow - requires MOABB data download")
+    def test_data_shape_consistency(self):
+        """Test that X and y have consistent lengths."""
+        loader = RestingState_DataLoader("Hinss2021", subject=1)
+        X, y, info = loader.get_data()
+
+        assert X.shape[0] == len(y)
+        assert X.shape[1] == info["n_ch"]
+        assert X.shape[2] == info["n_times"]
+
+    @pytest.mark.skip(reason="Slow - requires MOABB data download")
+    def test_label_range(self):
+        """Test that labels are in valid range."""
+        loader = RestingState_DataLoader("Hinss2021", subject=1)
+        X, y, info = loader.get_data()
+
+        unique_labels = np.unique(y)
+        assert np.min(unique_labels) >= 0
+        assert np.max(unique_labels) < info["n_classes"]
+
+    @pytest.mark.skip(reason="Slow - requires MOABB data download")
+    def test_info_contains_class_names(self):
+        """Test that info dict contains class names."""
+        loader = RestingState_DataLoader("Hinss2021", subject=1)
+        X, y, info = loader.get_data()
+
+        assert "class_names" in info
+        assert isinstance(info["class_names"], list)
+
+    @pytest.mark.skip(reason="Slow - requires MOABB data download")
+    def test_preprocessing_pipeline_applied(self):
+        """Test that preprocessing pipeline is applied."""
+
+        def simple_preprocess(X):
+            return X - np.mean(X, axis=2, keepdims=True)
+
+        loader = RestingState_DataLoader(
+            dataset_name="Hinss2021",
+            subject=1,
+            preprocessing_pipeline=[simple_preprocess],
+        )
+        X, y, info = loader.get_data()
+
+        assert X is not None
+
+    @pytest.mark.skip(reason="Slow - requires MOABB data download")
+    def test_different_time_windows(self):
+        """Test loading with different time windows."""
+        loader1 = RestingState_DataLoader("Hinss2021", subject=1, tmin=10, tmax=40)
+        X1, y1, info1 = loader1.get_data()
+
+        loader2 = RestingState_DataLoader("Hinss2021", subject=1, tmin=20, tmax=50)
+        X2, y2, info2 = loader2.get_data()
+
+        assert X1.shape != X2.shape
+        assert info1["n_times"] != info2["n_times"]
+
+    @pytest.mark.skip(reason="Slow - requires MOABB data download")
+    @pytest.mark.parametrize(
+        "dataset", RestingState_DataLoader.get_available_datasets()
+    )
+    def test_all_datasets_loadable(self, dataset):
+        """Test that all resting state datasets can be loaded."""
+        subjects = RestingState_DataLoader.get_subjects(dataset)
+        loader = RestingState_DataLoader(dataset, subject=subjects[0])
         X, y, info = loader.get_data()
 
         assert X is not None

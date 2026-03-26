@@ -22,6 +22,7 @@ from utils.data_loader import (
     MI_DataLoader,
     SSVEP_DataLoader,
     Sleep_Loader,
+    RestingState_DataLoader,
 )
 from utils.experiment_recorder import Parameter, Experiment
 from models.DBConformer import DBConformer
@@ -61,6 +62,9 @@ def parse_args():
             "Nakanishi2015",
             "Wang2021Combined",
             "SleepPhysionet",
+            "Cattan2019_PHMD",
+            "Hinss2021",
+            "Rodrigues2017",
         ],
     )
     parser.add_argument("--subject", type=int, default=1)
@@ -105,12 +109,25 @@ def main(
 
     SSVEP_DATASETS = ["Kalunga2016", "Nakanishi2015", "Wang2021Combined"]
     SLEEP_DATASETS = ["SleepPhysionet"]
+    RESTING_STATE_DATASETS = ["Cattan2019_PHMD", "Hinss2021", "Rodrigues2017"]
 
     if args.dataset == "dummy_dataset":
         X = np.random.randn(5, 3, 1000)
         y = np.random.randint(0, 2, size=5)
 
         dataset_info = {"n_ch": 3, "n_times": 1000, "n_classes": 2, "fs": 250}
+    elif args.dataset in RESTING_STATE_DATASETS:
+        loader = RestingState_DataLoader(
+            dataset_name=args.dataset,
+            subject=args.subject,
+            preprocessing_pipeline=PREPROCESSING,
+            tmin=10,
+            tmax=50,
+            fmin=1,
+            fmax=35,
+            resample=128,
+        )
+        X, y, dataset_info = loader.get_data()
     elif args.dataset in SLEEP_DATASETS:
         loader = Sleep_Loader(
             dataset_name=args.dataset,

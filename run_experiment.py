@@ -18,7 +18,12 @@ from utils.data_loader import (
     get_subjects_BNCI2015_004,
     get_subjects_Liu2024,
 )
-from utils.data_loader import get_subjects_AlexMI, SSVEP_DataLoader, Sleep_Loader
+from utils.data_loader import (
+    get_subjects_AlexMI,
+    SSVEP_DataLoader,
+    Sleep_Loader,
+    RestingState_DataLoader,
+)
 from utils.experiment_recorder import Parameter, Experiment
 from cross_validation import main as cross_validation
 
@@ -60,10 +65,14 @@ def parse_args():
             "Nakanishi2015",
             "Wang2021Combined",
             "SleepPhysionet",
+            "Cattan2019_PHMD",
+            "Hinss2021",
+            "Rodrigues2017",
             "all",
             "mi",
             "ssvep",
             "sleep",
+            "resting_state",
         ],
     )
     parser.add_argument("--device", type=str, default="cpu", choices=["cpu", "cuda"])
@@ -100,6 +109,8 @@ def main():
         datasets = ["Kalunga2016", "Nakanishi2015", "Wang2021Combined"]
     elif args.dataset == "sleep":
         datasets = ["SleepPhysionet"]
+    elif args.dataset == "resting_state":
+        datasets = ["Cattan2019_PHMD", "Hinss2021", "Rodrigues2017"]
     else:
         datasets = [args.dataset]
     device = args.device
@@ -157,6 +168,9 @@ def main():
             print(f"{dataset} subjects: {subjects}")
         elif dataset == "SleepPhysionet":
             subjects = Sleep_Loader.get_subjects("SleepPhysionet")
+            print(f"{dataset} subjects: {subjects}")
+        elif dataset in ["Cattan2019_PHMD", "Hinss2021", "Rodrigues2017"]:
+            subjects = RestingState_DataLoader.get_subjects(dataset)
             print(f"{dataset} subjects: {subjects}")
         else:
             subjects = [1]  # Default for dummy_dataset or unknown datasets
