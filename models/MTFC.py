@@ -1053,8 +1053,8 @@ class MTFC(nn.Module):
                 time_points=args.time_sample_num,
                 num_classes=args.class_num,
             )
-            self.frequency_embedding = FilterBanksEmbedding_v4(
-                n_channels=self.C, n_filter_banks=self.F, emb_size=self.D, fs=self.fs
+            self.frequency_embedding = FilterBanksEmbedding_v3(
+                n_channels=self.C, n_filter_banks=self.F, emb_size=self.D
             )
             if self.stft_reconstruction == "frequency":
                 freq_dim = self.FTS if self.sst_shared_projection else self.D
