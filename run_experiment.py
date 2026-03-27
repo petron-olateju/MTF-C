@@ -68,6 +68,7 @@ def parse_args():
             "Cattan2019_PHMD",
             "Hinss2021",
             "Rodrigues2017",
+            "ButtonToneSZ",
             "all",
             "mi",
             "ssvep",
@@ -119,7 +120,8 @@ def main():
         datasets = ["SleepPhysionet"]
     elif args.dataset == "resting_state":
         datasets = [
-            "Cattan2019_PHMD"
+            "Cattan2019_PHMD",
+            "ButtonToneSZ",
         ]  # Excluded Hinss2021, too short (2s length), Rodrigues2017 (too short for five-fold CV)
     else:
         datasets = [args.dataset]

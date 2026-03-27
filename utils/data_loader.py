@@ -27,6 +27,190 @@ from moabb.paradigms import MotorImagery, SSVEP, RestingStateToP300Adapter
 from braindecode.datasets import SleepPhysionet
 from braindecode.preprocessing import create_windows_from_events
 
+import os
+import kaggle
+from kaggle.api.kaggle_api_extended import KaggleApi
+import mne
+
+
+class ButtonToneSZ:
+    """Custom dataset for Kaggle button-tone-sz (Schizophrenia) EEG data.
+
+    This dataset contains EEG recordings from 81 subjects (49 Schizophrenia patients + 32 Healthy Controls).
+    Data is from a basic sensory task involving button-press and playback tones.
+
+    Dataset URL: https://www.kaggle.com/datasets/broach/button-tone-sz
+    """
+
+    KAGGLE_DATASET = "broach/button-tone-sz"
+    SUBJECTS_INFO = {
+        1: "sz",
+        2: "sz",
+        3: "sz",
+        4: "sz",
+        5: "sz",
+        6: "sz",
+        7: "sz",
+        8: "sz",
+        9: "sz",
+        10: "sz",
+        11: "sz",
+        12: "sz",
+        13: "sz",
+        14: "sz",
+        15: "sz",
+        16: "sz",
+        17: "sz",
+        18: "sz",
+        19: "sz",
+        20: "sz",
+        21: "sz",
+        22: "sz",
+        23: "sz",
+        24: "sz",
+        25: "sz",
+        26: "sz",
+        27: "sz",
+        28: "sz",
+        29: "sz",
+        30: "sz",
+        31: "sz",
+        32: "sz",
+        33: "sz",
+        34: "sz",
+        35: "sz",
+        36: "sz",
+        37: "sz",
+        38: "sz",
+        39: "sz",
+        40: "sz",
+        41: "sz",
+        42: "sz",
+        43: "sz",
+        44: "sz",
+        45: "sz",
+        46: "sz",
+        47: "sz",
+        48: "sz",
+        49: "sz",
+        50: "hc",
+        51: "hc",
+        52: "hc",
+        53: "hc",
+        54: "hc",
+        55: "hc",
+        56: "hc",
+        57: "hc",
+        58: "hc",
+        59: "hc",
+        60: "hc",
+        61: "hc",
+        62: "hc",
+        63: "hc",
+        64: "hc",
+        65: "hc",
+        66: "hc",
+        67: "hc",
+        68: "hc",
+        69: "hc",
+        70: "hc",
+        71: "hc",
+        72: "hc",
+        73: "hc",
+        74: "hc",
+        75: "hc",
+        76: "hc",
+        77: "hc",
+        78: "hc",
+        79: "hc",
+        80: "hc",
+        81: "hc",
+    }
+
+    def __init__(self, path_to_data=None):
+        """Initialize ButtonToneSZ dataset.
+
+        Args:
+            path_to_data: Path to locally downloaded dataset. If None, will download from Kaggle.
+        """
+        if path_to_data is None:
+            path_to_data = os.path.expanduser("~/.mne_data/ButtonToneSZ")
+
+        self.path_to_data = path_to_data
+
+        if not os.path.exists(path_to_data):
+            self._download()
+
+    def _download(self):
+        """Download dataset from Kaggle."""
+        os.makedirs(self.path_to_data, exist_ok=True)
+
+        try:
+            api = KaggleApi()
+            api.authenticate()
+            api.dataset_download_files(
+                self.KAGGLE_DATASET, path=self.path_to_data, unzip=True
+            )
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to download dataset from Kaggle: {e}. "
+                "Please ensure Kaggle API is configured. "
+                "You can download manually from: https://www.kaggle.com/datasets/broach/button-tone-sz"
+            )
+
+    def get_data(self, subjects=None):
+        """Get data for specified subjects.
+
+        Args:
+            subjects: List of subject IDs. If None, returns all subjects.
+
+        Returns:
+            Dictionary: {subject_id: {session_id: {run_id: Raw}}}
+        """
+        if subjects is None:
+            subjects = list(self.SUBJECTS_INFO.keys())
+
+        data = {}
+        set_files = sorted(
+            [f for f in os.listdir(self.path_to_data) if f.endswith(".set")]
+        )
+
+        for idx, subject_id in enumerate(subjects):
+            if idx < len(set_files):
+                set_file = os.path.join(self.path_to_data, set_files[idx])
+                try:
+                    raw = mne.io.read_raw_eeglab(set_file, preload=False, verbose=False)
+                    data[subject_id] = {"session_0": {"run_0": raw}}
+                except Exception as e:
+                    print(f"Warning: Could not load {set_file}: {e}")
+                    continue
+
+        return data
+
+    @staticmethod
+    def get_subjects(path_to_data=None):
+        """Get list of available subject IDs.
+
+        Args:
+            path_to_data: Path to locally downloaded dataset (unused, for API consistency).
+
+        Returns:
+            List of subject IDs (1-81).
+        """
+        return list(ButtonToneSZ.SUBJECTS_INFO.keys())
+
+    @staticmethod
+    def get_subject_label(subject_id):
+        """Get label for a subject (sz or hc).
+
+        Args:
+            subject_id: Subject ID.
+
+        Returns:
+            'sz' for Schizophrenia, 'hc' for Healthy Control.
+        """
+        return ButtonToneSZ.SUBJECTS_INFO.get(subject_id, None)
+
 
 def chronological_stratified_kfold(y, n_splits=5):
     """Split each class chronologically into n_splits, then merge."""
@@ -969,12 +1153,14 @@ class RestingState_DataLoader:
         "Cattan2019_PHMD": Cattan2019_PHMD,
         "Hinss2021": Hinss2021,
         "Rodrigues2017": Rodrigues2017,
+        "ButtonToneSZ": ButtonToneSZ,
     }
 
     DEFAULT_EVENTS = {
         "Cattan2019_PHMD": {"off": 1, "on": 2},
         "Hinss2021": {"easy": 2, "diff": 3},
         "Rodrigues2017": {"closed": 1, "open": 2},
+        "ButtonToneSZ": {"sz": 1, "hc": 2},
     }
 
     def __init__(
@@ -991,7 +1177,7 @@ class RestingState_DataLoader:
         """Initialize RestingState_DataLoader.
 
         Args:
-            dataset_name: Name of the dataset ('Cattan2019_PHMD', 'Hinss2021', 'Rodrigues2017')
+            dataset_name: Name of the dataset ('Cattan2019_PHMD', 'Hinss2021', 'Rodrigues2017', 'ButtonToneSZ')
             subject: Subject ID (integer)
             preprocessing_pipeline: Optional list of preprocessing functions
             tmin: Start time for epoching (seconds, default: 10)
@@ -1023,6 +1209,7 @@ class RestingState_DataLoader:
             "Cattan2019_PHMD": self._load_resting_state,
             "Hinss2021": self._load_resting_state,
             "Rodrigues2017": self._load_resting_state,
+            "ButtonToneSZ": self._load_button_tone_sz,
         }
 
         self.X, self.y, self.info = load_methods[self.dataset_name]()
@@ -1092,6 +1279,46 @@ class RestingState_DataLoader:
 
         return (X, y, info)
 
+    def _load_button_tone_sz(self) -> Tuple:
+        """Load ButtonToneSZ (Schizophrenia) dataset."""
+        dataset = ButtonToneSZ()
+        data = dataset.get_data(subjects=[self.subject])
+
+        if not data or self.subject not in data:
+            raise ValueError(f"No data found for subject {self.subject}")
+
+        raw = data[self.subject]["session_0"]["run_0"]
+
+        sfreq = raw.info["sfreq"]
+
+        if self.resample and self.resample != sfreq:
+            raw.resample(self.resample)
+            sfreq = self.resample
+
+        epochs = mne.make_fixed_length_epochs(
+            raw, duration=self.tmax - self.tmin, preload=True, verbose=False
+        )
+
+        X = epochs.get_data()
+
+        label_str = dataset.get_subject_label(self.subject)
+        y = np.full(X.shape[0], 1 if label_str == "sz" else 2)
+
+        X = self._apply_preprocessing(X)
+
+        n_trials, n_ch, n_times = X.shape
+        info = {
+            "n_trials": n_trials,
+            "n_ch": n_ch,
+            "n_times": n_times,
+            "n_classes": 2,
+            "fs": sfreq,
+            "class_names": ["sz", "hc"],
+            "subject_label": label_str,
+        }
+
+        return (X, y, info)
+
     def get_data(self):
         """Return loaded data.
 
@@ -1114,6 +1341,9 @@ class RestingState_DataLoader:
             raise ValueError(
                 f"Unknown dataset: {dataset_name}. Available: {list(RestingState_DataLoader.DATASETS.keys())}"
             )
+
+        if dataset_name == "ButtonToneSZ":
+            return ButtonToneSZ.get_subjects()
 
         dataset = RestingState_DataLoader.DATASETS[dataset_name]()
         return dataset.subject_list

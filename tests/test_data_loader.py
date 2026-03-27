@@ -30,6 +30,7 @@ from utils.data_loader import (
     get_subjects_AlexMI,
     SSVEP_DataLoader,
     RestingState_DataLoader,
+    ButtonToneSZ,
 )
 
 
@@ -349,6 +350,7 @@ class TestRestingStateDataLoader:
         assert "Cattan2019_PHMD" in datasets
         assert "Hinss2021" in datasets
         assert "Rodrigues2017" in datasets
+        assert "ButtonToneSZ" in datasets
 
     def test_get_subjects_returns_list(self):
         """Test that get_subjects returns a list of subject IDs."""
@@ -496,3 +498,35 @@ class TestRestingStateDataLoader:
         assert y is not None
         assert info is not None
         assert X.shape[0] > 0
+
+
+class TestButtonToneSZ:
+    """Tests for ButtonToneSZ class."""
+
+    def test_subject_count(self):
+        """Test that there are 81 subjects (49 SZ + 32 HC)."""
+        subjects = ButtonToneSZ.get_subjects()
+        assert len(subjects) == 81
+
+    def test_subject_labels_sz(self):
+        """Test that subjects 1-49 have SZ label."""
+        for i in range(1, 50):
+            assert ButtonToneSZ.get_subject_label(i) == "sz"
+
+    def test_subject_labels_hc(self):
+        """Test that subjects 50-81 have HC label."""
+        for i in range(50, 82):
+            assert ButtonToneSZ.get_subject_label(i) == "hc"
+
+    def test_invalid_subject_label(self):
+        """Test that invalid subject returns None."""
+        assert ButtonToneSZ.get_subject_label(999) is None
+        assert ButtonToneSZ.get_subject_label(0) is None
+
+    def test_default_data_path(self):
+        """Test that ButtonToneSZ initializes with default path."""
+        import os
+
+        expected_path = os.path.expanduser("~/.mne_data/ButtonToneSZ")
+        assert expected_path is not None
+        assert "ButtonToneSZ" in expected_path

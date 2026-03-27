@@ -65,6 +65,7 @@ def parse_args():
             "Cattan2019_PHMD",
             "Hinss2021",
             "Rodrigues2017",
+            "ButtonToneSZ"
         ],
     )
     parser.add_argument("--subject", type=int, default=1)
@@ -109,7 +110,12 @@ def main(
 
     SSVEP_DATASETS = ["Kalunga2016", "Nakanishi2015", "Wang2021Combined"]
     SLEEP_DATASETS = ["SleepPhysionet"]
-    RESTING_STATE_DATASETS = ["Cattan2019_PHMD", "Hinss2021", "Rodrigues2017"]
+    RESTING_STATE_DATASETS = [
+        "Cattan2019_PHMD",
+        "Hinss2021",
+        "Rodrigues2017",
+        "ButtonToneSZ",
+    ]
 
     if args.dataset == "dummy_dataset":
         X = np.random.randn(5, 3, 1000)
