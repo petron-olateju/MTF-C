@@ -523,10 +523,38 @@ class TestButtonToneSZ:
         assert ButtonToneSZ.get_subject_label(999) is None
         assert ButtonToneSZ.get_subject_label(0) is None
 
-    def test_default_data_path(self):
-        """Test that ButtonToneSZ initializes with default path."""
+    def test_default_data_path_kaggle(self):
+        """Test that ButtonToneSZ checks Kaggle path first."""
         import os
+        import unittest.mock
 
-        expected_path = os.path.expanduser("~/.mne_data/ButtonToneSZ")
-        assert expected_path is not None
-        assert "ButtonToneSZ" in expected_path
+        with unittest.mock.patch("os.path.exists") as mock_exists:
+
+            def exists_side_effect(path):
+                if path == "/kaggle/input/button-tone-sz":
+                    return True
+                return False
+
+            mock_exists.side_effect = exists_side_effect
+
+            dataset = ButtonToneSZ()
+            assert dataset.path_to_data == "/kaggle/input/button-tone-sz"
+
+    def test_default_data_path_fallback(self):
+        """Test that ButtonToneSZ falls back to default path."""
+        import os
+        import unittest.mock
+
+        with (
+            unittest.mock.patch("os.path.exists") as mock_exists,
+            unittest.mock.patch.object(ButtonToneSZ, "_download") as mock_download,
+        ):
+
+            def exists_side_effect(path):
+                return False
+
+            mock_exists.side_effect = exists_side_effect
+
+            dataset = ButtonToneSZ()
+            assert "ButtonToneSZ" in dataset.path_to_data
+            mock_download.assert_called_once()

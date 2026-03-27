@@ -131,10 +131,16 @@ class ButtonToneSZ:
         """Initialize ButtonToneSZ dataset.
 
         Args:
-            path_to_data: Path to locally downloaded dataset. If None, will download from Kaggle.
+            path_to_data: Path to locally downloaded dataset. If None, will check:
+                1. /kaggle/input/button-tone-sz/ (Kaggle environment)
+                2. ~/.mne_data/ButtonToneSZ (local fallback)
         """
         if path_to_data is None:
-            path_to_data = os.path.expanduser("~/.mne_data/ButtonToneSZ")
+            kaggle_path = "/kaggle/input/button-tone-sz"
+            if os.path.exists(kaggle_path):
+                path_to_data = kaggle_path
+            else:
+                path_to_data = os.path.expanduser("~/.mne_data/ButtonToneSZ")
 
         self.path_to_data = path_to_data
 
@@ -158,6 +164,17 @@ class ButtonToneSZ:
                 "You can download manually from: https://www.kaggle.com/datasets/broach/button-tone-sz"
             )
 
+    def _find_set_files(self):
+        """Find all .set files in the data directory."""
+        set_files = []
+
+        for root, dirs, files in os.walk(self.path_to_data):
+            for f in files:
+                if f.endswith(".set"):
+                    set_files.append(os.path.join(root, f))
+
+        return sorted(set_files)
+
     def get_data(self, subjects=None):
         """Get data for specified subjects.
 
@@ -171,13 +188,17 @@ class ButtonToneSZ:
             subjects = list(self.SUBJECTS_INFO.keys())
 
         data = {}
-        set_files = sorted(
-            [f for f in os.listdir(self.path_to_data) if f.endswith(".set")]
-        )
+        set_files = self._find_set_files()
+
+        if not set_files:
+            raise FileNotFoundError(
+                f"No .set files found in {self.path_to_data}. "
+                f"Please ensure the dataset is properly extracted."
+            )
 
         for idx, subject_id in enumerate(subjects):
             if idx < len(set_files):
-                set_file = os.path.join(self.path_to_data, set_files[idx])
+                set_file = set_files[idx]
                 try:
                     raw = mne.io.read_raw_eeglab(set_file, preload=False, verbose=False)
                     data[subject_id] = {"session_0": {"run_0": raw}}
