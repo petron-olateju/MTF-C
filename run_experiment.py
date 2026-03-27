@@ -81,6 +81,12 @@ def parse_args():
         "--experiment_description", type=str, default="Baseline Experiment"
     )
     parser.add_argument(
+        "--messages",
+        type=str,
+        default="",
+        help="Messages to save in results.yaml (split by double space)",
+    )
+    parser.add_argument(
         "--experiment_folder",
         type=str,
         default="./experiments",
@@ -94,6 +100,8 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    messages = [msg.strip() for msg in args.messages.split("  ") if msg.strip()]
 
     experiment = Experiment(
         args.experiment_version,
@@ -110,7 +118,9 @@ def main():
     elif args.dataset == "sleep":
         datasets = ["SleepPhysionet"]
     elif args.dataset == "resting_state":
-        datasets = ["Cattan2019_PHMD"]     # Excluded Hinss2021, too short (2s length), Rodrigues2017 (too short for five-fold CV)
+        datasets = [
+            "Cattan2019_PHMD"
+        ]  # Excluded Hinss2021, too short (2s length), Rodrigues2017 (too short for five-fold CV)
     else:
         datasets = [args.dataset]
     device = args.device
@@ -280,6 +290,7 @@ def main():
             ).update(
                 {
                     "experiment_description": args.experiment_description,
+                    "messages": messages,
                     "config": run_config,
                     "results": dataset_results,
                 }

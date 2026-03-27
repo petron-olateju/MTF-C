@@ -35,6 +35,7 @@ class TestParseArgs:
             assert args.experiment_version == "v0.0"
             assert args.experiment_description == "Baseline Experiment"
             assert args.experiment_folder == "./experiments"
+            assert args.messages == ""
             assert args.verbose is False
 
     def test_custom_arguments(self):
@@ -57,6 +58,8 @@ class TestParseArgs:
                 "Test Experiment",
                 "--experiment_folder",
                 "/tmp/experiments",
+                "--messages",
+                "training started  model saved  experiment complete",
                 "--verbose",
             ],
         ):
@@ -68,6 +71,7 @@ class TestParseArgs:
             assert args.experiment_version == "v1.0"
             assert args.experiment_description == "Test Experiment"
             assert args.experiment_folder == "/tmp/experiments"
+            assert args.messages == "training started  model saved  experiment complete"
             assert args.verbose is True
 
     def test_single_dataset_argument(self):
@@ -578,6 +582,96 @@ class TestResultsYAML:
             loaded["mtf_c"][timestamp]["results"]["BNCI2014_002"]["accuracy"]["mean"]
             == 0.80
         )
+
+    def test_results_yaml_with_messages(self, temp_experiment_dir):
+        """Test that messages are saved correctly in results.yaml."""
+        experiment_version = "test_version"
+        yaml_dir = os.path.join(temp_experiment_dir, experiment_version)
+        os.makedirs(yaml_dir, exist_ok=True)
+        results_yaml_path = os.path.join(yaml_dir, "results.yaml")
+
+        timestamp = "2024-01-01T00:00:00"
+        run_config = {
+            "training": {"folds": 5, "lr": 0.001},
+            "model": {"patch_size": 6},
+        }
+        experiment_description = "Test run with messages"
+        messages = ["training started", "model saved", "experiment complete"]
+        dataset_results = {
+            "BNCI2014_001": {
+                "accuracy": {"mean": 0.85, "std": 0.05},
+                "kappa": {"mean": 0.70, "std": 0.10},
+            }
+        }
+
+        all_results = {}
+        all_results.setdefault("mtf_c", {}).setdefault(timestamp, {}).update(
+            {
+                "experiment_description": experiment_description,
+                "messages": messages,
+                "config": run_config,
+                "results": dataset_results,
+            }
+        )
+
+        with open(results_yaml_path, "w") as f:
+            yaml.dump(all_results, f, default_flow_style=False)
+
+        with open(results_yaml_path, "r") as f:
+            loaded = yaml.safe_load(f)
+
+        assert timestamp in loaded["mtf_c"]
+        assert (
+            loaded["mtf_c"][timestamp]["experiment_description"]
+            == "Test run with messages"
+        )
+        assert loaded["mtf_c"][timestamp]["messages"] == [
+            "training started",
+            "model saved",
+            "experiment complete",
+        ]
+        assert "config" in loaded["mtf_c"][timestamp]
+        assert "results" in loaded["mtf_c"][timestamp]
+
+    def test_results_yaml_empty_messages(self, temp_experiment_dir):
+        """Test that empty messages list is saved correctly in results.yaml."""
+        experiment_version = "test_version"
+        yaml_dir = os.path.join(temp_experiment_dir, experiment_version)
+        os.makedirs(yaml_dir, exist_ok=True)
+        results_yaml_path = os.path.join(yaml_dir, "results.yaml")
+
+        timestamp = "2024-01-01T00:00:00"
+        run_config = {
+            "training": {"folds": 5, "lr": 0.001},
+            "model": {"patch_size": 6},
+        }
+        experiment_description = "Test run"
+        messages = []
+        dataset_results = {
+            "BNCI2014_001": {
+                "accuracy": {"mean": 0.85, "std": 0.05},
+                "kappa": {"mean": 0.70, "std": 0.10},
+            }
+        }
+
+        all_results = {}
+        all_results.setdefault("mtf_c", {}).setdefault(timestamp, {}).update(
+            {
+                "experiment_description": experiment_description,
+                "messages": messages,
+                "config": run_config,
+                "results": dataset_results,
+            }
+        )
+
+        with open(results_yaml_path, "w") as f:
+            yaml.dump(all_results, f, default_flow_style=False)
+
+        with open(results_yaml_path, "r") as f:
+            loaded = yaml.safe_load(f)
+
+        assert timestamp in loaded["mtf_c"]
+        assert loaded["mtf_c"][timestamp]["messages"] == []
 
     def test_results_yaml_without_stft_loss(self, temp_experiment_dir):
         """Test results.yaml for non-MTFC models without STFT loss."""
