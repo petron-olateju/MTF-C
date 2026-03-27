@@ -221,7 +221,7 @@ def main(
 
     subjects = sorted(all_subject_data.keys())
 
-    if args.subjects_list is not None:
+    if getattr(args, "subjects_list", None) is not None:
         subject_ids = [int(s.strip()) for s in args.subjects_list.split(",")]
         subjects = [s for s in subjects if s in subject_ids]
 
