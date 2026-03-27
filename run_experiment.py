@@ -26,6 +26,7 @@ from utils.data_loader import (
 )
 from utils.experiment_recorder import Parameter, Experiment
 from cross_validation import main as cross_validation
+from LOSO import main as loso_main, save_loso_csv
 
 
 def parse_args():
@@ -36,8 +37,8 @@ def parse_args():
     parser.add_argument(
         "--script",
         type=str,
-        default="cross_validation.py",
-        choices=["cross_validation", "pre_training"],
+        default="cross_validation",
+        choices=["cross_validation", "pre_training", "loso"],
     )
 
     parser.add_argument(
@@ -220,6 +221,46 @@ def main():
                                 "eval_inter": hyperparameters.eval_inter,
                                 "folds": hyperparameters.folds,
                                 "n_repeats": hyperparameters.n_repeats,
+                                "lr": hyperparameters.lr,
+                                "batch_size": hyperparameters.batch_size,
+                            },
+                            "model": model_configs,
+                        }
+                    )
+
+            elif script == "loso":
+                (
+                    subject_accuracies,
+                    subject_kappas,
+                    subjects,
+                    mean_accuracy,
+                    std_accuracy,
+                    mean_kappa,
+                    std_kappa,
+                    experiment,
+                    hyperparameters,
+                    model_configs,
+                ) = loso_main(mthd_args, experiment)
+                all_accuracies = all_accuracies + subject_accuracies
+                all_kappas = all_kappas + subject_kappas
+
+                csv_path = os.path.join(
+                    args.experiment_folder, f"loso_{args.model_name}_{args.dataset}.csv"
+                )
+                save_loso_csv(
+                    subject_accuracies,
+                    subject_kappas,
+                    subjects,
+                    csv_path,
+                )
+
+                if not run_config:
+                    run_config.update(
+                        {
+                            "training": {
+                                "val_size": hyperparameters.val_size,
+                                "n_iter": hyperparameters.n_iter,
+                                "eval_inter": hyperparameters.eval_inter,
                                 "lr": hyperparameters.lr,
                                 "batch_size": hyperparameters.batch_size,
                             },
