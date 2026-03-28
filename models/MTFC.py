@@ -502,7 +502,7 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
 
 class FilterBanksEmbedding_v5(nn.Module):
     def __init__(self, n_channels, n_filter_banks, emb_size=40,
-                 temporal_kernel=25, dropout=0.5):
+                 temporal_kernel=43, dropout=0.5):
         super().__init__()
         self.F = n_filter_banks
         self.D = emb_size
@@ -522,18 +522,18 @@ class FilterBanksEmbedding_v5(nn.Module):
         # Shared spatial + temporal projection — C channels × T' → emb_size
         # Applied identically per bank after filtering
         self.head = nn.Sequential(
-            nn.AdaptiveMaxPool1d(1),  # (B*C, T') → (B*C, 1)
-            # nn.Flatten(),             # (B*C,)
+            nn.AdaptiveAvgPool1d(1),  # (B*C, T') → (B*C, 1)
+            nn.Flatten(),             # (B*C,)
         )
         # After stacking: (B, F, C) → mean over C → (B, F) → Linear → (B, F, D)
-        self.proj = nn.Linear(emb_size, emb_size)
+        self.proj = nn.Linear(n_channels, emb_size)
 
     def forward(self, x):  # x: (B, C, T)
         B, C, T = x.shape
         bank_outputs = []
         for conv in self.filter_convs:
             z = conv(x)           # (B, C, T')
-            z = self.head(z)   # (B, C) — pool T per channel per bank
+            z = z.mean(dim=-1)   # (B, C) — pool T per channel per bank
             bank_outputs.append(z)
 
         out = torch.stack(bank_outputs, dim=1)  # (B, F, C)
