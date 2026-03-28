@@ -26,7 +26,7 @@ from utils.data_loader import (
 )
 from utils.experiment_recorder import Parameter, Experiment
 from cross_validation import main as cross_validation
-from LOSO import main as loso_main, save_loso_csv
+from LOSO import main as loso_main
 
 
 def parse_args():
@@ -236,32 +236,16 @@ def main():
 
             elif script == "loso":
                 (
-                    subject_accuracies,
-                    subject_kappas,
+                    accuracy,
+                    kappa,
                     stft_reconstruction_loss,
-                    subjects,
-                    mean_accuracy,
-                    std_accuracy,
-                    mean_kappa,
-                    std_kappa,
-                    avg_stft_loss,
                     experiment,
                     hyperparameters,
                     model_configs,
                 ) = loso_main(mthd_args, experiment)
-                all_accuracies = all_accuracies + subject_accuracies
-                all_kappas = all_kappas + subject_kappas
+                all_accuracies = all_accuracies + accuracy
+                all_kappas = all_kappas + kappa
                 all_stft = all_stft + stft_reconstruction_loss
-
-                csv_path = os.path.join(
-                    args.experiment_folder, f"loso_{args.model_name}_{args.dataset}.csv"
-                )
-                save_loso_csv(
-                    subject_accuracies,
-                    subject_kappas,
-                    subjects,
-                    csv_path,
-                )
 
                 if not run_config:
                     run_config.update(
@@ -278,10 +262,6 @@ def main():
                             "model": model_configs,
                         }
                     )
-
-                accuracy = subject_accuracies
-                kappa = subject_kappas
-                stft_reconstruction_loss = stft_reconstruction_loss
 
             if args.model_name != "mtf_c":
                 print(

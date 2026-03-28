@@ -3,9 +3,9 @@ training:
   n_iter: 100
   eval_inter: 5
   folds: 5
-  n_repeats: 3
+  n_repeats: 1
   lr: 1.0e-3
-  batch_size: 32
+  batch_size: 64
 
 db_conformer:
   patch_size: 100
