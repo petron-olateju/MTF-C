@@ -123,6 +123,8 @@ def main():
         datasets = [
             "Cattan2019_PHMD",
             "ButtonToneSZ",
+            "Hinss2021",
+            "Rodrigues2017",
         ]  # Excluded Hinss2021, too short (2s length), Rodrigues2017 (too short for five-fold CV)
     else:
         datasets = [args.dataset]
@@ -189,6 +191,10 @@ def main():
             subjects = [1]  # Default for dummy_dataset or unknown datasets
 
         for subject in tqdm(subjects, total=len(subjects), desc="Training"):
+            accuracy = []
+            kappa = []
+            stft_reconstruction_loss = []
+
             mthd_args = Namespace(
                 dataset=dataset,
                 subject=subject,
@@ -232,17 +238,20 @@ def main():
                 (
                     subject_accuracies,
                     subject_kappas,
+                    stft_reconstruction_loss,
                     subjects,
                     mean_accuracy,
                     std_accuracy,
                     mean_kappa,
                     std_kappa,
+                    avg_stft_loss,
                     experiment,
                     hyperparameters,
                     model_configs,
                 ) = loso_main(mthd_args, experiment)
                 all_accuracies = all_accuracies + subject_accuracies
                 all_kappas = all_kappas + subject_kappas
+                all_stft = all_stft + stft_reconstruction_loss
 
                 csv_path = os.path.join(
                     args.experiment_folder, f"loso_{args.model_name}_{args.dataset}.csv"
@@ -261,12 +270,18 @@ def main():
                                 "val_size": hyperparameters.val_size,
                                 "n_iter": hyperparameters.n_iter,
                                 "eval_inter": hyperparameters.eval_inter,
+                                "folds": hyperparameters.folds,
+                                "n_repeats": hyperparameters.n_repeats,
                                 "lr": hyperparameters.lr,
                                 "batch_size": hyperparameters.batch_size,
                             },
                             "model": model_configs,
                         }
                     )
+
+                accuracy = subject_accuracies
+                kappa = subject_kappas
+                stft_reconstruction_loss = stft_reconstruction_loss
 
             if args.model_name != "mtf_c":
                 print(

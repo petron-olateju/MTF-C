@@ -379,6 +379,7 @@ def main(
 
     all_subject_accuracies = []
     all_subject_kappas = []
+    all_subject_stft_losses = []
 
     for seed in tqdm(
         range(1, hyperparameters.n_repeats + 1),
@@ -391,6 +392,7 @@ def main(
 
         subject_accuracies = []
         subject_kappas = []
+        subject_stft_losses = []
 
         for test_subject in tqdm(subjects, desc="LOSO Validation"):
             train_subjects = [s for s in subjects if s != test_subject]
@@ -536,6 +538,8 @@ def main(
 
             last_acc = 0
             last_kappa = -1
+            last_stft_reconstruction_loss = math.inf
+            start_stft_loss = 0
 
             for i in range(n_iter):
                 model.train()
@@ -599,33 +603,50 @@ def main(
 
                     fold_acc = np.mean(test_accs).item()
                     fold_kappa = (fold_acc - 0.5) / (1 - 0.5)
+                    if (args.model_name == "mtf_c") and (stft is not None):
+                        fold_stft_loss = stft_loss
 
                     last_acc = fold_acc
                     last_kappa = fold_kappa
+                    if (args.model_name == "mtf_c") and (stft is not None):
+                        last_stft_reconstruction_loss = fold_stft_loss
+                        start_stft_loss += fold_stft_loss.item()
 
             subject_accuracies.append(last_acc)
             subject_kappas.append(last_kappa)
+            if (args.model_name == "mtf_c") and (
+                last_stft_reconstruction_loss != math.inf
+            ):
+                subject_stft_losses.append(last_stft_reconstruction_loss.item())
+            else:
+                subject_stft_losses.append(0)
 
         all_subject_accuracies.append(subject_accuracies)
         all_subject_kappas.append(subject_kappas)
+        all_subject_stft_losses.append(subject_stft_losses)
 
     mean_accuracy = float(np.mean(all_subject_accuracies))
     std_accuracy = float(np.std(all_subject_accuracies))
     mean_kappa = float(np.mean(all_subject_kappas))
     std_kappa = float(np.std(all_subject_kappas))
+    stft_reconstruction_loss = float(np.mean(all_subject_stft_losses))
 
     print(f"LOSO Results (across {hyperparameters.n_repeats} repeats):")
     print(f"  Accuracy: {mean_accuracy:.4f} ± {std_accuracy:.4f}")
     print(f"  Kappa:    {mean_kappa:.4f} ± {std_kappa:.4f}")
+    if args.model_name == "mtf_c":
+        print(f"  STFT Reconstruction Loss: {stft_reconstruction_loss:.6f}")
 
     return (
         all_subject_accuracies,
         all_subject_kappas,
+        all_subject_stft_losses,
         subjects,
         mean_accuracy,
         std_accuracy,
         mean_kappa,
         std_kappa,
+        stft_reconstruction_loss,
         experiment,
         hyperparameters,
         model_configs,
