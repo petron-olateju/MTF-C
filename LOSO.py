@@ -643,7 +643,7 @@ def save_loso_csv(
         writer = csv.writer(f)
         writer.writerow(["subject", "accuracy", "kappa"])
         for subject, acc, kappa in zip(subjects, subject_accuracies, subject_kappas):
-            writer.writerow([subject, f"{acc:.4f}", f"{kappa:.4f}"])
+            writer.writerow([subject, f"{np.mean(acc):.4f}", f"{np.mean(kappa):.4f}"])
 
 
 if __name__ == "__main__":
