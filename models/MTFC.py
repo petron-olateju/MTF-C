@@ -522,7 +522,7 @@ class FilterBanksEmbedding_v5(nn.Module):
         # Shared spatial + temporal projection — C channels × T' → emb_size
         # Applied identically per bank after filtering
         self.head = nn.Sequential(
-            nn.AdaptiveAvgPool1d(1),  # (B*C, T') → (B*C, 1)
+            nn.AdaptiveMaxPool1d(1),  # (B*C, T') → (B*C, 1)
             # nn.Flatten(),             # (B*C,)
         )
         # After stacking: (B, F, C) → mean over C → (B, F) → Linear → (B, F, D)
