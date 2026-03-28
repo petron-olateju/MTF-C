@@ -499,7 +499,46 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
             dim=1,
         )
         return out
-    
+
+class FilterBanksEmbedding_v5(nn.Module):
+    def __init__(self, n_channels, n_filter_banks, emb_size=40,
+                 temporal_kernel=25, dropout=0.5):
+        super().__init__()
+        self.F = n_filter_banks
+        self.D = emb_size
+
+        # F independent temporal filters — each learns different frequency response
+        self.filter_convs = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv1d(n_channels, n_channels, kernel_size=temporal_kernel,
+                          padding=temporal_kernel // 2, groups=n_channels, bias=False),
+                nn.BatchNorm1d(n_channels),
+                nn.ELU(),
+                nn.Dropout(dropout),
+            )
+            for _ in range(n_filter_banks)
+        ])
+
+        # Shared spatial + temporal projection — C channels × T' → emb_size
+        # Applied identically per bank after filtering
+        self.head = nn.Sequential(
+            nn.AdaptiveAvgPool1d(1),  # (B*C, T') → (B*C, 1)
+            nn.Flatten(),             # (B*C,)
+        )
+        # After stacking: (B, F, C) → mean over C → (B, F) → Linear → (B, F, D)
+        self.proj = nn.Linear(n_channels, emb_size)
+
+    def forward(self, x):  # x: (B, C, T)
+        B, C, T = x.shape
+        bank_outputs = []
+        for conv in self.filter_convs:
+            z = conv(x)           # (B, C, T')
+            z = z.mean(dim=-1)    # (B, C) — pool T per channel per bank
+            bank_outputs.append(z)
+
+        out = torch.stack(bank_outputs, dim=1)  # (B, F, C)
+        out = self.proj(out)                    # (B, F, D) — Linear(C, D) per bank
+        return out                              # (B, F, D)
 
 class FilterBanksEmbedding_v4(nn.Module):
     def __init__(
@@ -1053,7 +1092,7 @@ class MTFC(nn.Module):
                 time_points=args.time_sample_num,
                 num_classes=args.class_num,
             )
-            self.frequency_embedding = FilterBanksEmbedding_v3(
+            self.frequency_embedding = FilterBanksEmbedding_v5(
                 n_channels=self.C, n_filter_banks=self.F, emb_size=self.D
             )
             if self.stft_reconstruction == "frequency":

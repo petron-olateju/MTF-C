@@ -1,0 +1,63 @@
+mtf_c:
+  '2026-03-28T09:53:56.337164':
+    experiment_description: MTFC + FilterBanks + LOSO (No STFT reconstruction, f_t_s
+      branch method)base performance on SSVEP datasets, frequency spectrum reconstruction
+      included
+    messages:
+    - Switched filter patch embedding back to v3
+    - Included kaggle button_tone_sz schizophrenia dataset as apart of resting state
+      datasets
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 64
+      model:
+        patch_size: 100
+        filter_banks: 11
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: f_t_s
+        chn_attn_flag: false
+        fts_attn_flag: false
+        sst_method: filter_banks
+        stft_reconstruction: frequency
+        ct_shared_projection: false
+        sst_shared_projection: false
+        patch_emb_size: 40
+        n_heads_patch: 4
+        sst_emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+    results:
+      Kalunga2016:
+        accuracy:
+          mean: 0.6445455849170685
+          std: 0.14570830920131891
+        kappa:
+          mean: 0.28909116983413696
+          std: 0.29141661840263783
+        stft_reconstruction_loss: 0.04873211868107319
+      Nakanishi2015:
+        accuracy:
+          mean: 0.7032476621014732
+          std: 0.1827992374415006
+        kappa:
+          mean: 0.40649532420294626
+          std: 0.3655984748830011
+        stft_reconstruction_loss: 0.04241604987709295
+      Wang2021Combined:
+        accuracy:
+          mean: 0.6060475213774319
+          std: 0.22236058249494794
+        kappa:
+          mean: 0.21209504275486388
+          std: 0.4447211649898959
+        stft_reconstruction_loss: 0.0631862764150418
