@@ -526,7 +526,7 @@ class FilterBanksEmbedding_v5(nn.Module):
             # nn.Flatten(),             # (B*C,)
         )
         # After stacking: (B, F, C) → mean over C → (B, F) → Linear → (B, F, D)
-        self.proj = nn.Linear(n_channels, emb_size)
+        self.proj = nn.Linear(emb_size, emb_size)
 
     def forward(self, x):  # x: (B, C, T)
         B, C, T = x.shape
