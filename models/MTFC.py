@@ -523,7 +523,7 @@ class FilterBanksEmbedding_v5(nn.Module):
         # Applied identically per bank after filtering
         self.head = nn.Sequential(
             nn.AdaptiveAvgPool1d(1),  # (B*C, T') → (B*C, 1)
-            nn.Flatten(),             # (B*C,)
+            # nn.Flatten(),             # (B*C,)
         )
         # After stacking: (B, F, C) → mean over C → (B, F) → Linear → (B, F, D)
         self.proj = nn.Linear(n_channels, emb_size)
@@ -533,7 +533,7 @@ class FilterBanksEmbedding_v5(nn.Module):
         bank_outputs = []
         for conv in self.filter_convs:
             z = conv(x)           # (B, C, T')
-            z = z.mean(dim=-1)    # (B, C) — pool T per channel per bank
+            z = self.head(z)   # (B, C) — pool T per channel per bank
             bank_outputs.append(z)
 
         out = torch.stack(bank_outputs, dim=1)  # (B, F, C)
