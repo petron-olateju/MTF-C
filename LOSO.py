@@ -68,6 +68,7 @@ def parse_args():
         ],
     )
     parser.add_argument("--device", type=str, default="cpu", choices=["cpu", "cuda"])
+    parser.add_argument("--subject", type=int, default=1)
     parser.add_argument(
         "--verbose", action="store_true", help="Print training progress"
     )
@@ -82,12 +83,6 @@ def parse_args():
         type=str,
         default=None,
         help="Experiment version name for versioning results",
-    )
-    parser.add_argument(
-        "--subjects-list",
-        type=str,
-        default=None,
-        help="Comma-separated list of subject IDs to use (e.g., '1,2,3'). If None, uses all subjects.",
     )
 
     return parser.parse_args()
@@ -221,12 +216,16 @@ def main(
 
     subjects = sorted(all_subject_data.keys())
 
-    if getattr(args, "subjects_list", None) is not None:
-        subject_ids = [int(s.strip()) for s in args.subjects_list.split(",")]
-        subjects = [s for s in subjects if s in subject_ids]
+    if args.subject not in subjects:
+        raise ValueError(
+            f"Subject {args.subject} not found in dataset. Available subjects: {subjects}"
+        )
 
-    if len(subjects) == 0:
-        raise ValueError("No subjects available for LOSO validation")
+    test_subject = args.subject
+    train_subjects = [s for s in subjects if s != test_subject]
+
+    if len(train_subjects) == 0:
+        raise ValueError("No training subjects available")
 
     reference_info = all_subject_data[subjects[0]][2]
 
@@ -377,175 +376,199 @@ def main(
     n_iter = hyperparameters.n_iter
     eval_inter = hyperparameters.eval_inter
 
-    all_subject_accuracies = []
-    all_subject_kappas = []
-    all_subject_stft_losses = []
+    all_accuracies = []
+    all_kappas = []
+    all_stft_losses = []
+
+    X_train_list = [all_subject_data[s][0] for s in train_subjects]
+    y_train_list = [all_subject_data[s][1] for s in train_subjects]
+
+    X_train = np.vstack(X_train_list)
+    y_train = np.concatenate(y_train_list)
+
+    X_test, y_test = all_subject_data[test_subject][:2]
 
     for seed in tqdm(
         range(1, hyperparameters.n_repeats + 1),
         total=hyperparameters.n_repeats,
-        desc="LOSO Repeats",
+        desc=f"LOSO Subject {test_subject}",
     ):
         np.random.seed(seed)
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
 
-        subject_accuracies = []
-        subject_kappas = []
-        subject_stft_losses = []
-
-        for test_subject in tqdm(subjects, desc="LOSO Validation"):
-            train_subjects = [s for s in subjects if s != test_subject]
-
-            X_train_list = [all_subject_data[s][0] for s in train_subjects]
-            y_train_list = [all_subject_data[s][1] for s in train_subjects]
-
-            X_train = np.vstack(X_train_list)
-            y_train = np.concatenate(y_train_list)
-
-            X_test, y_test = all_subject_data[test_subject][:2]
-
-            if val_size > 0.0:
-                sss = StratifiedShuffleSplit(
-                    n_splits=1, test_size=val_size, random_state=42
-                )
-                for train_idx, val_idx in sss.split(X_train, y_train):
-                    X_tr, X_val = X_train[train_idx], X_train[val_idx]
-                    y_tr, y_val = y_train[train_idx], y_train[val_idx]
-            else:
-                X_tr, y_tr = X_train, y_train
-
-            if args.model_name == "db_conformer":
-                model = DBConformer(
-                    model_args,
-                    emb_size=model_configs["emb_size"],
-                    tem_depth=model_configs["tem_depth"],
-                    chn_depth=model_configs["chn_depth"],
-                    chn=reference_info["n_ch"],
-                    n_classes=reference_info["n_classes"],
-                )
-                model = model.to(device)
-            elif args.model_name == "mtf_c":
-                model = MTFC(
-                    model_args,
-                    n_filter_banks=model_configs["filter_banks"],
-                    patch_emb_size=model_configs["patch_emb_size"],
-                    n_heads_patch=model_configs["n_heads_patch"],
-                    wsize_divisor=model_configs["wsize_divisor"],
-                    freq_downsample=model_configs["freq_downsample"],
-                    n_times=reference_info["n_times"],
-                    sst_emb_size=model_configs["sst_emb_size"],
-                    depth=model_configs["tem_depth"],
-                    n_classes=reference_info["n_classes"],
-                    fs=reference_info["fs"],
-                )
-                model = model.to(device)
-            else:
-                model = DBConformer(
-                    model_args,
-                    emb_size=model_configs["emb_size"],
-                    tem_depth=model_configs["tem_depth"],
-                    chn_depth=model_configs["chn_depth"],
-                    chn=reference_info["n_ch"],
-                    n_classes=reference_info["n_classes"],
-                )
-                model = model.to(device)
-
-            optimizer = torch.optim.Adam(
-                model.parameters(),
-                lr=hyperparameters.lr,
-                betas=(0.9, 0.99),
-                weight_decay=0,
+        if val_size > 0.0:
+            sss = StratifiedShuffleSplit(
+                n_splits=1, test_size=val_size, random_state=seed
             )
+            for train_idx, val_idx in sss.split(X_train, y_train):
+                X_tr, X_val = X_train[train_idx], X_train[val_idx]
+                y_tr, y_val = y_train[train_idx], y_train[val_idx]
+        else:
+            X_tr, y_tr = X_train, y_train
 
-            _x_test = X_test
-            _y_test = y_test
-
-            _x_train, _y_train = X_tr, y_tr
-
-            loss_fn = nn.CrossEntropyLoss()
-
-            _x_train, sqrtRefEA = EA(_x_train)
-            _x_test = EA_online(_x_test, sqrtRefEA)
-
-            stft_reconstruction_type = model_configs.get("stft_reconstruction", False)
-
-            if stft_reconstruction_type == "STFT" or stft_reconstruction_type is True:
-                F_cfg = model_configs["filter_banks"]
-                P_cfg = model_configs["patch_size"]
-                wsize = int((F_cfg - 1) * 2)
-                assert wsize % 2 == 0
-                tstep = wsize // 2
-                _stft_train = np.array(
-                    [mne.time_frequency.stft(x, wsize, tstep) for x in _x_train]
-                )
-                _stft_test = np.array(
-                    [mne.time_frequency.stft(x, wsize, tstep) for x in _x_test]
-                )
-                _stft_train = abs(_stft_train)
-                _stft_test = abs(_stft_test)
-                target_T = (reference_info["n_times"] - 1) // P_cfg
-                _stft_train = _stft_train[:, :, :, :target_T]
-                _stft_test = _stft_test[:, :, :, :target_T]
-                freq_downsample = model_configs["freq_downsample"]
-                F_bins_trimmed = (
-                    _stft_train.shape[2] // freq_downsample
-                ) * freq_downsample
-                _stft_train = (
-                    _stft_train[:, :, :F_bins_trimmed, :]
-                    .reshape(
-                        _stft_train.shape[0],
-                        _stft_train.shape[1],
-                        -1,
-                        freq_downsample,
-                        _stft_train.shape[3],
-                    )
-                    .mean(axis=3)
-                )
-                _stft_test = (
-                    _stft_test[:, :, :F_bins_trimmed, :]
-                    .reshape(
-                        _stft_test.shape[0],
-                        _stft_test.shape[1],
-                        -1,
-                        freq_downsample,
-                        _stft_test.shape[3],
-                    )
-                    .mean(axis=3)
-                )
-            elif stft_reconstruction_type == "frequency":
-                F_cfg = model_configs["filter_banks"]
-                _stft_train = compute_band_powers(
-                    _x_train, n_filter_banks=F_cfg, fs=reference_info["fs"]
-                )
-                _stft_test = compute_band_powers(
-                    _x_test, n_filter_banks=F_cfg, fs=reference_info["fs"]
-                )
-            else:
-                _stft_train = np.zeros((len(_x_train), 1, 1, 1), dtype=np.float32)
-                _stft_test = np.zeros((len(_x_test), 1, 1, 1), dtype=np.float32)
-
-            train_loader = DataLoader(
-                EEGDataset(_x_train, _y_train, _stft_train),
-                batch_size=hyperparameters.batch_size,
-                shuffle=True,
+        if args.model_name == "db_conformer":
+            model = DBConformer(
+                model_args,
+                emb_size=model_configs["emb_size"],
+                tem_depth=model_configs["tem_depth"],
+                chn_depth=model_configs["chn_depth"],
+                chn=reference_info["n_ch"],
+                n_classes=reference_info["n_classes"],
             )
-            test_loader = DataLoader(
-                EEGDataset(_x_test, _y_test, _stft_test),
-                batch_size=hyperparameters.batch_size,
-                shuffle=True,
+            model = model.to(device)
+        elif args.model_name == "mtf_c":
+            model = MTFC(
+                model_args,
+                n_filter_banks=model_configs["filter_banks"],
+                patch_emb_size=model_configs["patch_emb_size"],
+                n_heads_patch=model_configs["n_heads_patch"],
+                wsize_divisor=model_configs["wsize_divisor"],
+                freq_downsample=model_configs["freq_downsample"],
+                n_times=reference_info["n_times"],
+                sst_emb_size=model_configs["sst_emb_size"],
+                depth=model_configs["tem_depth"],
+                n_classes=reference_info["n_classes"],
+                fs=reference_info["fs"],
             )
+            model = model.to(device)
+        else:
+            model = DBConformer(
+                model_args,
+                emb_size=model_configs["emb_size"],
+                tem_depth=model_configs["tem_depth"],
+                chn_depth=model_configs["chn_depth"],
+                chn=reference_info["n_ch"],
+                n_classes=reference_info["n_classes"],
+            )
+            model = model.to(device)
 
-            last_acc = 0
-            last_kappa = -1
-            last_stft_reconstruction_loss = math.inf
-            start_stft_loss = 0
+        optimizer = torch.optim.Adam(
+            model.parameters(),
+            lr=hyperparameters.lr,
+            betas=(0.9, 0.99),
+            weight_decay=0,
+        )
 
-            for i in range(n_iter):
-                model.train()
-                train_loss = 0
-                train_acc = 0
-                for j, (x, y, y_stft) in enumerate(train_loader):
+        _x_test = X_test
+        _y_test = y_test
+
+        _x_train, _y_train = X_tr, y_tr
+
+        loss_fn = nn.CrossEntropyLoss()
+
+        _x_train, sqrtRefEA = EA(_x_train)
+        _x_test = EA_online(_x_test, sqrtRefEA)
+
+        stft_reconstruction_type = model_configs.get("stft_reconstruction", False)
+
+        if stft_reconstruction_type == "STFT" or stft_reconstruction_type is True:
+            F_cfg = model_configs["filter_banks"]
+            P_cfg = model_configs["patch_size"]
+            wsize = int((F_cfg - 1) * 2)
+            assert wsize % 2 == 0
+            tstep = wsize // 2
+            _stft_train = np.array(
+                [mne.time_frequency.stft(x, wsize, tstep) for x in _x_train]
+            )
+            _stft_test = np.array(
+                [mne.time_frequency.stft(x, wsize, tstep) for x in _x_test]
+            )
+            _stft_train = abs(_stft_train)
+            _stft_test = abs(_stft_test)
+            target_T = (reference_info["n_times"] - 1) // P_cfg
+            _stft_train = _stft_train[:, :, :, :target_T]
+            _stft_test = _stft_test[:, :, :, :target_T]
+            freq_downsample = model_configs["freq_downsample"]
+            F_bins_trimmed = (_stft_train.shape[2] // freq_downsample) * freq_downsample
+            _stft_train = (
+                _stft_train[:, :, :F_bins_trimmed, :]
+                .reshape(
+                    _stft_train.shape[0],
+                    _stft_train.shape[1],
+                    -1,
+                    freq_downsample,
+                    _stft_train.shape[3],
+                )
+                .mean(axis=3)
+            )
+            _stft_test = (
+                _stft_test[:, :, :F_bins_trimmed, :]
+                .reshape(
+                    _stft_test.shape[0],
+                    _stft_test.shape[1],
+                    -1,
+                    freq_downsample,
+                    _stft_test.shape[3],
+                )
+                .mean(axis=3)
+            )
+        elif stft_reconstruction_type == "frequency":
+            F_cfg = model_configs["filter_banks"]
+            _stft_train = compute_band_powers(
+                _x_train, n_filter_banks=F_cfg, fs=reference_info["fs"]
+            )
+            _stft_test = compute_band_powers(
+                _x_test, n_filter_banks=F_cfg, fs=reference_info["fs"]
+            )
+        else:
+            _stft_train = np.zeros((len(_x_train), 1, 1, 1), dtype=np.float32)
+            _stft_test = np.zeros((len(_x_test), 1, 1, 1), dtype=np.float32)
+
+        train_loader = DataLoader(
+            EEGDataset(_x_train, _y_train, _stft_train),
+            batch_size=hyperparameters.batch_size,
+            shuffle=True,
+        )
+        test_loader = DataLoader(
+            EEGDataset(_x_test, _y_test, _stft_test),
+            batch_size=hyperparameters.batch_size,
+            shuffle=True,
+        )
+
+        last_acc = 0
+        last_kappa = -1
+        last_stft_reconstruction_loss = 0
+
+        for i in range(n_iter):
+            model.train()
+            train_loss = 0
+            train_acc = 0
+            for j, (x, y, y_stft) in enumerate(train_loader):
+                x = torch.unsqueeze(x, 1)
+                x, y, y_stft = (
+                    x.to(device),
+                    y.to(device),
+                    y_stft.to(device=device, dtype=torch.float),
+                )
+                y = y.long()
+                optimizer.zero_grad()
+                stft, representations, logits = model(x)
+                if stft is not None:
+                    stft_loss = nn.MSELoss()(stft, y_stft)
+                else:
+                    stft_loss = None
+                acc = accuracy_score(logits, y.cpu().detach().numpy())
+
+                loss = loss_fn(logits, y)
+                if stft_loss is not None:
+                    loss += stft_loss
+                loss.backward()
+                optimizer.step()
+
+                train_loss += loss.item()
+                train_acc += acc.item()
+
+            train_loss /= len(train_loader)
+            train_acc /= len(train_loader)
+
+            if i == 0 or (i + 1) % eval_inter == 0 or i == n_iter - 1:
+                model.eval()
+                test_accs = []
+                test_losses = []
+                for j, (x, y, y_stft) in enumerate(test_loader):
+                    if x.size(0) < 2:
+                        continue
                     x = torch.unsqueeze(x, 1)
                     x, y, y_stft = (
                         x.to(device),
@@ -553,100 +576,50 @@ def main(
                         y_stft.to(device=device, dtype=torch.float),
                     )
                     y = y.long()
-                    optimizer.zero_grad()
-                    stft, representations, logits = model(x)
-                    if stft is not None:
-                        stft_loss = nn.MSELoss()(stft, y_stft)
-                    else:
-                        stft_loss = None
-                    acc = accuracy_score(logits, y.cpu().detach().numpy())
+                    with torch.no_grad():
+                        stft, representations, logits = model(x)
+                        if stft is not None:
+                            stft_loss = nn.MSELoss()(stft, y_stft)
+                        else:
+                            stft_loss = None
+                        acc = accuracy_score(logits, y.cpu().detach().numpy())
+                        loss = loss_fn(logits, y)
+                        if stft_loss is not None:
+                            loss += stft_loss
 
-                    loss = loss_fn(logits, y)
-                    if stft_loss is not None:
-                        loss += stft_loss
-                    loss.backward()
-                    optimizer.step()
+                        test_accs.append(acc)
+                        test_losses.append(loss.item())
 
-                    train_loss += loss.item()
-                    train_acc += acc.item()
+                fold_acc = np.mean(test_accs).item()
+                fold_kappa = (fold_acc - 0.5) / (1 - 0.5)
 
-                train_loss /= len(train_loader)
-                train_acc /= len(train_loader)
+                last_acc = fold_acc
+                last_kappa = fold_kappa
+                if stft is not None and stft_loss is not None:
+                    last_stft_reconstruction_loss = stft_loss.item()
 
-                if i == 0 or (i + 1) % eval_inter == 0 or i == n_iter - 1:
-                    model.eval()
-                    test_accs = []
-                    test_losses = []
-                    for j, (x, y, y_stft) in enumerate(test_loader):
-                        if x.size(0) < 2:
-                            continue
-                        x = torch.unsqueeze(x, 1)
-                        x, y, y_stft = (
-                            x.to(device),
-                            y.to(device),
-                            y_stft.to(device=device, dtype=torch.float),
-                        )
-                        y = y.long()
-                        with torch.no_grad():
-                            stft, representations, logits = model(x)
-                            if stft is not None:
-                                stft_loss = nn.MSELoss()(stft, y_stft)
-                            else:
-                                stft_loss = None
-                            acc = accuracy_score(logits, y.cpu().detach().numpy())
-                            loss = loss_fn(logits, y)
-                            if stft_loss is not None:
-                                loss += stft_loss
+        all_accuracies.append(last_acc)
+        all_kappas.append(last_kappa)
+        all_stft_losses.append(last_stft_reconstruction_loss)
 
-                            test_accs.append(acc)
-                            test_losses.append(loss.item())
+    mean_accuracy = float(np.mean(all_accuracies))
+    std_accuracy = float(np.std(all_accuracies))
+    mean_kappa = float(np.mean(all_kappas))
+    std_kappa = float(np.std(all_kappas))
+    stft_reconstruction_loss = float(np.mean(all_stft_losses))
 
-                    fold_acc = np.mean(test_accs).item()
-                    fold_kappa = (fold_acc - 0.5) / (1 - 0.5)
-                    if (args.model_name == "mtf_c") and (stft is not None):
-                        fold_stft_loss = stft_loss
-
-                    last_acc = fold_acc
-                    last_kappa = fold_kappa
-                    if (args.model_name == "mtf_c") and (stft is not None):
-                        last_stft_reconstruction_loss = fold_stft_loss
-                        start_stft_loss += fold_stft_loss.item()
-
-            subject_accuracies.append(last_acc)
-            subject_kappas.append(last_kappa)
-            if (args.model_name == "mtf_c") and (
-                last_stft_reconstruction_loss != math.inf
-            ):
-                subject_stft_losses.append(last_stft_reconstruction_loss.item())
-            else:
-                subject_stft_losses.append(0)
-
-        all_subject_accuracies.append(subject_accuracies)
-        all_subject_kappas.append(subject_kappas)
-        all_subject_stft_losses.append(subject_stft_losses)
-
-    mean_accuracy = float(np.mean(all_subject_accuracies))
-    std_accuracy = float(np.std(all_subject_accuracies))
-    mean_kappa = float(np.mean(all_subject_kappas))
-    std_kappa = float(np.std(all_subject_kappas))
-    stft_reconstruction_loss = float(np.mean(all_subject_stft_losses))
-
-    print(f"LOSO Results (across {hyperparameters.n_repeats} repeats):")
+    print(
+        f"LOSO Results for Subject {test_subject} (across {hyperparameters.n_repeats} repeats):"
+    )
     print(f"  Accuracy: {mean_accuracy:.4f} ± {std_accuracy:.4f}")
     print(f"  Kappa:    {mean_kappa:.4f} ± {std_kappa:.4f}")
     if args.model_name == "mtf_c":
         print(f"  STFT Reconstruction Loss: {stft_reconstruction_loss:.6f}")
 
     return (
-        all_subject_accuracies,
-        all_subject_kappas,
-        all_subject_stft_losses,
-        subjects,
-        mean_accuracy,
-        std_accuracy,
-        mean_kappa,
-        std_kappa,
-        stft_reconstruction_loss,
+        all_accuracies,
+        all_kappas,
+        all_stft_losses,
         experiment,
         hyperparameters,
         model_configs,
@@ -671,11 +644,7 @@ if __name__ == "__main__":
     (
         accuracy,
         kappa,
-        subjects,
-        mean_acc,
-        std_acc,
-        mean_kappa,
-        std_kappa,
+        stft_reconstruction_loss,
         experiment,
         hyperparameters,
         model_configs,
