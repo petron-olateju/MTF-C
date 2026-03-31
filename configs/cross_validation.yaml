@@ -44,3 +44,4 @@ mtf_c:
   sst_emb_size: 40
   tem_depth: 1
   chn_depth: 1
+  temporal_kernel: 43

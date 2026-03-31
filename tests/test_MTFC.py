@@ -1102,3 +1102,54 @@ def test_mtfc_branch_ft_s_filter_banks():
     assert stft.shape == (2, 22, 4, 8)
     assert embed.shape == (2, 80)
     assert out.shape == (2, 4)
+
+
+def test_mtfc_filter_banks_temporal_kernel():
+    """Test MTFC with filter_banks method and different temporal_kernel values.
+
+    Verifies that:
+    1. temporal_kernel parameter is correctly passed to FilterBanksEmbedding_v5
+    2. Different temporal_kernel values work correctly
+    3. Forward pass produces correct output shapes
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="SSVEP",
+        chn=8,
+        patch_size=100,
+        time_sample_num=1000,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="f_t_s",
+        chn_attn_flag=False,
+        fts_attn_flag=False,
+        sst_method="filter_banks",
+        stft_reconstruction="frequency",
+        spa_dim=16,
+    )
+
+    for tk in [25, 43, 63]:
+        model = MTFC(
+            args,
+            n_filter_banks=11,
+            freq_downsample=1,
+            patch_emb_size=40,
+            n_heads_patch=4,
+            sst_emb_size=40,
+            depth=1,
+            n_classes=4,
+            fs=250,
+            temporal_kernel=tk,
+        )
+
+        assert model.temporal_kernel == tk
+
+        x = torch.randn(2, 1, 8, 1000)
+        stft, embed, out = model(x)
+
+        assert embed.shape[0] == 2
+        assert embed.shape[1] == model.classifier.fc[0].in_features
+        assert out.shape == (2, 4)

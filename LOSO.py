@@ -430,6 +430,7 @@ def main(
                 depth=model_configs["tem_depth"],
                 n_classes=reference_info["n_classes"],
                 fs=reference_info["fs"],
+                temporal_kernel=model_configs.get("temporal_kernel", 43),
             )
             model = model.to(device)
         else:

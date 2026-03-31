@@ -65,7 +65,7 @@ def parse_args():
             "Cattan2019_PHMD",
             "Hinss2021",
             "Rodrigues2017",
-            "ButtonToneSZ"
+            "ButtonToneSZ",
         ],
     )
     parser.add_argument("--subject", type=int, default=1)
@@ -379,6 +379,7 @@ def main(
                     depth=model_configs["tem_depth"],
                     n_classes=dataset_info["n_classes"],
                     fs=dataset_info["fs"],
+                    temporal_kernel=model_configs.get("temporal_kernel", 43),
                 )
                 model = model.to(device)
             else:
