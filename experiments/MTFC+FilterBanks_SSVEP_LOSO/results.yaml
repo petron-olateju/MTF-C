@@ -182,3 +182,64 @@ mtf_c:
           mean: 0.24489439561449247
           std: 0.43745848201076093
         stft_reconstruction_loss: 0.09696074016392231
+  '2026-03-31T22:31:19.764226':
+    experiment_description: MTFC + FilterBanks + LOSO (No STFT reconstruction, f_t_s
+      branch method)base performance on SSVEP datasets, frequency spectrum reconstruction
+      included
+    messages:
+    - Change to FilterBanksEmbedding_vStar with temporal_kernel of 43
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 64
+      model:
+        patch_size: 100
+        filter_banks: 11
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: f_t_s
+        chn_attn_flag: false
+        fts_attn_flag: false
+        sst_method: filter_banks
+        stft_reconstruction: frequency
+        ct_shared_projection: false
+        sst_shared_projection: false
+        patch_emb_size: 40
+        n_heads_patch: 4
+        sst_emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+        temporal_kernel: 43
+    results:
+      Kalunga2016:
+        accuracy:
+          mean: 0.6667183389266332
+          std: 0.15551224850895345
+        kappa:
+          mean: 0.3334366778532664
+          std: 0.3110244970179069
+        stft_reconstruction_loss: 0.10101999955562253
+      Nakanishi2015:
+        accuracy:
+          mean: 0.715021129165377
+          std: 0.18587597816121468
+        kappa:
+          mean: 0.4300422583307539
+          std: 0.37175195632242936
+        stft_reconstruction_loss: 0.06962700964262088
+      Wang2021Combined:
+        accuracy:
+          mean: 0.6224774060578182
+          std: 0.21956195129462283
+        kappa:
+          mean: 0.24495481211563636
+          std: 0.4391239025892456
+        stft_reconstruction_loss: 0.09534770054421549
