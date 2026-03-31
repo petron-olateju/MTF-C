@@ -503,13 +503,23 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
 
 class FilterBanksEmbedding_vStar(nn.Module):
     def __init__(
-        self, n_channels, n_filter_banks, emb_size=40, temporal_kernel=43, dropout=0.5
+        self,
+        n_channels,
+        n_filter_banks,
+        emb_size=40,
+        temporal_kernel=43,
+        n_time_points=1000,
+        dropout=0.5,
     ):
         super().__init__()
         self.F = n_filter_banks
         self.D = emb_size
+        self.C = n_channels
+        self.temporal_pool = 3
 
-        # F independent temporal filters — each learns different frequency response
+        T_out = n_time_points
+        self.T_out = T_out
+
         self.filter_convs = nn.ModuleList(
             [
                 nn.Sequential(
@@ -529,25 +539,23 @@ class FilterBanksEmbedding_vStar(nn.Module):
             ]
         )
 
-        # Shared spatial + temporal projection — C channels × T' → emb_size
-        # Applied identically per bank after filtering
         self.head = nn.Sequential(
-            nn.AdaptiveAvgPool1d(1),  # (B*C, T') → (B*C, 1)
-            nn.Flatten(),  # (B*C,)
+            nn.Conv1d(n_channels, emb_size, kernel_size=1),
+            nn.AdaptiveAvgPool1d(3),
+            nn.Flatten(start_dim=1),
         )
-        # After stacking: (B, F, C) → mean over C → (B, F) → Linear → (B, F, D)
-        self.proj = nn.Linear(n_channels, emb_size)
 
     def forward(self, x):  # x: (B, C, T)
         B, C, T = x.shape
         bank_outputs = []
         for conv in self.filter_convs:
             z = conv(x)  # (B, C, T')
-            z = z.mean(dim=-1)  # (B, C) — pool T per channel per bank
+            z = self.head(z)  # (B, D*3) - pooled temporal to 3 bins
             bank_outputs.append(z)
 
-        out = torch.stack(bank_outputs, dim=1)  # (B, F, C)
-        out = self.proj(out)  # (B, F, D) — Linear(C, D) per bank
+        out = torch.stack(bank_outputs, dim=1)  # (B, F, D*3)
+        out = out.view(B, self.F, self.D, 3)  # (B, F, D, 3)
+        out = out.mean(dim=-1)  # (B, F, D) - pool temporal bins
         return out  # (B, F, D)
 
 
@@ -1162,11 +1170,12 @@ class MTFC(nn.Module):
                 time_points=args.time_sample_num,
                 num_classes=args.class_num,
             )
-            self.frequency_embedding = FilterBanksEmbedding_v5(
+            self.frequency_embedding = FilterBanksEmbedding_vStar(
                 n_channels=self.C,
                 n_filter_banks=self.F,
                 emb_size=self.D,
                 temporal_kernel=self.temporal_kernel,
+                n_time_points=args.time_sample_num,
             )
             if self.stft_reconstruction == "frequency":
                 freq_dim = self.FTS if self.sst_shared_projection else self.D
