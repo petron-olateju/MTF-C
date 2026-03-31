@@ -312,6 +312,10 @@ def main():
         )
         print(f"Kappa: {np.mean(all_kappas):.2f} +- {np.std(all_kappas):.2f}")
 
+        all_accuracies = []
+        all_kappas = []
+        all_stft = []
+
         if experiment is not None:
             yaml_dir = f"{args.experiment_folder}/{args.experiment_version}"
             os.makedirs(yaml_dir, exist_ok=True)
