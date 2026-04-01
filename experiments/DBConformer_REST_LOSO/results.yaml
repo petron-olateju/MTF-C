@@ -1,0 +1,46 @@
+db_conformer:
+  '2026-04-01T12:44:22.261190':
+    experiment_description: DBConformer LOSO benchmark on REST datasets
+    messages: []
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 64
+      model:
+        patch_size: 100
+        filter_banks: 11
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: all
+        chn_attn_flag: true
+        fts_attn_flag: false
+        sst_method: false
+        stft_reconstruction: false
+        emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+    results:
+      Cattan2019_PHMD:
+        accuracy:
+          mean: 0.5000000074505806
+          std: 0.07071068444068242
+        kappa:
+          mean: 1.4901161193847656e-08
+          std: 0.14142136888136483
+        stft_reconstruction_loss: null
+      Rodrigues2017:
+        accuracy:
+          mean: 0.5247493848988884
+          std: 0.16014714625537604
+        kappa:
+          mean: 0.04949876979777688
+          std: 0.3202942925107521
+        stft_reconstruction_loss: null
