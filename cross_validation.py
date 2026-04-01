@@ -16,18 +16,13 @@ from torch.utils.data import DataLoader
 # from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from utils.metrics import accuracy_score
-from utils.preprocessing import EA, EA_online, bandpass_filtering
+from utils.preprocessing import EA, EA_online, bandpass_filtering, compute_band_powers
 from utils.data_loader import (
     EEGDataset,
-    load_BNCI2014_001,
-    load_BNCI2014_002,
-    load_BNCI2014_004,
-)
-from utils.data_loader import (
-    load_BNCI2015_001,
-    load_BNCI2015_004,
-    load_Liu2024,
-    load_AlexMI,
+    MI_DataLoader,
+    SSVEP_DataLoader,
+    Sleep_Loader,
+    RestingState_DataLoader,
 )
 from utils.experiment_recorder import Parameter, Experiment
 from models.DBConformer import DBConformer
@@ -61,12 +56,34 @@ def parse_args():
             "BNCI2015_004",
             "Liu2024",
             "AlexMI",
+            "Kalunga2016",
+            "MAMEM2",
+            "MAMEM3",
+            "Nakanishi2015",
+            "Wang2021Combined",
+            "SleepPhysionet",
+            "Cattan2019_PHMD",
+            "Hinss2021",
+            "Rodrigues2017",
+            "ButtonToneSZ",
         ],
     )
     parser.add_argument("--subject", type=int, default=1)
     parser.add_argument("--device", type=str, default="cpu", choices=["cpu", "cuda"])
     parser.add_argument(
         "--verbose", action="store_true", help="Print training progress"
+    )
+    parser.add_argument(
+        "--experiment_folder",
+        type=str,
+        default="./experiments",
+        help="Folder to save experiment results",
+    )
+    parser.add_argument(
+        "--experiment_version",
+        type=str,
+        default=None,
+        help="Experiment version name for versioning results",
     )
 
     return parser.parse_args()
@@ -77,6 +94,7 @@ def main(
     experiment: Union["Experiment", None] = None,
     config=None,
     model_configs=None,
+    save_yaml: bool = True,
 ):
     if args is None:
         args = parse_args()
@@ -90,42 +108,57 @@ def main(
         bandpass_filtering,
     ]
 
+    SSVEP_DATASETS = ["Kalunga2016", "Nakanishi2015", "Wang2021Combined"]
+    SLEEP_DATASETS = ["SleepPhysionet"]
+    RESTING_STATE_DATASETS = [
+        "Cattan2019_PHMD",
+        "Hinss2021",
+        "Rodrigues2017",
+        "ButtonToneSZ",
+    ]
+
     if args.dataset == "dummy_dataset":
-        X = np.random.randn(
-            5, 3, 1000
-        )  # --> Replacce with loader class from utils.dataset_loader
+        X = np.random.randn(5, 3, 1000)
         y = np.random.randint(0, 2, size=5)
 
         dataset_info = {"n_ch": 3, "n_times": 1000, "n_classes": 2, "fs": 250}
+    elif args.dataset in RESTING_STATE_DATASETS:
+        loader = RestingState_DataLoader(
+            dataset_name=args.dataset,
+            subject=args.subject,
+            preprocessing_pipeline=PREPROCESSING,
+            tmin=10,
+            tmax=50,
+            fmin=1,
+            fmax=35,
+            resample=128,
+        )
+        X, y, dataset_info = loader.get_data()
+    elif args.dataset in SLEEP_DATASETS:
+        loader = Sleep_Loader(
+            dataset_name=args.dataset,
+            subject=args.subject,
+            preprocessing_pipeline=PREPROCESSING,
+        )
+        X, y, dataset_info = loader.get_data()
+    elif args.dataset in SSVEP_DATASETS:
+        loader = SSVEP_DataLoader(
+            dataset_name=args.dataset,
+            subject=args.subject,
+            preprocessing_pipeline=PREPROCESSING,
+            t0=0.0,
+            tmax=4.0,
+        )
+        X, y, dataset_info = loader.get_data()
     else:
-        if args.dataset == "BNCI2014_001":
-            X, y, dataset_info = load_BNCI2014_001(
-                subject=args.subject, preprocessing_pipeline=PREPROCESSING
-            )
-        elif args.dataset == "BNCI2014_002":
-            X, y, dataset_info = load_BNCI2014_002(
-                subject=args.subject, preprocessing_pipeline=PREPROCESSING
-            )
-        elif args.dataset == "BNCI2014_004":
-            X, y, dataset_info = load_BNCI2014_004(
-                subject=args.subject, preprocessing_pipeline=PREPROCESSING
-            )
-        elif args.dataset == "BNCI2015_001":
-            X, y, dataset_info = load_BNCI2015_001(
-                subject=args.subject, preprocessing_pipeline=PREPROCESSING
-            )
-        elif args.dataset == "BNCI2015_004":
-            X, y, dataset_info = load_BNCI2015_004(
-                subject=args.subject, preprocessing_pipeline=PREPROCESSING
-            )
-        elif args.dataset == "Liu2024":
-            X, y, dataset_info = load_Liu2024(
-                subject=args.subject, preprocessing_pipeline=PREPROCESSING
-            )
-        elif args.dataset == "AlexMI":
-            X, y, dataset_info = load_AlexMI(
-                subject=args.subject, preprocessing_pipeline=PREPROCESSING
-            )
+        loader = MI_DataLoader(
+            dataset_name=args.dataset,
+            subject=args.subject,
+            preprocessing_pipeline=PREPROCESSING,
+            t0=0.5,
+            t1=3.5,
+        )
+        X, y, dataset_info = loader.get_data()
 
     # ====================
     # CONFIGS & HYPERPARAMETERS
@@ -305,6 +338,9 @@ def main(
         range(1, hyperparameters.n_repeats + 1), total=hyperparameters.n_repeats
     ):
         np.random.seed(seed)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+
         k = hyperparameters.folds
         skf = StratifiedKFold(n_splits=k, shuffle=False)
 
@@ -343,6 +379,7 @@ def main(
                     depth=model_configs["tem_depth"],
                     n_classes=dataset_info["n_classes"],
                     fs=dataset_info["fs"],
+                    temporal_kernel=model_configs.get("temporal_kernel", 43),
                 )
                 model = model.to(device)
             else:
@@ -373,69 +410,77 @@ def main(
             _x_test, _y_test = X_train[test_idx], y_train[test_idx]
             _x_train, _y_train = X_train[train_idx], y_train[train_idx]
 
-            class_counts = np.bincount(
-                _y_train.astype(int), minlength=dataset_info["n_classes"]
-            )
-            total_samples = len(_y_train)
-            class_weights = total_samples / (dataset_info["n_classes"] * class_counts)
-            class_weights = torch.FloatTensor(class_weights).to(device)
+            # class_counts = np.bincount(
+            #     _y_train.astype(int), minlength=dataset_info["n_classes"]
+            # )
+            # total_samples = len(_y_train)
+            # class_weights = total_samples / (dataset_info["n_classes"] * class_counts)
+            # class_weights = torch.FloatTensor(class_weights).to(device)
 
-            loss_fn = nn.CrossEntropyLoss(weight=class_weights)
+            # loss_fn = nn.CrossEntropyLoss(weight=class_weights)
+            loss_fn = nn.CrossEntropyLoss()
 
             # Euclidean Alignemnt of epochs
             _x_train, sqrtRefEA = EA(_x_train)
             _x_test = EA_online(_x_test, sqrtRefEA)
 
-            # Compute STFT for each epoch
-            F = model_configs["filter_banks"]
-            P = model_configs["patch_size"]
-            assert (F - 1) % P == 0
-            wsize = int((F - 1) * 2)
-            assert wsize % 2 == 0
-            tstep = P
-            # tstep = math.ceil(wsize / model_configs['wsize_divisor'])
-            _stft_train = np.array(
-                [mne.time_frequency.stft(x, wsize, tstep) for x in _x_train]
-            )
-            _stft_test = np.array(
-                [mne.time_frequency.stft(x, wsize, tstep) for x in _x_test]
-            )
-            _stft_train = abs(_stft_train)
-            _stft_test = abs(_stft_test)
+            # Compute STFT or band powers for each epoch
+            stft_reconstruction_type = model_configs.get("stft_reconstruction", False)
 
-            # Trim to match model's P = (n_times - 1) // patch_size
-            target_T = (dataset_info["n_times"] - 1) // P  # 176
-            _stft_train = _stft_train[:, :, :, :target_T]  # (B, C, F, target_T)
-            _stft_test = _stft_test[:, :, :, :target_T]
-
-            freq_downsample = model_configs["freq_downsample"]
-            F_bins_trimmed = (
-                _stft_train.shape[2] // freq_downsample
-            ) * freq_downsample  # 51 → 50
-
-            _stft_train = (
-                _stft_train[:, :, :F_bins_trimmed, :]
-                .reshape(
-                    _stft_train.shape[0],
-                    _stft_train.shape[1],
-                    -1,
-                    freq_downsample,
-                    _stft_train.shape[3],
+            if stft_reconstruction_type == "STFT" or stft_reconstruction_type is True:
+                F_cfg = model_configs["filter_banks"]
+                P_cfg = model_configs["patch_size"]
+                wsize = int((F_cfg - 1) * 2)
+                assert wsize % 2 == 0
+                tstep = wsize // 2
+                _stft_train = np.array(
+                    [mne.time_frequency.stft(x, wsize, tstep) for x in _x_train]
                 )
-                .mean(axis=3)
-            )
-
-            _stft_test = (
-                _stft_test[:, :, :F_bins_trimmed, :]
-                .reshape(
-                    _stft_test.shape[0],
-                    _stft_test.shape[1],
-                    -1,
-                    freq_downsample,
-                    _stft_test.shape[3],
+                _stft_test = np.array(
+                    [mne.time_frequency.stft(x, wsize, tstep) for x in _x_test]
                 )
-                .mean(axis=3)
-            )
+                _stft_train = abs(_stft_train)
+                _stft_test = abs(_stft_test)
+                target_T = (dataset_info["n_times"] - 1) // P_cfg
+                _stft_train = _stft_train[:, :, :, :target_T]
+                _stft_test = _stft_test[:, :, :, :target_T]
+                freq_downsample = model_configs["freq_downsample"]
+                F_bins_trimmed = (
+                    _stft_train.shape[2] // freq_downsample
+                ) * freq_downsample
+                _stft_train = (
+                    _stft_train[:, :, :F_bins_trimmed, :]
+                    .reshape(
+                        _stft_train.shape[0],
+                        _stft_train.shape[1],
+                        -1,
+                        freq_downsample,
+                        _stft_train.shape[3],
+                    )
+                    .mean(axis=3)
+                )
+                _stft_test = (
+                    _stft_test[:, :, :F_bins_trimmed, :]
+                    .reshape(
+                        _stft_test.shape[0],
+                        _stft_test.shape[1],
+                        -1,
+                        freq_downsample,
+                        _stft_test.shape[3],
+                    )
+                    .mean(axis=3)
+                )
+            elif stft_reconstruction_type == "frequency":
+                F_cfg = model_configs["filter_banks"]
+                _stft_train = compute_band_powers(
+                    _x_train, n_filter_banks=F_cfg, fs=dataset_info["fs"]
+                )
+                _stft_test = compute_band_powers(
+                    _x_test, n_filter_banks=F_cfg, fs=dataset_info["fs"]
+                )
+            else:
+                _stft_train = np.zeros((len(_x_train), 1, 1, 1), dtype=np.float32)
+                _stft_test = np.zeros((len(_x_test), 1, 1, 1), dtype=np.float32)
 
             # if args.model_name=='mtf_c':
             #     mne.set_log_level('WARNING')  # suppress INFO logs
@@ -477,9 +522,12 @@ def main(
             )
 
             # Training and Evaluate CV-fold for n_iter epochs
-            best_acc_per_fold = 0
-            best_kappa_per_fold = -1
-            best_stft_reconstruction_loss_per_fold = math.inf
+            # best_acc_per_fold = 0
+            # best_kappa_per_fold = -1
+            # best_stft_reconstruction_loss_per_fold = math.inf
+            last_acc_per_fold = 0
+            last_kappa_per_fold = -1
+            last_stft_reconstruction_loss_per_fold = math.inf
             for i in range(
                 n_iter
             ):  # tqdm(range(n_iter), total=n_iter): # desc=f"Training: fold {fold+1}/{k}"
@@ -550,21 +598,33 @@ def main(
                     if (args.model_name == "mtf_c") and (stft is not None):
                         fold_stft_loss = stft_loss
 
-                    if fold_acc > best_acc_per_fold:
-                        best_acc_per_fold = fold_acc
-                        best_kappa_per_fold = fold_kappa
-                        if (args.model_name == "mtf_c") and (stft is not None):
-                            best_stft_reconstruction_loss_per_fold = fold_stft_loss
-                            start_stft_loss += fold_stft_loss.item()
+                    last_acc_per_fold = fold_acc
+                    last_kappa_per_fold = fold_kappa
+                    if (args.model_name == "mtf_c") and (stft is not None):
+                        last_stft_reconstruction_loss_per_fold = fold_stft_loss
+                        start_stft_loss += fold_stft_loss.item()
+
+                    # if fold_acc > best_acc_per_fold:
+                    #     best_acc_per_fold = fold_acc
+                    #     best_kappa_per_fold = fold_kappa
+                    #     if (args.model_name == "mtf_c") and (stft is not None):
+                    #         best_stft_reconstruction_loss_per_fold = fold_stft_loss
+                    #         start_stft_loss += fold_stft_loss.item()
 
                     # if verbose:
                     #     print(f"Acc:{fold_acc}, Kappa:{fold_kappa}")
 
-            folds_acc.append(best_acc_per_fold)
-            folds_kappa.append(best_kappa_per_fold)
+            folds_acc.append(last_acc_per_fold)
+            folds_kappa.append(last_kappa_per_fold)
             folds_stft_reconstruction_loss.append(
-                best_stft_reconstruction_loss_per_fold
+                last_stft_reconstruction_loss_per_fold
             )
+
+            # folds_acc.append(best_acc_per_fold)
+            # folds_kappa.append(best_kappa_per_fold)
+            # folds_stft_reconstruction_loss.append(
+            #     best_stft_reconstruction_loss_per_fold
+            # )
 
         accuracy = np.mean(folds_acc)
         kappa = np.mean(folds_kappa)
@@ -588,7 +648,14 @@ def main(
         f"START STFT RECONSTRUCTION LOSS: {start_stft_loss / (hyperparameters.n_repeats * hyperparameters.folds)}"
     )
 
-    return all_accuracies, all_kappas, all_stft_reconstruction_loss, experiment
+    return (
+        all_accuracies,
+        all_kappas,
+        all_stft_reconstruction_loss,
+        experiment,
+        hyperparameters,
+        model_configs,
+    )
 
 
 if __name__ == "__main__":

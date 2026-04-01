@@ -12,7 +12,7 @@ import torch
 import pytest
 from types import SimpleNamespace
 from models.MTFC import (
-    FilterBanksPatchEmbeddingTemporal,
+    MultiScaleTemporalPatchEmbedding_FilterBanks,
     STAddition,
     STAdditionProjection,
     ST_SharedProjection,
@@ -22,8 +22,8 @@ from models.MTFC import (
 )
 
 
-def test_FilterBanksPatchEmbeddingTemporal():
-    """Test FilterBanksPatchEmbeddingTemporal forward pass.
+def test_MultiScaleTemporalPatchEmbedding_FilterBanks():
+    """Test MultiScaleTemporalPatchEmbedding_FilterBanks forward pass.
 
     Verifies that the multi-branch filter bank patch embedding produces
     correct output shape (B, F, P, D) where F is the number of filter banks,
@@ -37,7 +37,7 @@ def test_FilterBanksPatchEmbeddingTemporal():
     emb_size = 40
     fs = 250
 
-    model = FilterBanksPatchEmbeddingTemporal(
+    model = MultiScaleTemporalPatchEmbedding_FilterBanks(
         args, n_filter_banks=n_filter_banks, emb_size=emb_size, fs=fs
     )
 
@@ -360,7 +360,7 @@ def test_mtfc_with_dummy_dataset():
     with open("./configs/test_cv_config.yaml", "w") as f:
         yaml.dump(quick_config, f)
 
-    all_accuracies, all_kappas, all_stft_loss, _ = cv_main(
+    all_accuracies, all_kappas, all_stft_loss, _, _, _ = cv_main(
         args=args, config="test_cv_config", model_configs=quick_config["mtf_c"]
     )
 
@@ -443,6 +443,108 @@ def test_mtfc_branch_all():
 
     assert stft.shape == (2, 22, 4, 8)
     assert embed.shape == (2, 40)
+    assert out.shape == (2, 4)
+
+
+def test_mtfc_frequency_reconstruction_sst_shared_projection_true():
+    """Test MTFC with frequency reconstruction and sst_shared_projection=True.
+
+    Verifies that:
+    1. freq_to_bandpowers MLP is created with correct input dimension (FTS)
+    2. Model outputs band powers of shape (B, F)
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="f_t_s",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="filter_banks",
+        stft_reconstruction="frequency",
+        spa_dim=16,
+        ct_shared_projection=True,
+        sst_shared_projection=True,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=20,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert hasattr(model, "freq_to_bandpowers")
+    assert isinstance(model.freq_to_bandpowers, torch.nn.Sequential)
+
+    x = torch.randn(2, 1, 22, 1001)
+    band_powers, embed, out = model(x)
+
+    assert band_powers.shape == (2, 4)  # (B, F)
+    assert embed.shape == (2, 120)  # FTS * 3 branches
+    assert out.shape == (2, 4)
+
+
+def test_mtfc_frequency_reconstruction_sst_shared_projection_false():
+    """Test MTFC with frequency reconstruction and sst_shared_projection=False.
+
+    Verifies that:
+    1. freq_to_bandpowers MLP is created with correct input dimension (D)
+    2. Model outputs band powers of shape (B, F)
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="BCI-IV-2a",
+        chn=22,
+        patch_size=125,
+        time_sample_num=1001,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="f_t_s",
+        chn_attn_flag=False,
+        fts_attn_flag=True,
+        sst_method="filter_banks",
+        stft_reconstruction="frequency",
+        spa_dim=16,
+        ct_shared_projection=False,
+        sst_shared_projection=False,
+    )
+
+    model = MTFC(
+        args,
+        n_filter_banks=4,
+        freq_downsample=1,
+        patch_emb_size=20,
+        n_heads_patch=4,
+        sst_emb_size=40,
+        depth=1,
+        n_classes=4,
+        fs=250,
+    )
+
+    assert hasattr(model, "freq_to_bandpowers")
+    assert isinstance(model.freq_to_bandpowers, torch.nn.Sequential)
+
+    x = torch.randn(2, 1, 22, 1001)
+    band_powers, embed, out = model(x)
+
+    assert band_powers.shape == (2, 4)  # (B, F)
+    assert embed.shape == (2, 60)  # D * 3 branches
     assert out.shape == (2, 4)
 
 
@@ -1000,3 +1102,109 @@ def test_mtfc_branch_ft_s_filter_banks():
     assert stft.shape == (2, 22, 4, 8)
     assert embed.shape == (2, 80)
     assert out.shape == (2, 4)
+
+
+def test_mtfc_filter_banks_temporal_kernel():
+    """Test MTFC with filter_banks method and different temporal_kernel values.
+
+    Verifies that:
+    1. temporal_kernel parameter is correctly passed to FilterBanksEmbedding_v5
+    2. Different temporal_kernel values work correctly
+    3. Forward pass produces correct output shapes
+    """
+    from models.MTFC import MTFC
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="SSVEP",
+        chn=8,
+        patch_size=100,
+        time_sample_num=1000,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="f_t_s",
+        chn_attn_flag=False,
+        fts_attn_flag=False,
+        sst_method="filter_banks",
+        stft_reconstruction="frequency",
+        spa_dim=16,
+    )
+
+    for tk in [25, 43, 63]:
+        model = MTFC(
+            args,
+            n_filter_banks=11,
+            freq_downsample=1,
+            patch_emb_size=40,
+            n_heads_patch=4,
+            sst_emb_size=40,
+            depth=1,
+            n_classes=4,
+            fs=250,
+            temporal_kernel=tk,
+        )
+
+        assert model.temporal_kernel == tk
+
+        x = torch.randn(2, 1, 8, 1000)
+        stft, embed, out = model(x)
+
+        assert embed.shape[0] == 2
+        assert embed.shape[1] == model.classifier.fc[0].in_features
+        assert out.shape == (2, 4)
+
+
+def test_mtfc_filter_banks_variant():
+    """Test MTFC with different filter_banks_variant values.
+
+    Verifies that:
+    1. filter_banks_variant parameter correctly selects the embedding class
+    2. All variant names work correctly
+    3. Forward pass produces correct output shapes
+    """
+    from models.MTFC import MTFC, FILTER_BANKS_VARIANTS
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="SSVEP",
+        chn=8,
+        patch_size=100,
+        time_sample_num=1000,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="f_t_s",
+        chn_attn_flag=False,
+        fts_attn_flag=False,
+        sst_method="filter_banks",
+        stft_reconstruction="frequency",
+        spa_dim=16,
+    )
+
+    for variant_name in FILTER_BANKS_VARIANTS.keys():
+        model = MTFC(
+            args,
+            n_filter_banks=11,
+            freq_downsample=1,
+            patch_emb_size=40,
+            n_heads_patch=4,
+            sst_emb_size=40,
+            depth=1,
+            n_classes=4,
+            fs=250,
+            temporal_kernel=43,
+            filter_banks_variant=variant_name,
+        )
+
+        assert model.filter_banks_variant == variant_name
+        assert isinstance(
+            model.frequency_embedding, FILTER_BANKS_VARIANTS[variant_name]
+        )
+
+        x = torch.randn(2, 1, 8, 1000)
+        stft, embed, out = model(x)
+
+        assert embed.shape[0] == 2
+        assert embed.shape[1] == model.classifier.fc[0].in_features
+        assert out.shape == (2, 4)

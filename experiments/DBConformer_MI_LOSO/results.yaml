@@ -1,0 +1,54 @@
+db_conformer:
+  '2026-04-01T12:59:54.217436':
+    experiment_description: DBConformer MOTOR_IMAGERY benchmark on REST datasets
+    messages: []
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 64
+      model:
+        patch_size: 100
+        filter_banks: 11
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: all
+        chn_attn_flag: true
+        fts_attn_flag: false
+        sst_method: false
+        stft_reconstruction: false
+        emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+    results:
+      BNCI2014_001:
+        accuracy:
+          mean: 0.6984953747855293
+          std: 0.14367710850175502
+        kappa:
+          mean: 0.3969907495710585
+          std: 0.28735421700351005
+        stft_reconstruction_loss: null
+      BNCI2014_002:
+        accuracy:
+          mean: 0.6428571449858802
+          std: 0.12992102931505364
+        kappa:
+          mean: 0.28571428997176035
+          std: 0.2598420586301073
+        stft_reconstruction_loss: null
+      BNCI2014_004:
+        accuracy:
+          mean: 0.6211970912085639
+          std: 0.08751494454986211
+        kappa:
+          mean: 0.24239418241712782
+          std: 0.1750298890997242
+        stft_reconstruction_loss: null

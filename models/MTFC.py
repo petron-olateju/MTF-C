@@ -422,7 +422,6 @@ class SpectrogramEstimator(nn.Module):
             return self.mlp(z_st).squeeze(dim=-1).permute(0, 2, 3, 1)
 
         elif self.method == "filter_banks":
-
             if hasattr(self, "ct_shared_projection"):
                 z_f = self.ct_shared_projection(z_st)
                 z_t = self.ct_shared_projection(x_embed_temporal)
@@ -442,7 +441,7 @@ class SpectrogramEstimator(nn.Module):
         raise ValueError(f"Unknown spectrogram estimator method: {self.method}")
 
 
-class FilterBanksPatchEmbeddingTemporal(nn.Module):
+class MultiScaleTemporalPatchEmbedding_FilterBanks(nn.Module):
     """Patch embedding with multiple filter bank branches.
 
     Creates parallel patch embedding branches, each optimized for a different
@@ -500,8 +499,286 @@ class FilterBanksPatchEmbeddingTemporal(nn.Module):
             dim=1,
         )
         return out
-    
-class FilterBanksEmbedding(nn.Module):
+
+
+class MultiTemporalConvPool_ChannelsProject_FilterBanks(nn.Module):
+    def __init__(
+        self,
+        n_channels,
+        n_filter_banks,
+        emb_size=40,
+        temporal_kernel=43,
+        n_time_points=1000,
+        dropout=0.5,
+    ):
+        super().__init__()
+        self.F = n_filter_banks
+        self.D = emb_size
+        self.C = n_channels
+
+        self.temporal_pool = 3
+
+        T_out = n_time_points
+        self.T_out = T_out
+
+        self.filter_convs = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Conv1d(
+                        n_channels,
+                        n_channels,
+                        kernel_size=temporal_kernel,
+                        padding=temporal_kernel // 2,
+                        groups=n_channels,
+                        bias=False,
+                    ),
+                    nn.BatchNorm1d(n_channels),
+                    nn.ELU(),
+                    nn.Dropout(dropout),
+                )
+                for _ in range(n_filter_banks)
+            ]
+        )
+
+        self.head = nn.Sequential(
+            nn.Conv1d(n_channels, emb_size, kernel_size=1),
+            nn.AvgPool1d(kernel_size=3, stride=3),
+            nn.Flatten(start_dim=1),
+        )
+
+    def forward(self, x):  # x: (B, C, T)
+        B, C, T = x.shape
+        bank_outputs = []
+        for conv in self.filter_convs:
+            z = conv(x)  # (B, C, T')
+            z = self.head(z)  # (B, D * T_pool) where T_pool = T'//3
+            bank_outputs.append(z)
+
+        T_pool = z.shape[1] // self.D
+        out = torch.stack(bank_outputs, dim=1)  # (B, F, D * T_pool)
+        out = out.view(B, self.F, self.D, T_pool)  # (B, F, D, T_pool)
+        out = out.mean(dim=-1)  # (B, F, D) - pool temporal bins
+        return out  # (B, F, D)
+
+
+class MultiTemporalConvFixedPool_ChannelsProject_FilterBanks(nn.Module):
+    def __init__(
+        self,
+        n_channels,
+        n_filter_banks,
+        emb_size=40,
+        temporal_kernel=43,
+        n_time_points=1000,
+        dropout=0.5,
+    ):
+        super().__init__()
+        self.F = n_filter_banks
+        self.D = emb_size
+        self.C = n_channels
+        self.temporal_pool = 3
+
+        T_out = n_time_points
+        self.T_out = T_out
+
+        self.filter_convs = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Conv1d(
+                        n_channels,
+                        n_channels,
+                        kernel_size=temporal_kernel,
+                        padding=temporal_kernel // 2,
+                        groups=n_channels,
+                        bias=False,
+                    ),
+                    nn.BatchNorm1d(n_channels),
+                    nn.ELU(),
+                    nn.Dropout(dropout),
+                )
+                for _ in range(n_filter_banks)
+            ]
+        )
+
+        self.head = nn.Sequential(
+            nn.Conv1d(n_channels, emb_size, kernel_size=1),
+            nn.AdaptiveAvgPool1d(3),
+            nn.Flatten(start_dim=1),
+        )
+
+    def forward(self, x):  # x: (B, C, T)
+        B, C, T = x.shape
+        bank_outputs = []
+        for conv in self.filter_convs:
+            z = conv(x)  # (B, C, T')
+            z = self.head(z)  # (B, D*3) - pooled temporal to 3 bins
+            bank_outputs.append(z)
+
+        out = torch.stack(bank_outputs, dim=1)  # (B, F, D*3)
+        out = out.view(B, self.F, self.D, 3)  # (B, F, D, 3)
+        out = out.mean(dim=-1)  # (B, F, D) - pool temporal bins
+        return out  # (B, F, D)
+
+
+class MultiTemporalCollapse_ChannelsProject_FilterBanks(nn.Module):
+    def __init__(
+        self,
+        n_channels,
+        n_filter_banks,
+        emb_size=40,
+        temporal_kernel=43,
+        dropout=0.5,
+        n_time_points=None,
+    ):
+        super().__init__()
+        self.F = n_filter_banks
+        self.D = emb_size
+
+        # F independent temporal filters — each learns different frequency response
+        self.filter_convs = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Conv1d(
+                        n_channels,
+                        n_channels,
+                        kernel_size=temporal_kernel,
+                        padding=temporal_kernel // 2,
+                        groups=n_channels,
+                        bias=False,
+                    ),
+                    nn.BatchNorm1d(n_channels),
+                    nn.ELU(),
+                    nn.Dropout(dropout),
+                )
+                for _ in range(n_filter_banks)
+            ]
+        )
+
+        # Shared spatial + temporal projection — C channels × T' → emb_size
+        # Applied identically per bank after filtering
+        self.head = nn.Sequential(
+            nn.AdaptiveAvgPool1d(1),  # (B*C, T') → (B*C, 1)
+            nn.Flatten(),  # (B*C,)
+        )
+        # After stacking: (B, F, C) → mean over C → (B, F) → Linear → (B, F, D)
+        self.proj = nn.Linear(n_channels, emb_size)
+
+    def forward(self, x):  # x: (B, C, T)
+        B, C, T = x.shape
+        bank_outputs = []
+        for conv in self.filter_convs:
+            z = conv(x)  # (B, C, T')
+            z = z.mean(dim=-1)  # (B, C) — pool T per channel per bank
+            bank_outputs.append(z)
+
+        out = torch.stack(bank_outputs, dim=1)  # (B, F, C)
+        out = self.proj(out)  # (B, F, D) — Linear(C, D) per bank
+        return out  # (B, F, D)
+
+
+class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks(nn.Module):
+    def __init__(
+        self,
+        n_channels,
+        n_filter_banks,
+        emb_size=40,
+        dropout=0.5,
+        fs=250,
+        temporal_kernel=None,
+        n_time_points=None,
+    ):
+        super().__init__()
+        self.F = n_filter_banks
+        self.D = emb_size
+
+        # Multiple kernel sizes covering different frequency scales
+        # Small kernel → sensitive to high frequencies
+        # Large kernel → sensitive to low frequencies
+        kernel_sizes = [
+            max(3, int(fs / 30)),  # ~8 samples @ 250Hz → gamma range
+            max(3, int(fs / 13)),  # ~19 samples → beta range
+            max(3, int(fs / 8)),  # ~31 samples → alpha range
+            max(3, int(fs / 4)),  # ~62 samples → theta range
+            max(3, int(fs / 1)),  # ~250 samples → delta range
+        ]
+        # Make all odd for symmetric padding
+        kernel_sizes = [k if k % 2 == 1 else k + 1 for k in kernel_sizes]
+        self.n_scales = len(kernel_sizes)
+
+        # One depthwise conv per scale — each sensitive to a different frequency range
+        self.scale_convs = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Conv1d(
+                        n_channels,
+                        n_channels,
+                        kernel_size=k,
+                        padding=k // 2,
+                        groups=n_channels,
+                        bias=False,
+                    ),
+                    nn.BatchNorm1d(n_channels),
+                    nn.ELU(),
+                    nn.Dropout(dropout),
+                    nn.AdaptiveAvgPool1d(1),
+                    nn.Flatten(),  # (B, n_channels)
+                )
+                for k in kernel_sizes
+            ]
+        )
+
+        # Project concatenated multi-scale features to F*D
+        # Input dim: n_channels * n_scales
+        self.bank_heads = nn.Linear(
+            n_channels * self.n_scales, n_filter_banks * emb_size
+        )
+
+    def forward(self, x):  # x: (B, C, T)
+        # Extract features at each temporal scale independently
+        scale_features = [conv(x) for conv in self.scale_convs]  # list of (B, C)
+        z = torch.cat(scale_features, dim=-1)  # (B, C * n_scales)
+        out = self.bank_heads(z)  # (B, F*D)
+        return out.view(x.size(0), self.F, self.D)  # (B, F, D)
+
+
+class TemporalCollapse_ChannelsExpand_FilterBanks(nn.Module):
+    def __init__(
+        self,
+        n_channels,
+        n_filter_banks,
+        emb_size=40,
+        temporal_kernel=25,
+        dropout=0.5,
+        n_time_points=None,
+    ):
+        super().__init__()
+        self.F = n_filter_banks
+        self.D = emb_size
+
+        # Heavy backbone runs once
+        self.backbone = nn.Sequential(
+            nn.Conv1d(
+                n_channels,
+                n_channels,
+                kernel_size=temporal_kernel,
+                padding=temporal_kernel // 2,
+                groups=n_channels,
+                bias=False,
+            ),
+            nn.BatchNorm1d(n_channels),
+            nn.ELU(),
+            nn.Dropout(dropout),
+            nn.AdaptiveAvgPool1d(1),
+            nn.Flatten(),  # (B, n_channels)
+        )
+        self.bank_heads = nn.Linear(n_channels, n_filter_banks * emb_size)
+
+    def forward(self, x):  # x: (B, C, T)
+        z = self.backbone(x)  # (B, D)
+        out = self.bank_heads(z)  # (B, F*D)
+        return out.view(x.size(0), self.F, self.D)  # (B, F, D)
+
+
+class SpatioTemporalConv_FilterBanks(nn.Module):
     """Learnable 2D filter bank embedding for EEG signals.
 
     Applies F learned 2D convolutional filters over (C, T) to produce
@@ -544,6 +821,7 @@ class FilterBanksEmbedding(nn.Module):
         spatial_kernel=None,
         temporal_kernel=25,
         dropout=0.5,
+        n_time_points=None,
     ):
         super().__init__()
         self.F = n_filter_banks
@@ -552,38 +830,40 @@ class FilterBanksEmbedding(nn.Module):
 
         # Each filter bank is an independent 2D conv pipeline so filters
         # cannot share weights and are forced to specialise.
-        self.filter_banks = nn.ModuleList([
-            nn.Sequential(
-                # Treat input as (B, 1, C, T) — single in-channel 2D image
-                # Spatial conv: learns cross-channel weighting
-                nn.Conv2d(
-                    in_channels=1,
-                    out_channels=emb_size,
-                    kernel_size=(spatial_kernel, 1),
-                    padding=(spatial_kernel // 2, 0),
-                    bias=False,
-                ),
-                nn.BatchNorm2d(emb_size),
-                nn.ELU(),
-                nn.Dropout2d(dropout),
-                # Temporal conv: learns oscillatory structure at this bank's scale
-                nn.Conv2d(
-                    in_channels=emb_size,
-                    out_channels=emb_size,
-                    kernel_size=(1, temporal_kernel),
-                    padding=(0, temporal_kernel // 2),
-                    groups=emb_size,          # depthwise — each feature evolves independently
-                    bias=False,
-                ),
-                nn.BatchNorm2d(emb_size),
-                nn.ELU(),
-                nn.Dropout2d(dropout),
-                # Collapse spatial and temporal dims → single vector per filter bank
-                nn.AdaptiveAvgPool2d((1, 1)),
-                nn.Flatten(),                 # (B, emb_size)
-            )
-            for _ in range(n_filter_banks)
-        ])
+        self.filter_banks = nn.ModuleList(
+            [
+                nn.Sequential(
+                    # Treat input as (B, 1, C, T) — single in-channel 2D image
+                    # Spatial conv: learns cross-channel weighting
+                    nn.Conv2d(
+                        in_channels=1,
+                        out_channels=emb_size,
+                        kernel_size=(spatial_kernel, 1),
+                        padding=(spatial_kernel // 2, 0),
+                        bias=False,
+                    ),
+                    nn.BatchNorm2d(emb_size),
+                    nn.ELU(),
+                    nn.Dropout2d(dropout),
+                    # Temporal conv: learns oscillatory structure at this bank's scale
+                    nn.Conv2d(
+                        in_channels=emb_size,
+                        out_channels=emb_size,
+                        kernel_size=(1, temporal_kernel),
+                        padding=(0, temporal_kernel // 2),
+                        groups=emb_size,  # depthwise — each feature evolves independently
+                        bias=False,
+                    ),
+                    nn.BatchNorm2d(emb_size),
+                    nn.ELU(),
+                    nn.Dropout2d(dropout),
+                    # Collapse spatial and temporal dims → single vector per filter bank
+                    nn.AdaptiveAvgPool2d((1, 1)),
+                    nn.Flatten(),  # (B, emb_size)
+                )
+                for _ in range(n_filter_banks)
+            ]
+        )
 
         self.apply(self._init_weights)
 
@@ -598,15 +878,104 @@ class FilterBanksEmbedding(nn.Module):
 
     def forward(self, x):  # x: (B, C, T)
         x = x.unsqueeze(1)  # → (B, 1, C, T)
-        out = torch.stack(
-            [fb(x) for fb in self.filter_banks], dim=1
-        )  # → (B, F, D)
+        out = torch.stack([fb(x) for fb in self.filter_banks], dim=1)  # → (B, F, D)
         return out
+
+
+class FilterBanksEmbedding(nn.Module):
+    """Learnable 2D filter bank embedding for EEG signals.
+
+    Runs all F filter banks in two grouped Conv2d calls instead of
+    F sequential forward passes, eliminating the Python loop bottleneck.
+
+    Input:  (B, C, T)
+    Output: (B, F, D)
+    """
+
+    def __init__(
+        self,
+        n_channels,
+        n_filter_banks,
+        emb_size=40,
+        spatial_kernel=None,
+        temporal_kernel=25,
+        dropout=0.5,
+        n_time_points=None,
+    ):
+        super().__init__()
+        self.F = n_filter_banks
+        self.D = emb_size
+        spatial_kernel = spatial_kernel or n_channels
+
+        # All F banks fused: groups=F keeps each bank's filters independent
+        # Input treated as (B, F, C, T) — F copies of the same signal
+        self.spatial_conv = nn.Conv2d(
+            in_channels=self.F,
+            out_channels=self.F * emb_size,
+            kernel_size=(spatial_kernel, 1),
+            padding=(spatial_kernel // 2, 0),
+            groups=self.F,
+            bias=False,
+        )
+        self.spatial_bn = nn.BatchNorm2d(self.F * emb_size)
+        self.spatial_drop = nn.Dropout2d(dropout)
+
+        self.temporal_conv = nn.Conv2d(
+            in_channels=self.F * emb_size,
+            out_channels=self.F * emb_size,
+            kernel_size=(1, temporal_kernel),
+            padding=(0, temporal_kernel // 2),
+            groups=self.F * emb_size,  # fully depthwise
+            bias=False,
+        )
+        self.temporal_bn = nn.BatchNorm2d(self.F * emb_size)
+        self.temporal_drop = nn.Dropout2d(dropout)
+
+        self.pool = nn.AdaptiveAvgPool2d((1, 1))
+
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.trunc_normal_(m.weight, std=0.01)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.BatchNorm2d):
+            nn.init.constant_(m.weight, 1.0)
+            nn.init.constant_(m.bias, 0)
+
+    def forward(self, x):  # x: (B, C, T)
+        B, C, T = x.shape
+        # Give each filter bank its own copy of the input: (B, F, C, T)
+        x = x.unsqueeze(1).expand(-1, self.F, -1, -1).contiguous()
+
+        x = self.spatial_drop(
+            F.elu(self.spatial_bn(self.spatial_conv(x)))
+        )  # (B, F*D, C', T)
+        x = self.temporal_drop(
+            F.elu(self.temporal_bn(self.temporal_conv(x)))
+        )  # (B, F*D, 1', T')
+        x = self.pool(x)  # (B, F*D, 1, 1)
+        x = x.view(B, self.F, self.D)  # (B, F, D)
+        return x
 
 
 # =============================================================================
 # Main Model
 # =============================================================================
+
+
+FILTER_BANKS_VARIANTS = {
+    "MultiTemporalConvPool_ChannelsProject_FilterBanks": MultiTemporalConvPool_ChannelsProject_FilterBanks,
+    "MultiTemporalConvFixedPool_ChannelsProject_FilterBanks": MultiTemporalConvFixedPool_ChannelsProject_FilterBanks,
+    "MultiTemporalCollapse_ChannelsProject_FilterBanks": MultiTemporalCollapse_ChannelsProject_FilterBanks,
+    "MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks": MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks,
+    "TemporalCollapse_ChannelsExpand_FilterBanks": TemporalCollapse_ChannelsExpand_FilterBanks,
+    "SpatioTemporalConv_FilterBanks": SpatioTemporalConv_FilterBanks,
+    "FilterBanksEmbedding": FilterBanksEmbedding,
+}
+
+DEFAULT_FILTER_BANKS_VARIANT = "MultiTemporalConvPool_ChannelsProject_FilterBanks"
 
 
 class MTFC(nn.Module):
@@ -675,8 +1044,11 @@ class MTFC(nn.Module):
         depth=5,
         n_classes=2,
         fs=250,
+        temporal_kernel=43,
+        filter_banks_variant=DEFAULT_FILTER_BANKS_VARIANT,
     ):
         super().__init__()
+        self.temporal_kernel = temporal_kernel
         self.P = (args.time_sample_num - 1) // args.patch_size
         self.C = args.chn
         self.D = patch_emb_size
@@ -695,11 +1067,13 @@ class MTFC(nn.Module):
         self.stft_reconstruction = args.stft_reconstruction
         self.ct_shared_projection = getattr(args, "ct_shared_projection", True)
         self.sst_shared_projection = getattr(args, "sst_shared_projection", True)
+        self.filter_banks_variant = filter_banks_variant
 
         self.branch_spec = parse_branch_config(self.branch)
         if self.sst_method is False:
-            assert all('f' not in dims for dims in self.branch_spec), \
+            assert all("f" not in dims for dims in self.branch_spec), (
                 "Cannot use frequency branch when sst_method=False"
+            )
 
         wsize = int((self.F - 1) * 2)
         tstep = math.ceil(wsize / wsize_divisor)
@@ -721,10 +1095,10 @@ class MTFC(nn.Module):
         frequency, temporal, and spatial embeddings separately after transformer.
         """
         self.branch_attention_pool = nn.Sequential(
-                nn.Linear(self.transformer_dim, self.transformer_dim),
-                nn.Tanh(),
-                nn.Linear(self.transformer_dim, 1),
-            )
+            nn.Linear(self.transformer_dim, self.transformer_dim),
+            nn.Tanh(),
+            nn.Linear(self.transformer_dim, 1),
+        )
 
     def _apply_branch_attention_pooling(self, branch_output, branch_dims):
         """Apply attention pooling to transformer output after processing.
@@ -756,7 +1130,7 @@ class MTFC(nn.Module):
         elif branch_dims == "fts":
             seq_len = self.F * self.P * self.C
 
-        dim_output = branch_output[:, seq_idx : seq_idx + seq_len] # type: ignore
+        dim_output = branch_output[:, seq_idx : seq_idx + seq_len]  # type: ignore
         if self.fts_attn_flag:
             attn_weights = torch.softmax(attn_pool(dim_output), dim=1)
             pooled = torch.sum(attn_weights * dim_output, dim=1)
@@ -794,7 +1168,6 @@ class MTFC(nn.Module):
         """
         classifier_input_dim = self.transformer_dim * self.num_branches
         self.classifier = ClassificationHead(classifier_input_dim, self.n_classes)
-
 
     def _build_sst_layers(self, args):
         """Build spectral-spatio-temporal method specific layers.
@@ -852,9 +1225,6 @@ class MTFC(nn.Module):
             )
 
         elif self.sst_method == "filter_banks":
-            # self.temporal_embedding = FilterBanksPatchEmbeddingTemporal(
-            #     args, n_filter_banks=self.F, emb_size=self.D, fs=self.fs
-            # )
             self.temporal_embedding = PatchEmbeddingTemporal(
                 data_name=args.data_name,
                 in_planes=args.chn,
@@ -865,19 +1235,32 @@ class MTFC(nn.Module):
                 time_points=args.time_sample_num,
                 num_classes=args.class_num,
             )
-            self.frequency_embedding = FilterBanksEmbedding(
+            FilterBanksClass = FILTER_BANKS_VARIANTS.get(
+                self.filter_banks_variant, DEFAULT_FILTER_BANKS_VARIANT
+            )
+            self.frequency_embedding = FilterBanksClass(
                 n_channels=self.C,
                 n_filter_banks=self.F,
-                emb_size=self.D
-            )
-            self.spectrogram_estimator = SpectrogramEstimator(
-                method="filter_banks",
                 emb_size=self.D,
-                n_freqs=self.F,
-                num_channels=self.C,
-                num_patches=self.P,
-                use_ct_shared_projection=self.ct_shared_projection,
+                temporal_kernel=self.temporal_kernel,
+                n_time_points=args.time_sample_num,
             )
+            if self.stft_reconstruction == "frequency":
+                freq_dim = self.FTS if self.sst_shared_projection else self.D
+                self.freq_to_bandpowers = nn.Sequential(
+                    nn.Linear(freq_dim, freq_dim),
+                    nn.ELU(),
+                    nn.Linear(freq_dim, 1),
+                )
+            elif self.stft_reconstruction:
+                self.spectrogram_estimator = SpectrogramEstimator(
+                    method="filter_banks",
+                    emb_size=self.D,
+                    n_freqs=self.F,
+                    num_channels=self.C,
+                    num_patches=self.P,
+                    use_ct_shared_projection=self.ct_shared_projection,
+                )
         else:
             self.temporal_embedding = PatchEmbeddingTemporal(
                 data_name=args.data_name,
@@ -951,16 +1334,20 @@ class MTFC(nn.Module):
 
         if self.sst_method == "filter_banks":
             x_embed_frequency = self.frequency_embedding(x.squeeze(1))
-            # x_embed_frequency = x_embed_temporal.mean(dim=2)
-            # x_embed_temporal = x_embed_temporal.mean(dim=1)
-            if self.stft_reconstruction:
-                stft = self._compute_spectrogram(x_embed_temporal, x_embed_spatial, x_embed_frequency)
+            if self.stft_reconstruction == "frequency":
+                pass  # Will handle in output computation
+            elif self.stft_reconstruction:
+                stft = self._compute_spectrogram(
+                    x_embed_temporal, x_embed_spatial, x_embed_frequency
+                )
         else:
             stft = self._compute_spectrogram(x_embed_temporal, x_embed_spatial, None)
             x_embed_frequency = self._compute_frequency_embedding(stft)
 
-        x_embed_temporal, x_embed_spatial, x_embed_frequency = self._apply_positional_encoding(
-            x_embed_temporal, x_embed_spatial, x_embed_frequency
+        x_embed_temporal, x_embed_spatial, x_embed_frequency = (
+            self._apply_positional_encoding(
+                x_embed_temporal, x_embed_spatial, x_embed_frequency
+            )
         )
 
         if self.sst_shared_projection and self.sst_method is not False:
@@ -968,18 +1355,27 @@ class MTFC(nn.Module):
             x_embed_temporal = self.sst_shared_projection_layer(x_embed_temporal)
             x_embed_spatial = self.sst_shared_projection_layer(x_embed_spatial)
 
-
         if self.branch == "all":
-            z_hat_f = x_embed_frequency.unsqueeze(2).unsqueeze(1).expand(-1, self.C, -1, self.P, -1)
-            z_hat_t = x_embed_temporal.unsqueeze(1).unsqueeze(2).expand(-1, self.C, self.F, -1, -1)
-            z_hat_s = x_embed_spatial.unsqueeze(2).unsqueeze(3).expand(-1, -1, self.F, self.P, -1)
-  
-            x_embed_fts = (z_hat_s + z_hat_f +z_hat_t).contiguous()
+            z_hat_f = (
+                x_embed_frequency.unsqueeze(2)
+                .unsqueeze(1)
+                .expand(-1, self.C, -1, self.P, -1)
+            )
+            z_hat_t = (
+                x_embed_temporal.unsqueeze(1)
+                .unsqueeze(2)
+                .expand(-1, self.C, self.F, -1, -1)
+            )
+            z_hat_s = (
+                x_embed_spatial.unsqueeze(2)
+                .unsqueeze(3)
+                .expand(-1, -1, self.F, self.P, -1)
+            )
+
+            x_embed_fts = (z_hat_s + z_hat_f + z_hat_t).contiguous()
             x_embed_fts = rearrange(x_embed_fts, "b c f t d -> b (c f t) d")
             x_embed_fts = self.transformers["branch_0"](x_embed_fts)
-            x_embed_fts = self._apply_branch_attention_pooling(
-                x_embed_fts, ("fts")
-            )
+            x_embed_fts = self._apply_branch_attention_pooling(x_embed_fts, ("fts"))
             outputs = [x_embed_fts]
         else:
             outputs = []
@@ -987,8 +1383,12 @@ class MTFC(nn.Module):
                 branch_key = f"branch_{i}"
 
                 if branch_dims == ("f", "t"):
-                    branch_emb_f = x_embed_frequency.unsqueeze(2).expand(-1, -1, self.P, -1)
-                    branch_emb_t = x_embed_temporal.unsqueeze(1).expand(-1, self.F, -1, -1)
+                    branch_emb_f = x_embed_frequency.unsqueeze(2).expand(
+                        -1, -1, self.P, -1
+                    )
+                    branch_emb_t = x_embed_temporal.unsqueeze(1).expand(
+                        -1, self.F, -1, -1
+                    )
                     branch_emb = (branch_emb_f + branch_emb_t).contiguous()
                     branch_emb = rearrange(branch_emb, "b f p d -> b (f p) d")
                 elif branch_dims == ("t", "s"):
@@ -1016,30 +1416,33 @@ class MTFC(nn.Module):
                 elif branch_dims == ("s",):
                     branch_emb = x_embed_spatial
 
-                branch_emb = self.transformers[branch_key](branch_emb) # type: ignore
+                branch_emb = self.transformers[branch_key](branch_emb)  # type: ignore
                 branch_pooled = self._apply_branch_attention_pooling(
                     branch_emb, branch_dims
                 )
                 outputs.append(branch_pooled)
 
-        branch_tokens = torch.stack(outputs, dim=1)
-        branch_tokens = self.branch_fusion_transformer(branch_tokens)
-        x_embed_fts = rearrange(branch_tokens, "b t d -> b (t d)")
-
-        # x_embed_fts = torch.cat(outputs, dim=-1)
+        x_embed_fts = torch.cat(outputs, dim=-1)
 
         x_embed = x_embed_fts
         _, out = self.classifier(x_embed)
 
-        if self.stft_reconstruction and stft is not None:
-            loomed_stft = F.elu(self.stft_temporal_loom(stft.permute(0, 3, 1, 2)))  # type: ignore
+        if self.stft_reconstruction == "frequency" and hasattr(
+            self, "freq_to_bandpowers"
+        ):
+            band_powers = self.freq_to_bandpowers(x_embed_frequency).squeeze(-1)
+            return band_powers, x_embed, out
+        elif self.stft_reconstruction and stft is not None:
+            loomed_stft = F.elu(self.stft_temporal_loom(stft.permute(0, 3, 1, 2)))
             loomed_stft = loomed_stft.permute(
                 0, 2, 1, 3
             )  # (B, F, C, P) -> (B, C, F, P)
             return loomed_stft, x_embed, out
         return None, x_embed, out
 
-    def _compute_spectrogram(self, x_embed_temporal, x_embed_spatial, x_embed_frequency):
+    def _compute_spectrogram(
+        self, x_embed_temporal, x_embed_spatial, x_embed_frequency
+    ):
         """Compute spectrogram based on SST method.
 
         Args:
@@ -1059,7 +1462,9 @@ class MTFC(nn.Module):
             return self.spectrogram_estimator(z_st, x_embed_temporal, x_embed_spatial)
 
         elif self.sst_method == "filter_banks":
-            return self.spectrogram_estimator(x_embed_frequency, x_embed_temporal, x_embed_spatial)
+            return self.spectrogram_estimator(
+                x_embed_frequency, x_embed_temporal, x_embed_spatial
+            )
 
         return None
 
