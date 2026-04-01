@@ -167,7 +167,7 @@ All MTFC parameters are under the `mtfc:` section:
 |-----------|------|-----------------|---------|-------------|
 | `patch_size` | int | Positive integer | `100` | Patch size for temporal segmentation |
 | `filter_banks` | int | Positive integer | `11` | Number of filter banks |
-| `filter_banks_variant` | str | `MultiTemporalConvPool_ChannelsProject_FilterBanks` | `MultiTemporalConvPool_ChannelsProject_FilterBanks` | Filter bank variant |
+| `filter_banks_variant` | str | `MultiTemporalConvPool_ChannelsProject_FilterBanks`, `MultiTemporalConvFixedPool_ChannelsProject_FilterBanks`, `MultiTemporalCollapse_ChannelsProject_FilterBanks`, `MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks`, `TemporalCollapse_ChannelsExpand_FilterBanks`, `SpatioTemporalConv_FilterBanks`, `FilterBanksEmbedding` | `MultiTemporalConvPool_ChannelsProject_FilterBanks` | Filter bank variant (see below) |
 | `freq_downsample` | int | Positive integer | `1` | Frequency downsampling factor |
 | `wsize_divisor` | int | `2, 4` | `2` | Window size divisor |
 | `spa_dim` | int | Positive integer | `16` | Spatial embedding dimension |
@@ -216,6 +216,18 @@ The `branch` parameter defines how frequency (f), temporal (t), and spatial (s) 
 | `true` | Same as `STFT` |
 | `STFT` | Use Short-Time Fourier Transform for reconstruction |
 | `frequency` | Use band power features for reconstruction |
+
+### Filter Banks Variant Options
+
+| Value | Description |
+|-------|-------------|
+| `MultiTemporalConvPool_ChannelsProject_FilterBanks` | Default - Multi-scale temporal convolution with pooling and channel projection |
+| `MultiTemporalConvFixedPool_ChannelsProject_FilterBanks` | Multi-scale temporal convolution with fixed pooling and channel projection |
+| `MultiTemporalCollapse_ChannelsProject_FilterBanks` | Temporal collapse with channel projection |
+| `MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks` | Multi-scale temporal collapse with channel expansion |
+| `TemporalCollapse_ChannelsExpand_FilterBanks` | Temporal collapse with channel expansion |
+| `SpatioTemporalConv_FilterBanks` | Spatio-temporal convolution for filter banks |
+| `FilterBanksEmbedding` | Simple filter banks embedding (no temporal processing) |
 
 ### Grid Search Configuration
 
