@@ -122,7 +122,7 @@ def main():
     elif args.dataset == "resting_state":
         datasets = [
             "Cattan2019_PHMD",
-            "ButtonToneSZ",
+            # "ButtonToneSZ",
             "Hinss2021",
             "Rodrigues2017",
         ]  # Excluded Hinss2021, too short (2s length), Rodrigues2017 (too short for five-fold CV)

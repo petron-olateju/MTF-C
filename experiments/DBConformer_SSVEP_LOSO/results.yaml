@@ -1,0 +1,54 @@
+db_conformer:
+  '2026-04-01T08:14:14.561034':
+    experiment_description: DBConformer LOSO benchmark on SSVEP datasets
+    messages: []
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 64
+      model:
+        patch_size: 100
+        filter_banks: 11
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: all
+        chn_attn_flag: true
+        fts_attn_flag: false
+        sst_method: false
+        stft_reconstruction: false
+        emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+    results:
+      Kalunga2016:
+        accuracy:
+          mean: 0.6448189367850622
+          std: 0.1553046546473608
+        kappa:
+          mean: 0.2896378735701243
+          std: 0.3106093092947216
+        stft_reconstruction_loss: null
+      Nakanishi2015:
+        accuracy:
+          mean: 0.8095619711611006
+          std: 0.18751596670649548
+        kappa:
+          mean: 0.6191239423222012
+          std: 0.37503193341299096
+        stft_reconstruction_loss: null
+      Wang2021Combined:
+        accuracy:
+          mean: 0.3736049085855484
+          std: 0.05186657754785131
+        kappa:
+          mean: -0.2527901828289032
+          std: 0.10373315509570262
+        stft_reconstruction_loss: null
