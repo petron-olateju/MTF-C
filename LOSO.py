@@ -85,6 +85,13 @@ def parse_args():
         help="Experiment version name for versioning results",
     )
 
+    parser.add_argument(
+        "--subjects-list",
+        type=str,
+        default="",
+        help="Comma-separated list of subjects to process",
+    )
+
     return parser.parse_args()
 
 

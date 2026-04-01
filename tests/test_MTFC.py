@@ -12,7 +12,7 @@ import torch
 import pytest
 from types import SimpleNamespace
 from models.MTFC import (
-    FilterBanksPatchEmbeddingTemporal,
+    MultiScaleTemporalPatchEmbedding_FilterBanks,
     STAddition,
     STAdditionProjection,
     ST_SharedProjection,
@@ -22,8 +22,8 @@ from models.MTFC import (
 )
 
 
-def test_FilterBanksPatchEmbeddingTemporal():
-    """Test FilterBanksPatchEmbeddingTemporal forward pass.
+def test_MultiScaleTemporalPatchEmbedding_FilterBanks():
+    """Test MultiScaleTemporalPatchEmbedding_FilterBanks forward pass.
 
     Verifies that the multi-branch filter bank patch embedding produces
     correct output shape (B, F, P, D) where F is the number of filter banks,
@@ -37,7 +37,7 @@ def test_FilterBanksPatchEmbeddingTemporal():
     emb_size = 40
     fs = 250
 
-    model = FilterBanksPatchEmbeddingTemporal(
+    model = MultiScaleTemporalPatchEmbedding_FilterBanks(
         args, n_filter_banks=n_filter_banks, emb_size=emb_size, fs=fs
     )
 

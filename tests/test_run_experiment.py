@@ -28,7 +28,7 @@ class TestParseArgs:
         """Test that default arguments are correctly parsed."""
         with patch("sys.argv", ["run_experiment.py"]):
             args = run_experiment.parse_args()
-            assert args.script == "cross_validation.py"
+            assert args.script == "cross_validation"
             assert args.model_name == "db_conformer"
             assert args.dataset == "dummy_dataset"
             assert args.device == "cpu"
