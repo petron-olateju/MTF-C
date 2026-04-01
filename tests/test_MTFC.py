@@ -1153,3 +1153,58 @@ def test_mtfc_filter_banks_temporal_kernel():
         assert embed.shape[0] == 2
         assert embed.shape[1] == model.classifier.fc[0].in_features
         assert out.shape == (2, 4)
+
+
+def test_mtfc_filter_banks_variant():
+    """Test MTFC with different filter_banks_variant values.
+
+    Verifies that:
+    1. filter_banks_variant parameter correctly selects the embedding class
+    2. All variant names work correctly
+    3. Forward pass produces correct output shapes
+    """
+    from models.MTFC import MTFC, FILTER_BANKS_VARIANTS
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        data_name="SSVEP",
+        chn=8,
+        patch_size=100,
+        time_sample_num=1000,
+        class_num=4,
+        gate_flag=False,
+        posemb_flag=True,
+        branch="f_t_s",
+        chn_attn_flag=False,
+        fts_attn_flag=False,
+        sst_method="filter_banks",
+        stft_reconstruction="frequency",
+        spa_dim=16,
+    )
+
+    for variant_name in FILTER_BANKS_VARIANTS.keys():
+        model = MTFC(
+            args,
+            n_filter_banks=11,
+            freq_downsample=1,
+            patch_emb_size=40,
+            n_heads_patch=4,
+            sst_emb_size=40,
+            depth=1,
+            n_classes=4,
+            fs=250,
+            temporal_kernel=43,
+            filter_banks_variant=variant_name,
+        )
+
+        assert model.filter_banks_variant == variant_name
+        assert isinstance(
+            model.frequency_embedding, FILTER_BANKS_VARIANTS[variant_name]
+        )
+
+        x = torch.randn(2, 1, 8, 1000)
+        stft, embed, out = model(x)
+
+        assert embed.shape[0] == 2
+        assert embed.shape[1] == model.classifier.fc[0].in_features
+        assert out.shape == (2, 4)

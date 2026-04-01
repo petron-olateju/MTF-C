@@ -621,7 +621,13 @@ class MultiTemporalConvFixedPool_ChannelsProject_FilterBanks(nn.Module):
 
 class MultiTemporalCollapse_ChannelsProject_FilterBanks(nn.Module):
     def __init__(
-        self, n_channels, n_filter_banks, emb_size=40, temporal_kernel=43, dropout=0.5
+        self,
+        n_channels,
+        n_filter_banks,
+        emb_size=40,
+        temporal_kernel=43,
+        dropout=0.5,
+        n_time_points=None,
     ):
         super().__init__()
         self.F = n_filter_banks
@@ -670,7 +676,16 @@ class MultiTemporalCollapse_ChannelsProject_FilterBanks(nn.Module):
 
 
 class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks(nn.Module):
-    def __init__(self, n_channels, n_filter_banks, emb_size=40, dropout=0.5, fs=250):
+    def __init__(
+        self,
+        n_channels,
+        n_filter_banks,
+        emb_size=40,
+        dropout=0.5,
+        fs=250,
+        temporal_kernel=None,
+        n_time_points=None,
+    ):
         super().__init__()
         self.F = n_filter_banks
         self.D = emb_size
@@ -727,7 +742,13 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks(nn.Module):
 
 class TemporalCollapse_ChannelsExpand_FilterBanks(nn.Module):
     def __init__(
-        self, n_channels, n_filter_banks, emb_size=40, temporal_kernel=25, dropout=0.5
+        self,
+        n_channels,
+        n_filter_banks,
+        emb_size=40,
+        temporal_kernel=25,
+        dropout=0.5,
+        n_time_points=None,
     ):
         super().__init__()
         self.F = n_filter_banks
@@ -800,6 +821,7 @@ class SpatioTemporalConv_FilterBanks(nn.Module):
         spatial_kernel=None,
         temporal_kernel=25,
         dropout=0.5,
+        n_time_points=None,
     ):
         super().__init__()
         self.F = n_filter_banks
@@ -878,6 +900,7 @@ class FilterBanksEmbedding(nn.Module):
         spatial_kernel=None,
         temporal_kernel=25,
         dropout=0.5,
+        n_time_points=None,
     ):
         super().__init__()
         self.F = n_filter_banks
@@ -940,6 +963,19 @@ class FilterBanksEmbedding(nn.Module):
 # =============================================================================
 # Main Model
 # =============================================================================
+
+
+FILTER_BANKS_VARIANTS = {
+    "MultiTemporalConvPool_ChannelsProject_FilterBanks": MultiTemporalConvPool_ChannelsProject_FilterBanks,
+    "MultiTemporalConvFixedPool_ChannelsProject_FilterBanks": MultiTemporalConvFixedPool_ChannelsProject_FilterBanks,
+    "MultiTemporalCollapse_ChannelsProject_FilterBanks": MultiTemporalCollapse_ChannelsProject_FilterBanks,
+    "MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks": MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks,
+    "TemporalCollapse_ChannelsExpand_FilterBanks": TemporalCollapse_ChannelsExpand_FilterBanks,
+    "SpatioTemporalConv_FilterBanks": SpatioTemporalConv_FilterBanks,
+    "FilterBanksEmbedding": FilterBanksEmbedding,
+}
+
+DEFAULT_FILTER_BANKS_VARIANT = "MultiTemporalConvPool_ChannelsProject_FilterBanks"
 
 
 class MTFC(nn.Module):
@@ -1009,6 +1045,7 @@ class MTFC(nn.Module):
         n_classes=2,
         fs=250,
         temporal_kernel=43,
+        filter_banks_variant=DEFAULT_FILTER_BANKS_VARIANT,
     ):
         super().__init__()
         self.temporal_kernel = temporal_kernel
@@ -1030,6 +1067,7 @@ class MTFC(nn.Module):
         self.stft_reconstruction = args.stft_reconstruction
         self.ct_shared_projection = getattr(args, "ct_shared_projection", True)
         self.sst_shared_projection = getattr(args, "sst_shared_projection", True)
+        self.filter_banks_variant = filter_banks_variant
 
         self.branch_spec = parse_branch_config(self.branch)
         if self.sst_method is False:
@@ -1195,14 +1233,15 @@ class MTFC(nn.Module):
                 time_points=args.time_sample_num,
                 num_classes=args.class_num,
             )
-            self.frequency_embedding = (
-                MultiTemporalConvPool_ChannelsProject_FilterBanks(
-                    n_channels=self.C,
-                    n_filter_banks=self.F,
-                    emb_size=self.D,
-                    temporal_kernel=self.temporal_kernel,
-                    n_time_points=args.time_sample_num,
-                )
+            FilterBanksClass = FILTER_BANKS_VARIANTS.get(
+                self.filter_banks_variant, DEFAULT_FILTER_BANKS_VARIANT
+            )
+            self.frequency_embedding = FilterBanksClass(
+                n_channels=self.C,
+                n_filter_banks=self.F,
+                emb_size=self.D,
+                temporal_kernel=self.temporal_kernel,
+                n_time_points=args.time_sample_num,
             )
             if self.stft_reconstruction == "frequency":
                 freq_dim = self.FTS if self.sst_shared_projection else self.D
