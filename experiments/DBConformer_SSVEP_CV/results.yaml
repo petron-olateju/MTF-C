@@ -1,0 +1,54 @@
+db_conformer:
+  '2026-04-09T10:56:00.791620':
+    experiment_description: DBConformer cross-validation benchmark on SSVEP DATASET
+    messages: []
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 32
+      model:
+        patch_size: 100
+        filter_banks: 11
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: all
+        chn_attn_flag: true
+        fts_attn_flag: false
+        sst_method: false
+        stft_reconstruction: false
+        emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+    results:
+      Kalunga2016:
+        accuracy:
+          mean: 0.8066102996468544
+          std: 0.10262029426310497
+        kappa:
+          mean: 0.6132205992937089
+          std: 0.2052405885262099
+        stft_reconstruction_loss: null
+      Nakanishi2015:
+        accuracy:
+          mean: 0.8097222222222222
+          std: 0.19789717252922473
+        kappa:
+          mean: 0.6194444444444445
+          std: 0.3957943450584494
+        stft_reconstruction_loss: null
+      Wang2021Combined:
+        accuracy:
+          mean: 0.39229166805744176
+          std: 0.06499565720123887
+        kappa:
+          mean: -0.21541666388511657
+          std: 0.12999131440247774
+        stft_reconstruction_loss: null

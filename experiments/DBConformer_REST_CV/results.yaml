@@ -1,0 +1,38 @@
+db_conformer:
+  '2026-04-09T10:44:52.237655':
+    experiment_description: DBConformer cross-validation benchmairk on REST DATASET
+    messages: []
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 32
+      model:
+        patch_size: 100
+        filter_banks: 11
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: all
+        chn_attn_flag: true
+        fts_attn_flag: false
+        sst_method: false
+        stft_reconstruction: false
+        emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+    results:
+      Cattan2019_PHMD:
+        accuracy:
+          mean: 0.6749999999999999
+          std: 0.1689427911059441
+        kappa:
+          mean: 0.35000000000000003
+          std: 0.3378855822118882
+        stft_reconstruction_loss: null
