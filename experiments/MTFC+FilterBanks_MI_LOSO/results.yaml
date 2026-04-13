@@ -62,3 +62,67 @@ mtf_c:
           mean: 0.27075064182281494
           std: 0.1984450864937711
         stft_reconstruction_loss: 0.03278392863770326
+  '2026-04-13T21:50:40.188369':
+    experiment_description: MTFC + FilterBanks (SpatioTemporalConvolution+FilterBanks)
+      + LOSO (No STFT reconstruction, f_t_s branch method)base performance on MI datasets,
+      frequency spectrum reconstruction included
+    messages:
+    - Using filter_bank variant = SpatioTemporalConv_FilterBanks for frequency components
+      emmbedding
+    - Frequency spectrum reconstruction enabled
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 64
+      model:
+        patch_size: 100
+        filter_banks: 11
+        filter_banks_variant: SpatioTemporalConv_FilterBanks
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: f_t_s
+        chn_attn_flag: false
+        fts_attn_flag: false
+        sst_method: filter_banks
+        stft_reconstruction: frequency
+        ct_shared_projection: false
+        sst_shared_projection: false
+        patch_emb_size: 40
+        n_heads_patch: 4
+        sst_emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+        temporal_kernel: 43
+    results:
+      BNCI2014_001:
+        accuracy:
+          mean: 0.7065972089767456
+          std: 0.14176704988721078
+        kappa:
+          mean: 0.4131944179534912
+          std: 0.28353409977442157
+        stft_reconstruction_loss: 0.010833318992000487
+      BNCI2014_002:
+        accuracy:
+          mean: 0.6298363038471767
+          std: 0.13669077866217194
+        kappa:
+          mean: 0.25967260769435335
+          std: 0.2733815573243439
+        stft_reconstruction_loss: 668.5088593767224
+      BNCI2014_004:
+        accuracy:
+          mean: 0.6353753209114075
+          std: 0.09922254324688555
+        kappa:
+          mean: 0.27075064182281494
+          std: 0.1984450864937711
+        stft_reconstruction_loss: 0.03278394115881787
