@@ -1,0 +1,69 @@
+baseline: null
+description: MTFC + FilterBanks + LOSO (No STFT reconstruction, f_t_s branch method)base
+  performance on MI datasets, frequency spectrum reconstruction included
+name: MTFC+FilterBanks_SSVEP_LOSO
+parameters:
+  Dataset-Details:
+    Kalunga2016:
+      class_names:
+      - '13'
+      - '17'
+      - '21'
+      - rest
+      freqs: []
+      fs: 256.0
+      n_ch: 8
+      n_classes: 4
+      n_times: 1024
+      n_trials: 62
+    Nakanishi2015:
+      class_names:
+      - '10.25'
+      - '10.75'
+      - '11.25'
+      - '11.75'
+      - '12.25'
+      - '12.75'
+      - '13.25'
+      - '13.75'
+      - '14.25'
+      - '14.75'
+      - '9.25'
+      - '9.75'
+      freqs: []
+      fs: 256.0
+      n_ch: 8
+      n_classes: 12
+      n_times: 1024
+      n_trials: 180
+    Wang2021Combined:
+      class_names:
+      - '12.14'
+      - '14.17'
+      - '7.73'
+      - '9.44'
+      freqs: []
+      fs: 1000.0
+      n_ch: 31
+      n_classes: 4
+      n_times: 1024
+      n_trials: 400
+  Model-Hyperparameters:
+    channel_depth: 1
+    filter_banks: 11
+    freq_downsample: 1
+    patch_embedding_size: 40
+    patch_size: 100
+    spatial_dimensionality: 16
+    sst_embedding_size: 40
+    sst_method: filter_banks
+    temporal_depth: 1
+    wsize_divisor: 2
+  Training-Hyperparameters:
+    batch_size: 64
+    eval_inter: 5
+    k-folds: 5
+    k-folds-repeat: 1
+    learning_rate: 0.001
+    n_iter: 100
+    validation_size: 0.0
