@@ -1,7 +1,7 @@
 baseline: null
-description: MTFC + FilterBanks (TemporalCollapse_ChannelsExpand_FilterBanks) + LOSO
-  (No STFT reconstruction, f_t_s branch method)base performance on MI datasets, frequency
-  spectrum reconstruction included
+description: MTFC + FilterBanks (MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks)
+  + LOSO (No STFT reconstruction, f_t_s branch method)base performance on MI datasets,
+  frequency spectrum reconstruction included
 name: MTFC+FilterBanks_REST_LOSO
 parameters:
   Dataset-Details:
