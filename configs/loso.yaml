@@ -27,7 +27,7 @@ db_conformer:
 mtf_c:
   patch_size: 100
   filter_banks: 11
-  filter_banks_variant: 'MultiTemporalCollapse_ChannelsProject_FilterBank'
+  filter_banks_variant: 'MultiTemporalConvFixedPool_ChannelsProject_FilterBanks'
   freq_downsample: 1
   wsize_divisor: 2
   spa_dim: 16
