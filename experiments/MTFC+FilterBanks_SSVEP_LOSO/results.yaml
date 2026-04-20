@@ -319,11 +319,11 @@ mtf_c:
           std: 0.09412144504076037
         stft_reconstruction_loss: 0.14927073835860938
   '2026-04-20T07:33:19.185047':
-    experiment_description: MTFC + FilterBanks (MultiTemporalCollapse_ChannelsProject_FilterBank)
+    experiment_description: MTFC + FilterBanks (MultiTemporalConvFixedPool_ChannelsProject_FilterBanks)
       + LOSO (No STFT reconstruction, f_t_s branch method)base performance on MI datasets,
       frequency spectrum reconstruction included
     messages:
-    - Using filter_bank variant = MultiTemporalCollapse_ChannelsProject_FilterBank
+    - Using filter_bank variant = MultiTemporalConvFixedPool_ChannelsProject_FilterBanks
       for frequency components emmbedding
     - Frequency spectrum reconstruction enabled
     config:
