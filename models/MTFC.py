@@ -966,6 +966,7 @@ class FilterBanksEmbedding(nn.Module):
 
 
 FILTER_BANKS_VARIANTS = {
+    "MultiScaleTemporalPatchEmbedding_FilterBanks": MultiScaleTemporalPatchEmbedding_FilterBanks,
     "MultiTemporalConvPool_ChannelsProject_FilterBanks": MultiTemporalConvPool_ChannelsProject_FilterBanks,
     "MultiTemporalConvFixedPool_ChannelsProject_FilterBanks": MultiTemporalConvFixedPool_ChannelsProject_FilterBanks,
     "MultiTemporalCollapse_ChannelsProject_FilterBanks": MultiTemporalCollapse_ChannelsProject_FilterBanks,
