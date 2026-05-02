@@ -753,7 +753,7 @@ class DualPath_FilterBanks(nn.Module):
         self.F = n_filter_banks
         self.D = emb_size
 
-        self.backbone = nn.Sequential(
+        self.backbone = nn.Sequential([
             nn.Conv1d(
                 n_channels,
                 n_channels,
@@ -765,7 +765,7 @@ class DualPath_FilterBanks(nn.Module):
             nn.BatchNorm1d(n_channels),
             nn.ELU(),
             nn.Dropout(dropout),
-        )
+        ])
 
         self.temporal_pool_head = nn.Sequential(
             nn.AdaptiveAvgPool1d(1),
