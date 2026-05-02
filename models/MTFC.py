@@ -789,7 +789,7 @@ class DualPath_FilterBanks(nn.Module):
             ),
             nn.BatchNorm2d(n_filter_banks * emb_size),
             nn.ELU(),
-            nn.Dropout(dropout),
+            # nn.Dropout(dropout),
             nn.AdaptiveAvgPool2d(1, 1)
         ])
 
