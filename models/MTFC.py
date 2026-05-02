@@ -740,6 +740,83 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks(nn.Module):
         return out.view(x.size(0), self.F, self.D)  # (B, F, D)
 
 
+class DualPath_FilterBanks(nn.Module):
+    def __init__(
+            self, 
+            n_channels,
+            n_filter_banks,
+            emb_size,
+            temporal_kernel=25,
+            dropout=0.5,
+            n_time_points=None
+    ):
+        self.F = n_filter_banks
+        self.D = emb_size
+
+        self.backbone = nn.Sequential(
+            nn.Conv1d(
+                n_channels,
+                n_channels,
+                kernel_size=temporal_kernel,
+                padding=temporal_kernel // 2,
+                groups=n_channels,
+                bias=False,
+            ),
+            nn.BatchNorm1d(n_channels),
+            nn.ELU(),
+            nn.Dropout(dropout),
+        )
+
+        self.temporal_pool_head = nn.Sequential(
+            nn.AdaptiveAvgPool1d(1),
+            nn.Flatten(),
+            nn.Linear(n_channels, n_filter_banks * emb_size),
+            nn.ELU()
+        )
+
+        self.banks_spatiotemporal_embedding = nn.Sequential([
+            nn.Conv2d(
+                in_channels = n_filter_banks,
+                out_channels = n_filter_banks * emb_size,
+                kernel_size = 3, 
+                groups = n_filter_banks
+            ),
+            nn.Conv2d(
+                in_channels = n_filter_banks,
+                out_channels = n_filter_banks * emb_size,
+                kernel_size = 3, 
+                groups = n_filter_banks
+            ),
+            nn.BatchNorm2d(n_filter_banks * emb_size),
+            nn.ELU(),
+            nn.Dropout(dropout),
+            nn.AdaptiveAvgPool2d(1, 1)
+        ])
+
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.trunc_normal_(m.weight, std=0.01)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.BatchNorm2d):
+            nn.init.constant_(m.weight, 1.0)
+            nn.init.constant_(m.bias, 0)
+
+    def forward(self, x):
+        B, C, T = x.size()
+        z = self.backbone(x)                      # (B, C, T')
+        z1 = self.temporal_pool_head(z)           # (B, F*D)
+        z1 = rearrange(z1, 'b (f d) -> b f d')    # (B, F, D)   
+
+        z = z.unsqueeze(1).expand(-1, self.F, -1, -1).contiguous
+        z2 = self.banks_spatiotemporal_embedding(z)
+        z2 = z2.view(B, self.F, self.D)
+
+        return z1 + z2
+
+
 class TemporalCollapse_ChannelsExpand_FilterBanks(nn.Module):
     def __init__(
         self,
@@ -772,8 +849,19 @@ class TemporalCollapse_ChannelsExpand_FilterBanks(nn.Module):
         )
         self.bank_heads = nn.Linear(n_channels, n_filter_banks * emb_size)
 
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.trunc_normal_(m.weight, std=0.01)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.BatchNorm2d):
+            nn.init.constant_(m.weight, 1.0)
+            nn.init.constant_(m.bias, 0)
+
     def forward(self, x):  # x: (B, C, T)
-        z = self.backbone(x)  # (B, D)
+        z = self.backbone(x)  # (B, C)
         out = self.bank_heads(z)  # (B, F*D)
         return out.view(x.size(0), self.F, self.D)  # (B, F, D)
 
@@ -974,6 +1062,7 @@ FILTER_BANKS_VARIANTS = {
     "TemporalCollapse_ChannelsExpand_FilterBanks": TemporalCollapse_ChannelsExpand_FilterBanks,
     "SpatioTemporalConv_FilterBanks": SpatioTemporalConv_FilterBanks,
     "FilterBanksEmbedding": FilterBanksEmbedding,
+    "DualPath_FilterBanks": DualPath_FilterBanks
 }
 
 DEFAULT_FILTER_BANKS_VARIANT = "MultiTemporalConvPool_ChannelsProject_FilterBanks"
