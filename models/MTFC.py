@@ -787,7 +787,7 @@ class DualPath_FilterBanks(nn.Module):
                 kernel_size = 3, 
                 groups = n_filter_banks
             ),
-            nn.BatchNorm2d(n_filter_banks * emb_size),
+            # nn.BatchNorm2d(n_filter_banks * emb_size),
             nn.ELU(),
             # nn.Dropout(dropout),
             nn.AdaptiveAvgPool2d(1, 1)
