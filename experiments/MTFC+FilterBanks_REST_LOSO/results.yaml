@@ -1,0 +1,281 @@
+mtf_c:
+  '2026-05-03T08:51:58.918589':
+    experiment_description: MTFC + FilterBanks TemporalCollapse_ChannelsExpand_FilterBanks
+      + LOSO (No STFT reconstruction, f_t_s branch method)base performance on MI datasets,
+      frequency spectrum reconstruction included
+    messages:
+    - Using filter_bank variant = TemporalCollapse_ChannelsExpand_FilterBanks for
+      frequency components emmbedding
+    - Frequency spectrum reconstruction enabled
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 64
+      model:
+        patch_size: 100
+        filter_banks: 11
+        filter_banks_variant: TemporalCollapse_ChannelsExpand_FilterBanks
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: f_t_s
+        chn_attn_flag: false
+        fts_attn_flag: false
+        sst_method: filter_banks
+        stft_reconstruction: frequency
+        ct_shared_projection: false
+        sst_shared_projection: false
+        patch_emb_size: 40
+        n_heads_patch: 4
+        sst_emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+        temporal_kernel: 43
+    results:
+      Cattan2019_PHMD:
+        accuracy:
+          mean: 0.5000000037252903
+          std: 0.15275252300260989
+        kappa:
+          mean: 7.450580596923828e-09
+          std: 0.30550504600521977
+        stft_reconstruction_loss: 0.19977984065189958
+      Rodrigues2017:
+        accuracy:
+          mean: 0.6116332631362112
+          std: 0.18888555444360247
+        kappa:
+          mean: 0.22326652627242238
+          std: 0.37777110888720494
+        stft_reconstruction_loss: 0.3097291893668865
+  '2026-05-03T09:06:06.569876':
+    experiment_description: MTFC + FilterBanks MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+      + LOSO (No STFT reconstruction, f_t_s branch method)base performance on MI datasets,
+      frequency spectrum reconstruction included
+    messages:
+    - Using filter_bank variant = MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+      for frequency components emmbedding
+    - Frequency spectrum reconstruction enabled
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 64
+      model:
+        patch_size: 100
+        filter_banks: 11
+        filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: f_t_s
+        chn_attn_flag: false
+        fts_attn_flag: false
+        sst_method: filter_banks
+        stft_reconstruction: frequency
+        ct_shared_projection: false
+        sst_shared_projection: false
+        patch_emb_size: 40
+        n_heads_patch: 4
+        sst_emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+        temporal_kernel: 43
+    results:
+      Cattan2019_PHMD:
+        accuracy:
+          mean: 0.5250000059604645
+          std: 0.10897247222109314
+        kappa:
+          mean: 0.050000011920928955
+          std: 0.2179449444421863
+        stft_reconstruction_loss: 0.8688057288527489
+      Rodrigues2017:
+        accuracy:
+          mean: 0.7443609127872869
+          std: 0.22339139893613352
+        kappa:
+          mean: 0.4887218255745737
+          std: 0.44678279787226705
+        stft_reconstruction_loss: 1.4502950458738364
+  '2026-05-03T09:24:42.917889':
+    experiment_description: MTFC + FilterBanks MultiTemporalCollapse_ChannelsProject_FilterBanks
+      + LOSO (No STFT reconstruction, f_t_s branch method)base performance on MI datasets,
+      frequency spectrum reconstruction included
+    messages:
+    - Using filter_bank variant = MultiTemporalCollapse_ChannelsProject_FilterBanks
+      for frequency components emmbedding
+    - Frequency spectrum reconstruction enabled
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 64
+      model:
+        patch_size: 100
+        filter_banks: 11
+        filter_banks_variant: MultiTemporalCollapse_ChannelsProject_FilterBanks
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: f_t_s
+        chn_attn_flag: false
+        fts_attn_flag: false
+        sst_method: filter_banks
+        stft_reconstruction: frequency
+        ct_shared_projection: false
+        sst_shared_projection: false
+        patch_emb_size: 40
+        n_heads_patch: 4
+        sst_emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+        temporal_kernel: 43
+    results:
+      Cattan2019_PHMD:
+        accuracy:
+          mean: 0.5166666693985462
+          std: 0.12801909447216717
+        kappa:
+          mean: 0.03333333879709244
+          std: 0.25603818894433433
+        stft_reconstruction_loss: 0.5110986987128854
+      Rodrigues2017:
+        accuracy:
+          mean: 0.7095864760248285
+          std: 0.23214437793863946
+        kappa:
+          mean: 0.41917295204965693
+          std: 0.4642887558772789
+        stft_reconstruction_loss: 0.44867130192486865
+  '2026-05-03T09:47:26.315590':
+    experiment_description: MTFC + FilterBanks MultiTemporalConvFixedPool_ChannelsProject_FilterBanks
+      + LOSO (No STFT reconstruction, f_t_s branch method)base performance on MI datasets,
+      frequency spectrum reconstruction included
+    messages:
+    - Using filter_bank variant = MultiTemporalConvFixedPool_ChannelsProject_FilterBanks
+      for frequency components emmbedding
+    - Frequency spectrum reconstruction enabled
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 64
+      model:
+        patch_size: 100
+        filter_banks: 11
+        filter_banks_variant: MultiTemporalConvFixedPool_ChannelsProject_FilterBanks
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: f_t_s
+        chn_attn_flag: false
+        fts_attn_flag: false
+        sst_method: filter_banks
+        stft_reconstruction: frequency
+        ct_shared_projection: false
+        sst_shared_projection: false
+        patch_emb_size: 40
+        n_heads_patch: 4
+        sst_emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+        temporal_kernel: 43
+    results:
+      Cattan2019_PHMD:
+        accuracy:
+          mean: 0.5166666693985462
+          std: 0.12801909447216717
+        kappa:
+          mean: 0.03333333879709244
+          std: 0.25603818894433433
+        stft_reconstruction_loss: 0.5121744386851788
+      Rodrigues2017:
+        accuracy:
+          mean: 0.7095864760248285
+          std: 0.23214437793863946
+        kappa:
+          mean: 0.41917295204965693
+          std: 0.4642887558772789
+        stft_reconstruction_loss: 0.44786029137474925
+  '2026-05-03T10:13:12.992418':
+    experiment_description: MTFC + FilterBanks MultiTemporalConvPool_ChannelsProject_FilterBanks
+      + LOSO (No STFT reconstruction, f_t_s branch method)base performance on MI datasets,
+      frequency spectrum reconstruction included
+    messages:
+    - Using filter_bank variant = MultiTemporalConvPool_ChannelsProject_FilterBanks
+      for frequency components emmbedding
+    - Frequency spectrum reconstruction enabled
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 64
+      model:
+        patch_size: 100
+        filter_banks: 11
+        filter_banks_variant: MultiTemporalConvPool_ChannelsProject_FilterBanks
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: f_t_s
+        chn_attn_flag: false
+        fts_attn_flag: false
+        sst_method: filter_banks
+        stft_reconstruction: frequency
+        ct_shared_projection: false
+        sst_shared_projection: false
+        patch_emb_size: 40
+        n_heads_patch: 4
+        sst_emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+        temporal_kernel: 43
+    results:
+      Cattan2019_PHMD:
+        accuracy:
+          mean: 0.5166666693985462
+          std: 0.12801909447216717
+        kappa:
+          mean: 0.03333333879709244
+          std: 0.25603818894433433
+        stft_reconstruction_loss: 0.5120251700282097
+      Rodrigues2017:
+        accuracy:
+          mean: 0.7095864760248285
+          std: 0.23214437793863946
+        kappa:
+          mean: 0.41917295204965693
+          std: 0.4642887558772789
+        stft_reconstruction_loss: 0.4489180488315852
