@@ -782,7 +782,7 @@ class DualPath_FilterBanks(nn.Module):
                 groups = n_filter_banks
             ),
             nn.Conv2d(
-                in_channels = n_filter_banks,
+                in_channels = n_filter_banks * emb_size,
                 out_channels = n_filter_banks * emb_size,
                 kernel_size = 3, 
                 groups = n_filter_banks
