@@ -740,6 +740,77 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks(nn.Module):
         return out.view(x.size(0), self.F, self.D)  # (B, F, D)
 
 
+class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v2(nn.Module):
+    '''
+        Use pointwise convolution across channels after filter_banks depthwise convolution.
+    '''
+    def __init__(
+        self,
+        n_channels,
+        n_filter_banks,
+        emb_size=40,
+        dropout=0.5,
+        fs=250,
+        temporal_kernel=None,
+        n_time_points=None,
+    ):
+        super().__init__()
+        self.F = n_filter_banks
+        self.D = emb_size
+
+        # Multiple kernel sizes covering different frequency scales
+        # Small kernel → sensitive to high frequencies
+        # Large kernel → sensitive to low frequencies
+        kernel_sizes = [
+            max(3, int(fs / 30)),  # ~8 samples @ 250Hz → gamma range
+            max(3, int(fs / 13)),  # ~19 samples → beta range
+            max(3, int(fs / 8)),  # ~31 samples → alpha range
+            max(3, int(fs / 4)),  # ~62 samples → theta range
+            max(3, int(fs / 1)),  # ~250 samples → delta range
+        ]
+        # Make all odd for symmetric padding
+        kernel_sizes = [k if k % 2 == 1 else k + 1 for k in kernel_sizes]
+        self.n_scales = len(kernel_sizes)
+
+        # One depthwise conv per scale — each sensitive to a different frequency range
+        self.scale_convs = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Conv1d(
+                        n_channels,
+                        n_channels,
+                        kernel_size=k,
+                        padding=k // 2,
+                        groups=n_channels,
+                        bias=False,
+                    ),
+                    nn.BatchNorm1d(n_channels),
+                    nn.ELU(),
+                    nn.Dropout(dropout),
+                )
+                for k in kernel_sizes
+            ]
+        )
+
+        self.pointwise_conv = nn.Sequential(
+            nn.Conv1d(n_channels * self.n_scales, n_filter_banks * self.D, kernel_size=1, groups=1),
+            nn.BatchNorm1d(n_filter_banks * self.D),
+            nn.ELU()
+            )
+
+
+    def forward(self, x):  # x: (B, C, T)
+        # Extract features at each temporal scale independently
+        scale_features = [conv(x).unsqueeze(dim=2) for conv in self.scale_convs]  # list of (B, C, T')
+        z = torch.cat(scale_features, dim=2)    # (B, C, N, T)
+        z = rearrange(z, 'b c n t -> b (c n) t')    # (B, C*N, T)
+        z = self.pointwise_conv(z)  # (B, F*D, T)
+        z = z.mean(dim=-1)     # (B, F*D)
+        z = rearrange(z, 'b (f d) -> b f d', f=self.F, d=self.D)   # (B, F, D) 
+        return z
+
+
+
 class DualPath_FilterBanks(nn.Module):
     def __init__(
             self, 
@@ -1062,7 +1133,8 @@ FILTER_BANKS_VARIANTS = {
     "TemporalCollapse_ChannelsExpand_FilterBanks": TemporalCollapse_ChannelsExpand_FilterBanks,
     "SpatioTemporalConv_FilterBanks": SpatioTemporalConv_FilterBanks,
     "FilterBanksEmbedding": FilterBanksEmbedding,
-    "DualPath_FilterBanks": DualPath_FilterBanks
+    "DualPath_FilterBanks": DualPath_FilterBanks,
+    "MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v2": MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v2
 }
 
 DEFAULT_FILTER_BANKS_VARIANT = "MultiTemporalConvPool_ChannelsProject_FilterBanks"

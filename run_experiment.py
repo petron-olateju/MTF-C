@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from tqdm import tqdm
 from datetime import datetime
 
