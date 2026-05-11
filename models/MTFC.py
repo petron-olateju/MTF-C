@@ -6,6 +6,7 @@ embeddings with a transformer-based conformer for EEG signal classification.
 
 import math
 import re
+import numpy as np
 
 import torch
 import torch.nn as nn
@@ -810,6 +811,172 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v2(nn.Module):
         return z
 
 
+class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v3(nn.Module):
+    '''
+        - Keep pointwise convolution across channels from v2.
+        - Include dynamically initialised kernel size for each 
+        frequency scale (n_scales = n_filter_banks) using 
+        30Hz as highest frequency of interest.
+    '''
+    def __init__(
+        self,
+        n_channels,
+        n_filter_banks,
+        emb_size=40,
+        dropout=0.5,
+        fs=250,
+        temporal_kernel=None,
+        n_time_points=None,
+    ):
+        super().__init__()
+        self.F = n_filter_banks
+        self.D = emb_size
+
+        # Multiple kernel sizes covering different frequency scales
+        # Small kernel → sensitive to high frequencies
+        # Large kernel → sensitive to low frequencies
+        kernel_sizes = [max(3, int(fs/l_f)) for l_f in np.linspace(1, 30, n_filter_banks)]
+        # Make all odd for symmetric padding
+        kernel_sizes = [k if k % 2 == 1 else k + 1 for k in kernel_sizes]
+        self.n_scales = len(kernel_sizes)
+
+        # One depthwise conv per scale — each sensitive to a different frequency range
+        self.scale_convs = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Conv1d(
+                        n_channels,
+                        n_channels,
+                        kernel_size=k,
+                        padding=k // 2,
+                        groups=n_channels,
+                        bias=False,
+                    ),
+                    nn.BatchNorm1d(n_channels),
+                    nn.ELU(),
+                    nn.Dropout(dropout),
+                )
+                for k in kernel_sizes
+            ]
+        )
+
+        self.pointwise_conv = nn.Sequential(
+            nn.Conv1d(n_channels * self.n_scales, n_filter_banks * self.D, kernel_size=1, groups=1),
+            nn.BatchNorm1d(n_filter_banks * self.D),
+            nn.ELU()
+            )
+
+
+    def forward(self, x):  # x: (B, C, T)
+        # Extract features at each temporal scale independently
+        scale_features = [conv(x).unsqueeze(dim=2) for conv in self.scale_convs]  # list of (B, C, T')
+        z = torch.cat(scale_features, dim=2)    # (B, C, N, T)
+        z = rearrange(z, 'b c n t -> b (c n) t')    # (B, C*N, T)
+        z = self.pointwise_conv(z)  # (B, F*D, T)
+        z = z.mean(dim=-1)     # (B, F*D)
+        z = rearrange(z, 'b (f d) -> b f d', f=self.F, d=self.D)   # (B, F, D) 
+        return z
+
+
+
+class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v4(nn.Module):
+    '''
+        - From v2.
+        - F independent importance scorers: each bank learns which
+        (channel, scale) slots matter based on their temporal activity.
+        - Importance is derived from a small temporal encoder (Conv1d over
+        the 4 temporal bins) so the score depends on the signal pattern,
+        not just a fixed linear combination.
+        - F separate embedding heads preserve bank-specific projections.
+    '''
+    def __init__(
+        self,
+        n_channels,
+        n_filter_banks,
+        emb_size=40,
+        dropout=0.5,
+        fs=250,
+        temporal_kernel=None,
+        n_time_points=None,
+    ):
+        super().__init__()
+        self.C = n_channels
+        self.F = n_filter_banks
+        self.D = emb_size
+
+        # Multiple kernel sizes covering different frequency scales
+        # Small kernel → sensitive to high frequencies
+        # Large kernel → sensitive to low frequencies
+        kernel_sizes = [
+            max(3, int(fs / 30)),  # ~8 samples @ 250Hz → gamma range
+            max(3, int(fs / 13)),  # ~19 samples → beta range
+            max(3, int(fs / 8)),  # ~31 samples → alpha range
+            max(3, int(fs / 4)),  # ~62 samples → theta range
+            max(3, int(fs / 1)),  # ~250 samples → delta range
+        ]
+        # Make all odd for symmetric padding
+        kernel_sizes = [k if k % 2 == 1 else k + 1 for k in kernel_sizes]
+        self.n_scales = len(kernel_sizes)
+
+        # One depthwise conv per scale — each sensitive to a different frequency range
+        self.scale_convs = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Conv1d(
+                        n_channels,
+                        n_channels,
+                        kernel_size=k,
+                        padding=k // 2,
+                        groups=n_channels,
+                        bias=False,
+                    ),
+                    nn.BatchNorm1d(n_channels),
+                    nn.ELU(),
+                    nn.Dropout(dropout),
+                    nn.AdaptiveAvgPool1d(4)
+                )
+                for k in kernel_sizes
+            ]
+        )
+
+        CN = n_channels * self.n_scales
+        self.importance_encoders = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv1d(CN, CN, kernel_size=3, padding=1, groups=CN, bias=False),     # depthwise convolution over time
+                nn.ELU(),
+                nn.Conv1d(CN, CN, kernel_size=4, groups=CN, bias=True)      # collapse time to 1
+            )
+            for _ in range(n_filter_banks)
+        ])
+
+        self.embedding_heads = nn.ModuleList([
+            nn.Linear(self.C*self.n_scales*4, self.D) 
+            for _ in range(self.F)
+        ])
+
+
+    def forward(self, x):  # x: (B, C, T)
+        # Extract features at each temporal scale independently
+        scale_features = [conv(x).unsqueeze(dim=2) for conv in self.scale_convs]  # list of (B, C, 4)
+        z = torch.cat(scale_features, dim=2)    # (B, C, N, 4)
+        z = rearrange(z, 'b c n t -> b (c n) t')        # (B, C*N, 4)
+
+        # --- per-bank importance scoring + weighted embedding ---
+        bank_outputs = []
+        for f in range(self.F):
+            # score each (c,n) slot based on its temporal activity pattern
+            alpha = self.importance_encoders[f](z)          # (B, C*N, 1)
+            alpha = alpha.squeeze(-1)                        # (B, C*N)
+            alpha = torch.softmax(alpha, dim=-1)             # (B, C*N) — sums to 1
+            alpha = alpha.unsqueeze(-1).expand_as(z)        # (B, C*N, 4)
+
+            z_weighted = z * alpha                           # (B, C*N, 4)
+            z_flat = rearrange(z_weighted, 'b cn t -> b (cn t)')  # (B, C*N*4)
+            bank_outputs.append(self.embedding_heads[f](z_flat))  # (B, D)
+
+        z_out = torch.stack(bank_outputs, dim=1)  # (B, F, D)
+        return z_out
+
 
 class DualPath_FilterBanks(nn.Module):
     def __init__(
@@ -1134,7 +1301,9 @@ FILTER_BANKS_VARIANTS = {
     "SpatioTemporalConv_FilterBanks": SpatioTemporalConv_FilterBanks,
     "FilterBanksEmbedding": FilterBanksEmbedding,
     "DualPath_FilterBanks": DualPath_FilterBanks,
-    "MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v2": MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v2
+    "MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v2": MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v2,
+    "MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v3": MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v3,
+    "MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v4": MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v4
 }
 
 DEFAULT_FILTER_BANKS_VARIANT = "MultiTemporalConvPool_ChannelsProject_FilterBanks"
