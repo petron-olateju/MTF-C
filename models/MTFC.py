@@ -982,9 +982,9 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v5(nn.Module):
     '''
     - From v4.
     - Add grouped spatial mixer before importance scoring:
-      channels interact within each frequency scale, giving
-      the importance encoder access to cross-channel contrast
-      (e.g. lateral asymmetry) before per-instance scoring.
+      channels interact across frequency scales, giving
+      the importance encoder access to cross-channel and cross-scale 
+      contrast (e.g. lateral asymmetry) before per-instance scoring.
     '''
     def __init__(
         self,
