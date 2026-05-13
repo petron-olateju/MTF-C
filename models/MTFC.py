@@ -1037,8 +1037,6 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v5(nn.Module):
         # before importance scoring.
         self.spatial_mixer = nn.Sequential(
             nn.Conv1d(CN, CN, kernel_size=1, groups=1, bias=False),
-            # nn.BatchNorm1d(CN),
-            # nn.ELU(),
         )
 
         # Per-bank importance encoders — now scoring mixed slots
