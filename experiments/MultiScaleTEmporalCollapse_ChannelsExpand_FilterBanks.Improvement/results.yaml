@@ -128,3 +128,46 @@ mtf_c:
           mean: 0.2671957744492425
           std: 0.19399771246153397
         stft_reconstruction_loss: 0.06785241100523207
+  '2026-05-13T00:02:42.795315':
+    experiment_description: Baseline Experiment
+    messages: []
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 64
+      model:
+        patch_size: 100
+        filter_banks: 11
+        filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v5
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: f_t_s
+        chn_attn_flag: false
+        fts_attn_flag: false
+        sst_method: filter_banks
+        stft_reconstruction: frequency
+        ct_shared_projection: false
+        sst_shared_projection: false
+        patch_emb_size: 40
+        n_heads_patch: 4
+        sst_emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+        temporal_kernel: 43
+    results:
+      BNCI2014_004:
+        accuracy:
+          mean: 0.6403769784503512
+          std: 0.0991466479172894
+        kappa:
+          mean: 0.2807539569007026
+          std: 0.1982932958345788
+        stft_reconstruction_loss: 0.031535862013697624
