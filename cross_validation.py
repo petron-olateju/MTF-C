@@ -380,6 +380,7 @@ def main(
                     n_classes=dataset_info["n_classes"],
                     fs=dataset_info["fs"],
                     temporal_kernel=model_configs.get("temporal_kernel", 43),
+                    filter_banks_variant=model_configs['filter_banks_variant']
                 )
                 model = model.to(device)
             else:
