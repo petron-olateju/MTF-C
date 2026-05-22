@@ -3,10 +3,10 @@
 source .venv/bin/activate
 
 uv run python run_experiment.py \
-    --script "loso" \
-    --model_name "db_conformer" \
+    --script "cross_validation" \
+    --model_name "mtf_c" \
     --dataset "mi" \
     --device "cuda" \
-    --experiment_version "DBConformer_MI_LOSO" \
-    --experiment_description "DBConformer MOTOR_IMAGERY benchmark on REST datasets" \
-    --messages "use 5 repeats of LOSO validation with different seeds for confirmation of DBConformer."
+    --experiment_version "MTFC+FilterBanks_MI_CV" \
+    --experiment_description "MTFC MOTOR_IMAGERY benchmark on MI datasets in 4 fold CV mode" \
+    --messages "use 5 repeats (seeds) of five-fold CV per subject"
