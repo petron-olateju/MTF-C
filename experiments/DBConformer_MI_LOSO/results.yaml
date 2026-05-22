@@ -52,3 +52,95 @@ db_conformer:
           mean: 0.24239418241712782
           std: 0.1750298890997242
         stft_reconstruction_loss: null
+  '2026-05-20T06:12:37.833599':
+    experiment_description: DBConformer MOTOR_IMAGERY benchmark on REST datasets
+    messages:
+    - use 5 repeats of LOSO validation with different seeds for confirmation of DBConformer
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 5
+        lr: 0.001
+        batch_size: 64
+      model:
+        patch_size: 100
+        filter_banks: 11
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: all
+        chn_attn_flag: true
+        fts_attn_flag: false
+        sst_method: false
+        stft_reconstruction: false
+        emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+    results:
+      BNCI2014_004:
+        accuracy:
+          mean: 0.629819776614507
+          std: 0.0927898541445766
+        kappa:
+          mean: 0.25963955322901405
+          std: 0.1855797082891532
+        stft_reconstruction_loss: null
+  '2026-05-20T09:17:01.477661':
+    experiment_description: DBConformer MOTOR_IMAGERY benchmark on REST datasets
+    messages:
+    - use 5 repeats of LOSO validation with different seeds for confirmation of DBConformer.
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 5
+        lr: 0.001
+        batch_size: 64
+      model:
+        patch_size: 100
+        filter_banks: 11
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: all
+        chn_attn_flag: true
+        fts_attn_flag: false
+        sst_method: false
+        stft_reconstruction: false
+        emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+    results:
+      BNCI2014_001:
+        accuracy:
+          mean: 0.7171296331617567
+          std: 0.13613512269610206
+        kappa:
+          mean: 0.43425926632351347
+          std: 0.2722702453922041
+        stft_reconstruction_loss: null
+      BNCI2014_002:
+        accuracy:
+          mean: 0.6380208317722593
+          std: 0.1316755144628206
+        kappa:
+          mean: 0.2760416635445186
+          std: 0.2633510289256412
+        stft_reconstruction_loss: null
+      BNCI2014_004:
+        accuracy:
+          mean: 0.629819776614507
+          std: 0.0927898541445766
+        kappa:
+          mean: 0.25963955322901405
+          std: 0.1855797082891532
+        stft_reconstruction_loss: null
