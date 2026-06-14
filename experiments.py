@@ -65,7 +65,7 @@ def cross_validation(
     preprocessing_pipeline,
     t0,
     t1,
-    experiment_seed
+    experiment_seed,
 ):
     np.random.seed(experiment_seed)
     torch.manual_seed(experiment_seed)
@@ -73,7 +73,7 @@ def cross_validation(
         torch.cuda.manual_seed(experiment_seed)
 
     SUBJECTS = get_data_subjects(dataset_name=dataset_name)
-    SUBJECTS = SUBJECTS[0:1]       # Remove after testing code restructuring
+    SUBJECTS = SUBJECTS[0:1]  # Remove after testing code restructuring
 
     performance = []
     loss = []
@@ -110,10 +110,13 @@ def cross_validation(
 
                 trainer.fit(model, datamodule=dm)
                 val_metrics = trainer.validate(model, dm)[0]
-                print(f"Subject-{subject} ({fold+1} / {n_folds}) Performance:", val_metrics)
+                print(
+                    f"Subject-{subject} ({fold+1} / {n_folds}) Performance:",
+                    val_metrics,
+                )
 
-                sub_performance.append(val_metrics['val_performance'])
-                sub_loss.append(val_metrics['val_loss'])
+                sub_performance.append(val_metrics["val_performance"])
+                sub_loss.append(val_metrics["val_loss"])
 
         sub_performance = np.mean(sub_performance).item()
         sub_loss = np.mean(sub_loss).item()
@@ -121,13 +124,15 @@ def cross_validation(
 
         performance.append(sub_performance)
         loss.append(sub_loss)
-    
+
     performance_mean = np.mean(performance).item()
     performance_std = np.std(performance).item()
     loss = np.mean(loss).item()
 
     return {
-        'model_params': model_params,
-        'mean_performance': performance_mean, 'std_performance': performance_std,
-        'loss': loss, 'subjects_performance': subjects_performance,
-        }
+        "model_params": model_params,
+        "mean_performance": performance_mean,
+        "std_performance": performance_std,
+        "loss": loss,
+        "subjects_performance": subjects_performance,
+    }

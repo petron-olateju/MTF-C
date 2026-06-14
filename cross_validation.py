@@ -13,6 +13,7 @@ import math
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+
 # from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from utils.metrics import accuracy_score
@@ -380,7 +381,7 @@ def main(
                     n_classes=dataset_info["n_classes"],
                     fs=dataset_info["fs"],
                     temporal_kernel=model_configs.get("temporal_kernel", 43),
-                    filter_banks_variant=model_configs['filter_banks_variant']
+                    filter_banks_variant=model_configs["filter_banks_variant"],
                 )
                 model = model.to(device)
             else:

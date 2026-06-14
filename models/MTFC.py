@@ -16,7 +16,6 @@ from einops import rearrange
 from .DBConformer import PatchEmbeddingTemporal, PatchEmbeddingSpatial
 from .DBConformer import TransformerEncoder, ClassificationHead
 
-
 # =============================================================================
 # Utility Functions
 # =============================================================================
@@ -45,7 +44,7 @@ def parse_branch_config(branch):
         ValueError: If branch string contains invalid characters or format.
     """
     if branch == "all":
-        return [("fts")]
+        return ["fts"]
 
     valid_chars = set("fts_")
     if not all(c in valid_chars for c in branch):
@@ -742,9 +741,10 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks(nn.Module):
 
 
 class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v2(nn.Module):
-    '''
-        Use pointwise convolution across channels after filter_banks depthwise convolution.
-    '''
+    """
+    Use pointwise convolution across channels after filter_banks depthwise convolution.
+    """
+
     def __init__(
         self,
         n_channels,
@@ -794,30 +794,37 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v2(nn.Module):
         )
 
         self.pointwise_conv = nn.Sequential(
-            nn.Conv1d(n_channels * self.n_scales, n_filter_banks * self.D, kernel_size=1, groups=1),
+            nn.Conv1d(
+                n_channels * self.n_scales,
+                n_filter_banks * self.D,
+                kernel_size=1,
+                groups=1,
+            ),
             nn.BatchNorm1d(n_filter_banks * self.D),
-            nn.ELU()
-            )
-
+            nn.ELU(),
+        )
 
     def forward(self, x):  # x: (B, C, T)
         # Extract features at each temporal scale independently
-        scale_features = [conv(x).unsqueeze(dim=2) for conv in self.scale_convs]  # list of (B, C, T')
-        z = torch.cat(scale_features, dim=2)    # (B, C, N, T)
-        z = rearrange(z, 'b c n t -> b (c n) t')    # (B, C*N, T)
+        scale_features = [
+            conv(x).unsqueeze(dim=2) for conv in self.scale_convs
+        ]  # list of (B, C, T')
+        z = torch.cat(scale_features, dim=2)  # (B, C, N, T)
+        z = rearrange(z, "b c n t -> b (c n) t")  # (B, C*N, T)
         z = self.pointwise_conv(z)  # (B, F*D, T)
-        z = z.mean(dim=-1)     # (B, F*D)
-        z = rearrange(z, 'b (f d) -> b f d', f=self.F, d=self.D)   # (B, F, D) 
+        z = z.mean(dim=-1)  # (B, F*D)
+        z = rearrange(z, "b (f d) -> b f d", f=self.F, d=self.D)  # (B, F, D)
         return z
 
 
 class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v3(nn.Module):
-    '''
-        - Keep pointwise convolution across channels from v2.
-        - Include dynamically initialised kernel size for each 
-        frequency scale (n_scales = n_filter_banks) using 
-        30Hz as highest frequency of interest.
-    '''
+    """
+    - Keep pointwise convolution across channels from v2.
+    - Include dynamically initialised kernel size for each
+    frequency scale (n_scales = n_filter_banks) using
+    30Hz as highest frequency of interest.
+    """
+
     def __init__(
         self,
         n_channels,
@@ -835,7 +842,9 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v3(nn.Module):
         # Multiple kernel sizes covering different frequency scales
         # Small kernel → sensitive to high frequencies
         # Large kernel → sensitive to low frequencies
-        kernel_sizes = [max(3, int(fs/l_f)) for l_f in np.linspace(1, 30, n_filter_banks)]
+        kernel_sizes = [
+            max(3, int(fs / l_f)) for l_f in np.linspace(1, 30, n_filter_banks)
+        ]
         # Make all odd for symmetric padding
         kernel_sizes = [k if k % 2 == 1 else k + 1 for k in kernel_sizes]
         self.n_scales = len(kernel_sizes)
@@ -861,34 +870,40 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v3(nn.Module):
         )
 
         self.pointwise_conv = nn.Sequential(
-            nn.Conv1d(n_channels * self.n_scales, n_filter_banks * self.D, kernel_size=1, groups=1),
+            nn.Conv1d(
+                n_channels * self.n_scales,
+                n_filter_banks * self.D,
+                kernel_size=1,
+                groups=1,
+            ),
             nn.BatchNorm1d(n_filter_banks * self.D),
-            nn.ELU()
-            )
-
+            nn.ELU(),
+        )
 
     def forward(self, x):  # x: (B, C, T)
         # Extract features at each temporal scale independently
-        scale_features = [conv(x).unsqueeze(dim=2) for conv in self.scale_convs]  # list of (B, C, T')
-        z = torch.cat(scale_features, dim=2)    # (B, C, N, T)
-        z = rearrange(z, 'b c n t -> b (c n) t')    # (B, C*N, T)
+        scale_features = [
+            conv(x).unsqueeze(dim=2) for conv in self.scale_convs
+        ]  # list of (B, C, T')
+        z = torch.cat(scale_features, dim=2)  # (B, C, N, T)
+        z = rearrange(z, "b c n t -> b (c n) t")  # (B, C*N, T)
         z = self.pointwise_conv(z)  # (B, F*D, T)
-        z = z.mean(dim=-1)     # (B, F*D)
-        z = rearrange(z, 'b (f d) -> b f d', f=self.F, d=self.D)   # (B, F, D) 
+        z = z.mean(dim=-1)  # (B, F*D)
+        z = rearrange(z, "b (f d) -> b f d", f=self.F, d=self.D)  # (B, F, D)
         return z
 
 
-
 class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v4(nn.Module):
-    '''
-        - From v2.
-        - F independent importance scorers: each bank learns which
-        (channel, scale) slots matter based on their temporal activity.
-        - Importance is derived from a small temporal encoder (Conv1d over
-        the 4 temporal bins) so the score depends on the signal pattern,
-        not just a fixed linear combination.
-        - F separate embedding heads preserve bank-specific projections.
-    '''
+    """
+    - From v2.
+    - F independent importance scorers: each bank learns which
+    (channel, scale) slots matter based on their temporal activity.
+    - Importance is derived from a small temporal encoder (Conv1d over
+    the 4 temporal bins) so the score depends on the signal pattern,
+    not just a fixed linear combination.
+    - F separate embedding heads preserve bank-specific projections.
+    """
+
     def __init__(
         self,
         n_channels,
@@ -933,45 +948,51 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v4(nn.Module):
                     nn.BatchNorm1d(n_channels),
                     nn.ELU(),
                     nn.Dropout(dropout),
-                    nn.AdaptiveAvgPool1d(4)
+                    nn.AdaptiveAvgPool1d(4),
                 )
                 for k in kernel_sizes
             ]
         )
 
         CN = n_channels * self.n_scales
-        self.importance_encoders = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv1d(CN, CN, kernel_size=3, padding=1, groups=CN, bias=False),     # depthwise convolution over time
-                nn.ELU(),
-                nn.Conv1d(CN, CN, kernel_size=4, groups=CN, bias=True)      # collapse time to 1
-            )
-            for _ in range(n_filter_banks)
-        ])
+        self.importance_encoders = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Conv1d(
+                        CN, CN, kernel_size=3, padding=1, groups=CN, bias=False
+                    ),  # depthwise convolution over time
+                    nn.ELU(),
+                    nn.Conv1d(
+                        CN, CN, kernel_size=4, groups=CN, bias=True
+                    ),  # collapse time to 1
+                )
+                for _ in range(n_filter_banks)
+            ]
+        )
 
-        self.embedding_heads = nn.ModuleList([
-            nn.Linear(self.C*self.n_scales*4, self.D) 
-            for _ in range(self.F)
-        ])
-
+        self.embedding_heads = nn.ModuleList(
+            [nn.Linear(self.C * self.n_scales * 4, self.D) for _ in range(self.F)]
+        )
 
     def forward(self, x):  # x: (B, C, T)
         # Extract features at each temporal scale independently
-        scale_features = [conv(x).unsqueeze(dim=2) for conv in self.scale_convs]  # list of (B, C, 4)
-        z = torch.cat(scale_features, dim=2)    # (B, C, N, 4)
-        z = rearrange(z, 'b c n t -> b (c n) t')        # (B, C*N, 4)
+        scale_features = [
+            conv(x).unsqueeze(dim=2) for conv in self.scale_convs
+        ]  # list of (B, C, 4)
+        z = torch.cat(scale_features, dim=2)  # (B, C, N, 4)
+        z = rearrange(z, "b c n t -> b (c n) t")  # (B, C*N, 4)
 
         # --- per-bank importance scoring + weighted embedding ---
         bank_outputs = []
         for f in range(self.F):
             # score each (c,n) slot based on its temporal activity pattern
-            alpha = self.importance_encoders[f](z)          # (B, C*N, 1)
-            alpha = alpha.squeeze(-1)                        # (B, C*N)
-            alpha = torch.softmax(alpha, dim=-1)             # (B, C*N) — sums to 1
-            alpha = alpha.unsqueeze(-1).expand_as(z)        # (B, C*N, 4)
+            alpha = self.importance_encoders[f](z)  # (B, C*N, 1)
+            alpha = alpha.squeeze(-1)  # (B, C*N)
+            alpha = torch.softmax(alpha, dim=-1)  # (B, C*N) — sums to 1
+            alpha = alpha.unsqueeze(-1).expand_as(z)  # (B, C*N, 4)
 
-            z_weighted = z * alpha                           # (B, C*N, 4)
-            z_flat = rearrange(z_weighted, 'b cn t -> b (cn t)')  # (B, C*N*4)
+            z_weighted = z * alpha  # (B, C*N, 4)
+            z_flat = rearrange(z_weighted, "b cn t -> b (cn t)")  # (B, C*N*4)
             bank_outputs.append(self.embedding_heads[f](z_flat))  # (B, D)
 
         z_out = torch.stack(bank_outputs, dim=1)  # (B, F, D)
@@ -979,13 +1000,14 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v4(nn.Module):
 
 
 class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v5(nn.Module):
-    '''
+    """
     - From v4.
     - Add grouped spatial mixer before importance scoring:
       channels interact across frequency scales, giving
-      the importance encoder access to cross-channel and cross-scale 
+      the importance encoder access to cross-channel and cross-scale
       contrast (e.g. lateral asymmetry) before per-instance scoring.
-    '''
+    """
+
     def __init__(
         self,
         n_channels,
@@ -1015,9 +1037,12 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v5(nn.Module):
             [
                 nn.Sequential(
                     nn.Conv1d(
-                        n_channels, n_channels,
-                        kernel_size=k, padding=k // 2,
-                        groups=n_channels, bias=False,
+                        n_channels,
+                        n_channels,
+                        kernel_size=k,
+                        padding=k // 2,
+                        groups=n_channels,
+                        bias=False,
                     ),
                     nn.BatchNorm1d(n_channels),
                     nn.ELU(),
@@ -1042,55 +1067,58 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v5(nn.Module):
         # Per-bank importance encoders — now scoring mixed slots
         # so alpha reflects cross-channel contrast, not just
         # individual channel activity.
-        self.importance_encoders = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv1d(CN, CN, kernel_size=3, padding=1, groups=CN, bias=False),
-                nn.ELU(),
-                nn.Conv1d(CN, CN, kernel_size=4, groups=CN, bias=True),
-            )
-            for _ in range(n_filter_banks)
-        ])
+        self.importance_encoders = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Conv1d(CN, CN, kernel_size=3, padding=1, groups=CN, bias=False),
+                    nn.ELU(),
+                    nn.Conv1d(CN, CN, kernel_size=4, groups=CN, bias=True),
+                )
+                for _ in range(n_filter_banks)
+            ]
+        )
 
         # F separate embedding heads
-        self.embedding_heads = nn.ModuleList([
-            nn.Linear(CN * 4, emb_size)
-            for _ in range(n_filter_banks)
-        ])
+        self.embedding_heads = nn.ModuleList(
+            [nn.Linear(CN * 4, emb_size) for _ in range(n_filter_banks)]
+        )
 
     def forward(self, x):  # (B, C, T)
         # multi-scale depthwise filtering
         scale_features = [conv(x) for conv in self.scale_convs]  # list of (B, C, 4)
-        z = torch.stack(scale_features, dim=2)                    # (B, C, N, 4)
-        z = rearrange(z, 'b c n t -> b (c n) t')                 # (B, C*N, 4)
+        z = torch.stack(scale_features, dim=2)  # (B, C, N, 4)
+        z = rearrange(z, "b c n t -> b (c n) t")  # (B, C*N, 4)
 
         # cross-channel mixing within each frequency scale
-        z = self.spatial_mixer(z)                                 # (B, C*N, 4)
+        z = self.spatial_mixer(z)  # (B, C*N, 4)
 
         # per-bank importance scoring on mixed features + weighted embedding
         bank_outputs = []
         for f in range(self.F):
-            alpha = self.importance_encoders[f](z)       # (B, C*N, 1)
-            alpha = alpha.squeeze(-1)                    # (B, C*N)
-            alpha = torch.softmax(alpha, dim=-1)         # (B, C*N)
-            alpha = alpha.unsqueeze(-1).expand_as(z)    # (B, C*N, 4)
+            alpha = self.importance_encoders[f](z)  # (B, C*N, 1)
+            alpha = alpha.squeeze(-1)  # (B, C*N)
+            alpha = torch.softmax(alpha, dim=-1)  # (B, C*N)
+            alpha = alpha.unsqueeze(-1).expand_as(z)  # (B, C*N, 4)
 
-            z_weighted = z * alpha                                       # (B, C*N, 4)
-            z_flat = rearrange(z_weighted, 'b cn t -> b (cn t)')        # (B, C*N*4)
-            bank_outputs.append(self.embedding_heads[f](z_flat))        # (B, D)
+            z_weighted = z * alpha  # (B, C*N, 4)
+            z_flat = rearrange(z_weighted, "b cn t -> b (cn t)")  # (B, C*N*4)
+            bank_outputs.append(self.embedding_heads[f](z_flat))  # (B, D)
 
         z_out = torch.stack(bank_outputs, dim=1)  # (B, F, D)
         return z_out
 
+
 class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v6(nn.Module):
-    '''
+    """
     - From v5.
     - Replace grouped spatial mixer with per-instance spatial mixing:
         - Linear layers from temporal activity compute C*N scores per instace
         - Scores per instance rewieghted via softmax
         - Channels still interact across frequency scales
-        - Cross-channel and cross-scale contrast (e.g. lateral asymmetry) 
+        - Cross-channel and cross-scale contrast (e.g. lateral asymmetry)
         passed to downstream submodules (importance scoring)
-    '''
+    """
+
     def __init__(
         self,
         n_channels,
@@ -1120,9 +1148,12 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v6(nn.Module):
             [
                 nn.Sequential(
                     nn.Conv1d(
-                        n_channels, n_channels,
-                        kernel_size=k, padding=k // 2,
-                        groups=n_channels, bias=False,
+                        n_channels,
+                        n_channels,
+                        kernel_size=k,
+                        padding=k // 2,
+                        groups=n_channels,
+                        bias=False,
                     ),
                     nn.BatchNorm1d(n_channels),
                     nn.ELU(),
@@ -1142,58 +1173,59 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v6(nn.Module):
         # Per-bank importance encoders — now scoring mixed slots
         # so alpha reflects cross-channel contrast, not just
         # individual channel activity.
-        self.importance_encoders = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv1d(CN, CN, kernel_size=3, padding=1, groups=CN, bias=False),
-                nn.ELU(),
-                nn.Conv1d(CN, CN, kernel_size=4, groups=CN, bias=True),
-            )
-            for _ in range(n_filter_banks)
-        ])
+        self.importance_encoders = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Conv1d(CN, CN, kernel_size=3, padding=1, groups=CN, bias=False),
+                    nn.ELU(),
+                    nn.Conv1d(CN, CN, kernel_size=4, groups=CN, bias=True),
+                )
+                for _ in range(n_filter_banks)
+            ]
+        )
 
         # F separate embedding heads
-        self.embedding_heads = nn.ModuleList([
-            nn.Linear(CN * 4, emb_size)
-            for _ in range(n_filter_banks)
-        ])
+        self.embedding_heads = nn.ModuleList(
+            [nn.Linear(CN * 4, emb_size) for _ in range(n_filter_banks)]
+        )
 
     def forward(self, x):  # (B, C, T)
         # multi-scale depthwise filtering
         scale_features = [conv(x) for conv in self.scale_convs]  # list of (B, C, 4)
-        z = torch.stack(scale_features, dim=2)                    # (B, C, N, 4)
-        z = rearrange(z, 'b c n t -> b (c n) t')                 # (B, C*N, 4)
+        z = torch.stack(scale_features, dim=2)  # (B, C, N, 4)
+        z = rearrange(z, "b c n t -> b (c n) t")  # (B, C*N, 4)
         B, _, T = z.size()
 
         # cross-channel mixing within each frequency scale
-        z_mean = z.mean(dim=-1) # (B, C*N)
+        z_mean = z.mean(dim=-1)  # (B, C*N)
         beta = torch.softmax(
-            self.spatial_mixer_gate(z_mean),
-            dim=-1
-        )   # *B, C*N) -> Instance wise Spatial+Scale Mixing                             # (B, C*N, 1)
-        beta = beta.unsqueeze(-1).expand_as(z)    # (B, C*N, 4)
+            self.spatial_mixer_gate(z_mean), dim=-1
+        )  # *B, C*N) -> Instance wise Spatial+Scale Mixing                             # (B, C*N, 1)
+        beta = beta.unsqueeze(-1).expand_as(z)  # (B, C*N, 4)
         z = beta * z
 
         # per-bank importance scoring on mixed features + weighted embedding
         bank_outputs = []
         for f in range(self.F):
-            alpha = self.importance_encoders[f](z)       # (B, C*N, 1)
-            alpha = alpha.squeeze(-1)                    # (B, C*N)
-            alpha = torch.softmax(alpha, dim=-1)         # (B, C*N)
-            alpha = alpha.unsqueeze(-1).expand_as(z)    # (B, C*N, 4)
+            alpha = self.importance_encoders[f](z)  # (B, C*N, 1)
+            alpha = alpha.squeeze(-1)  # (B, C*N)
+            alpha = torch.softmax(alpha, dim=-1)  # (B, C*N)
+            alpha = alpha.unsqueeze(-1).expand_as(z)  # (B, C*N, 4)
 
-            z_weighted = z * alpha                                       # (B, C*N, 4)
-            z_flat = rearrange(z_weighted, 'b cn t -> b (cn t)')        # (B, C*N*4)
-            bank_outputs.append(self.embedding_heads[f](z_flat))        # (B, D)
+            z_weighted = z * alpha  # (B, C*N, 4)
+            z_flat = rearrange(z_weighted, "b cn t -> b (cn t)")  # (B, C*N*4)
+            bank_outputs.append(self.embedding_heads[f](z_flat))  # (B, D)
 
         z_out = torch.stack(bank_outputs, dim=1)  # (B, F, D)
         return z_out
 
 
 class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v7(nn.Module):
-    '''
+    """
     - From v6.
     - Improve v6 spatial_mixer_gate
-    '''
+    """
+
     def __init__(
         self,
         n_channels,
@@ -1223,9 +1255,12 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v7(nn.Module):
             [
                 nn.Sequential(
                     nn.Conv1d(
-                        n_channels, n_channels,
-                        kernel_size=k, padding=k // 2,
-                        groups=n_channels, bias=False,
+                        n_channels,
+                        n_channels,
+                        kernel_size=k,
+                        padding=k // 2,
+                        groups=n_channels,
+                        bias=False,
                     ),
                     nn.BatchNorm1d(n_channels),
                     nn.ELU(),
@@ -1240,63 +1275,65 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v7(nn.Module):
 
         # Cross-channel mixing within each frequency scale.
         # use linear layer with softmax for instance independent spatial+scale-mixing
-        self.spatial_mixer_gate = nn.Linear(CN*4, CN*CN, bias=False)
+        self.spatial_mixer_gate = nn.Linear(CN * 4, CN * CN, bias=False)
 
         # Per-bank importance encoders — now scoring mixed slots
         # so alpha reflects cross-channel contrast, not just
         # individual channel activity.
-        self.importance_encoders = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv1d(CN, CN, kernel_size=3, padding=1, groups=CN, bias=False),
-                nn.ELU(),
-                nn.Conv1d(CN, CN, kernel_size=4, groups=CN, bias=True),
-            )
-            for _ in range(n_filter_banks)
-        ])
+        self.importance_encoders = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Conv1d(CN, CN, kernel_size=3, padding=1, groups=CN, bias=False),
+                    nn.ELU(),
+                    nn.Conv1d(CN, CN, kernel_size=4, groups=CN, bias=True),
+                )
+                for _ in range(n_filter_banks)
+            ]
+        )
 
         # F separate embedding heads
-        self.embedding_heads = nn.ModuleList([
-            nn.Linear(CN * 4, emb_size)
-            for _ in range(n_filter_banks)
-        ])
+        self.embedding_heads = nn.ModuleList(
+            [nn.Linear(CN * 4, emb_size) for _ in range(n_filter_banks)]
+        )
 
     def forward(self, x):  # (B, C, T)
         # multi-scale depthwise filtering
         scale_features = [conv(x) for conv in self.scale_convs]  # list of (B, C, 4)
-        z = torch.stack(scale_features, dim=2)                    # (B, C, N, 4)
-        z = rearrange(z, 'b c n t -> b (c n) t')                 # (B, C*N, 4)
+        z = torch.stack(scale_features, dim=2)  # (B, C, N, 4)
+        z = rearrange(z, "b c n t -> b (c n) t")  # (B, C*N, 4)
         B, CN, T = z.size()
 
         # cross-channel mixing within each frequency scale
-        z_squeeze = rearrange(z, 'b c t -> b (c t)') # (B, C*N)
-        beta = self.spatial_mixer_gate(z_squeeze)   # (B, C*N*2)
+        z_squeeze = rearrange(z, "b c t -> b (c t)")  # (B, C*N)
+        beta = self.spatial_mixer_gate(z_squeeze)  # (B, C*N*2)
         beta = beta.view(B, CN, CN).unsqueeze(-1)
         beta = torch.softmax(beta, dim=2)
-        beta = beta.expand(-1, -1, -1, T)     # (B, CN, CN, T)
-        z = beta * z.unsqueeze(dim=1).expand(-1, CN, -1, -1)     # (B, CN, CN, T)
+        beta = beta.expand(-1, -1, -1, T)  # (B, CN, CN, T)
+        z = beta * z.unsqueeze(dim=1).expand(-1, CN, -1, -1)  # (B, CN, CN, T)
         z = torch.sum(z, dim=2).squeeze(2)
 
         # per-bank importance scoring on mixed features + weighted embedding
         bank_outputs = []
         for f in range(self.F):
-            alpha = self.importance_encoders[f](z)       # (B, C*N, 1)
-            alpha = alpha.squeeze(-1)                    # (B, C*N)
-            alpha = torch.softmax(alpha, dim=-1)         # (B, C*N)
-            alpha = alpha.unsqueeze(-1).expand_as(z)    # (B, C*N, 4)
+            alpha = self.importance_encoders[f](z)  # (B, C*N, 1)
+            alpha = alpha.squeeze(-1)  # (B, C*N)
+            alpha = torch.softmax(alpha, dim=-1)  # (B, C*N)
+            alpha = alpha.unsqueeze(-1).expand_as(z)  # (B, C*N, 4)
 
-            z_weighted = z * alpha                                       # (B, C*N, 4)
-            z_flat = rearrange(z_weighted, 'b cn t -> b (cn t)')        # (B, C*N*4)
-            bank_outputs.append(self.embedding_heads[f](z_flat))        # (B, D)
+            z_weighted = z * alpha  # (B, C*N, 4)
+            z_flat = rearrange(z_weighted, "b cn t -> b (cn t)")  # (B, C*N*4)
+            bank_outputs.append(self.embedding_heads[f](z_flat))  # (B, D)
 
         z_out = torch.stack(bank_outputs, dim=1)  # (B, F, D)
         return z_out
 
 
 class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v8(nn.Module):
-    '''
+    """
     - From v5.
     - Make importance encoder include temporal axis
-    '''
+    """
+
     def __init__(
         self,
         n_channels,
@@ -1326,9 +1363,12 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v8(nn.Module):
             [
                 nn.Sequential(
                     nn.Conv1d(
-                        n_channels, n_channels,
-                        kernel_size=k, padding=k // 2,
-                        groups=n_channels, bias=False,
+                        n_channels,
+                        n_channels,
+                        kernel_size=k,
+                        padding=k // 2,
+                        groups=n_channels,
+                        bias=False,
                     ),
                     nn.BatchNorm1d(n_channels),
                     nn.ELU(),
@@ -1353,96 +1393,102 @@ class MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks_v8(nn.Module):
         # Per-bank importance encoders — now scoring mixed slots
         # so alpha reflects cross-channel contrast, not just
         # individual channel activity.
-        self.importance_encoders = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv1d(CN, CN, kernel_size=3, padding=1, groups=CN, bias=False),
-                nn.ELU(),
-                # no collapse conv -- keep (B, C*N, 4)
-                # nn.Conv1d(CN, CN, kernel_size=4, groups=CN, bias=True),
-            )
-            for _ in range(n_filter_banks)
-        ])
+        self.importance_encoders = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Conv1d(CN, CN, kernel_size=3, padding=1, groups=CN, bias=False),
+                    nn.ELU(),
+                    # no collapse conv -- keep (B, C*N, 4)
+                    # nn.Conv1d(CN, CN, kernel_size=4, groups=CN, bias=True),
+                )
+                for _ in range(n_filter_banks)
+            ]
+        )
 
         # F separate embedding heads
-        self.embedding_heads = nn.ModuleList([
-            nn.Linear(CN * 4, emb_size)
-            for _ in range(n_filter_banks)
-        ])
+        self.embedding_heads = nn.ModuleList(
+            [nn.Linear(CN * 4, emb_size) for _ in range(n_filter_banks)]
+        )
 
     def forward(self, x):  # (B, C, T)
         # multi-scale depthwise filtering
         scale_features = [conv(x) for conv in self.scale_convs]  # list of (B, C, 4)
-        z = torch.stack(scale_features, dim=2)                    # (B, C, N, 4)
-        z = rearrange(z, 'b c n t -> b (c n) t')                 # (B, C*N, 4)
+        z = torch.stack(scale_features, dim=2)  # (B, C, N, 4)
+        z = rearrange(z, "b c n t -> b (c n) t")  # (B, C*N, 4)
 
         # cross-channel mixing within each frequency scale
-        z = self.spatial_mixer(z)                                 # (B, C*N, 4)
+        z = self.spatial_mixer(z)  # (B, C*N, 4)
 
         # per-bank importance scoring on mixed features + weighted embedding
         bank_outputs = []
         for f in range(self.F):
-            alpha = self.importance_encoders[f](z)       # (B, C*N, 4)
-            alpha = torch.softmax(alpha, dim=1)         # Softmax over C*N at each time bin
+            alpha = self.importance_encoders[f](z)  # (B, C*N, 4)
+            alpha = torch.softmax(alpha, dim=1)  # Softmax over C*N at each time bin
 
-            z_weighted = z * alpha                                       # (B, C*N, 4)
-            z_flat = rearrange(z_weighted, 'b cn t -> b (cn t)')        # (B, C*N*4)
-            bank_outputs.append(self.embedding_heads[f](z_flat))        # (B, D)
+            z_weighted = z * alpha  # (B, C*N, 4)
+            z_flat = rearrange(z_weighted, "b cn t -> b (cn t)")  # (B, C*N*4)
+            bank_outputs.append(self.embedding_heads[f](z_flat))  # (B, D)
 
         z_out = torch.stack(bank_outputs, dim=1)  # (B, F, D)
         return z_out
 
+
 class DualPath_FilterBanks(nn.Module):
     def __init__(
-            self, 
-            n_channels,
-            n_filter_banks,
-            emb_size,
-            temporal_kernel=25,
-            dropout=0.5,
-            n_time_points=None
+        self,
+        n_channels,
+        n_filter_banks,
+        emb_size,
+        temporal_kernel=25,
+        dropout=0.5,
+        n_time_points=None,
     ):
         self.F = n_filter_banks
         self.D = emb_size
 
-        self.backbone = nn.Sequential([
-            nn.Conv1d(
-                n_channels,
-                n_channels,
-                kernel_size=temporal_kernel,
-                padding=temporal_kernel // 2,
-                groups=n_channels,
-                bias=False,
-            ),
-            nn.BatchNorm1d(n_channels),
-            nn.ELU(),
-            nn.Dropout(dropout),
-        ])
+        self.backbone = nn.Sequential(
+            [
+                nn.Conv1d(
+                    n_channels,
+                    n_channels,
+                    kernel_size=temporal_kernel,
+                    padding=temporal_kernel // 2,
+                    groups=n_channels,
+                    bias=False,
+                ),
+                nn.BatchNorm1d(n_channels),
+                nn.ELU(),
+                nn.Dropout(dropout),
+            ]
+        )
 
         self.temporal_pool_head = nn.Sequential(
             nn.AdaptiveAvgPool1d(1),
             nn.Flatten(),
             nn.Linear(n_channels, n_filter_banks * emb_size),
-            nn.ELU()
+            nn.ELU(),
         )
 
-        self.banks_spatiotemporal_embedding = nn.Sequential([
-            nn.Conv2d(
-                in_channels = n_filter_banks,
-                out_channels = n_filter_banks * emb_size,
-                kernel_size = 3, 
-                groups = n_filter_banks
-            ),
-            nn.Conv2d(
-                in_channels = n_filter_banks * emb_size,
-                out_channels = n_filter_banks * emb_size,
-                kernel_size = 3, 
-                groups = n_filter_banks
-            ),
-            # nn.BatchNorm2d(n_filter_banks * emb_size),
-            nn.ELU(),
-            # nn.Dropout(dropout),
-            nn.AdaptiveAvgPool2d(1, 1)
-        ])
+        self.banks_spatiotemporal_embedding = nn.Sequential(
+            [
+                nn.Conv2d(
+                    in_channels=n_filter_banks,
+                    out_channels=n_filter_banks * emb_size,
+                    kernel_size=3,
+                    groups=n_filter_banks,
+                ),
+                nn.Conv2d(
+                    in_channels=n_filter_banks * emb_size,
+                    out_channels=n_filter_banks * emb_size,
+                    kernel_size=3,
+                    groups=n_filter_banks,
+                ),
+                # nn.BatchNorm2d(n_filter_banks * emb_size),
+                nn.ELU(),
+                # nn.Dropout(dropout),
+                nn.AdaptiveAvgPool2d(1, 1),
+            ]
+        )
 
         self.apply(self._init_weights)
 
@@ -1457,9 +1503,9 @@ class DualPath_FilterBanks(nn.Module):
 
     def forward(self, x):
         B, C, T = x.size()
-        z = self.backbone(x)                      # (B, C, T')
-        z1 = self.temporal_pool_head(z)           # (B, F*D)
-        z1 = rearrange(z1, 'b (f d) -> b f d')    # (B, F, D)   
+        z = self.backbone(x)  # (B, C, T')
+        z1 = self.temporal_pool_head(z)  # (B, F*D)
+        z1 = rearrange(z1, "b (f d) -> b f d")  # (B, F, D)
 
         z = z.unsqueeze(1).expand(-1, self.F, -1, -1).contiguous
         z2 = self.banks_spatiotemporal_embedding(z)
@@ -1819,9 +1865,9 @@ class MTFC(nn.Module):
 
         self.branch_spec = parse_branch_config(self.branch)
         if self.sst_method is False:
-            assert all("f" not in dims for dims in self.branch_spec), (
-                "Cannot use frequency branch when sst_method=False"
-            )
+            assert all(
+                "f" not in dims for dims in self.branch_spec
+            ), "Cannot use frequency branch when sst_method=False"
 
         wsize = int((self.F - 1) * 2)
         tstep = math.ceil(wsize / wsize_divisor)

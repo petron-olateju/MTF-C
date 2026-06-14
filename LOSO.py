@@ -438,7 +438,7 @@ def main(
                 n_classes=reference_info["n_classes"],
                 fs=reference_info["fs"],
                 temporal_kernel=model_configs.get("temporal_kernel", 43),
-                filter_banks_variant=model_configs['filter_banks_variant']
+                filter_banks_variant=model_configs["filter_banks_variant"],
             )
             model = model.to(device)
         else:

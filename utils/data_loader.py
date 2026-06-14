@@ -50,9 +50,7 @@ RESTING_STATE_DATASETS = [
     "ButtonToneSZ",
 ]
 
-DATASET_TASK_MAP = {
-    "BNCI2014_001": 'binary'
-}
+DATASET_TASK_MAP = {"BNCI2014_001": "binary"}
 
 
 class ButtonToneSZ:

@@ -1,4 +1,4 @@
-'''
+"""
 =================================================
 coding:utf-8
 @Time:      2023/12/5 17:08
@@ -6,7 +6,7 @@ coding:utf-8
 @Author:    Ziwei Wang
 @Function:
 =================================================
-'''
+"""
 
 import torch
 import torch.nn as nn
@@ -14,7 +14,9 @@ import torch.nn.functional as F
 
 
 class ShallowConvNet(nn.Module):
-    def __init__(self, n_classes, input_ch, input_time, batch_norm=True, batch_norm_alpha=0.1):
+    def __init__(
+        self, n_classes, input_ch, input_time, batch_norm=True, batch_norm_alpha=0.1
+    ):
         super(ShallowConvNet, self).__init__()
         self.batch_norm = batch_norm
         self.batch_norm_alpha = batch_norm_alpha
@@ -25,11 +27,17 @@ class ShallowConvNet(nn.Module):
             self.layer1 = nn.Sequential(
                 nn.ZeroPad2d(padding=(0, 3, 0, 0)),
                 nn.Conv2d(1, n_ch1, kernel_size=(1, 25), stride=1),
-                nn.Conv2d(n_ch1, n_ch1, kernel_size=(input_ch, 1), stride=1, bias=not self.batch_norm),
-                nn.BatchNorm2d(n_ch1,
-                               momentum=self.batch_norm_alpha,
-                               affine=True,
-                               eps=1e-5))
+                nn.Conv2d(
+                    n_ch1,
+                    n_ch1,
+                    kernel_size=(input_ch, 1),
+                    stride=1,
+                    bias=not self.batch_norm,
+                ),
+                nn.BatchNorm2d(
+                    n_ch1, momentum=self.batch_norm_alpha, affine=True, eps=1e-5
+                ),
+            )
 
         self.layer1.eval()
         out = self.layer1(torch.zeros(1, 1, input_ch, input_time))

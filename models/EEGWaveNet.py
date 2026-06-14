@@ -1,16 +1,29 @@
 import torch
 import torch.nn as nn
 
+
 class EEGWaveNet(nn.Module):
     def __init__(self, n_chans, n_classes):
         super(EEGWaveNet, self).__init__()
 
-        self.temp_conv1 = nn.Conv1d(n_chans, n_chans, kernel_size=2, stride=2, groups=n_chans)
-        self.temp_conv2 = nn.Conv1d(n_chans, n_chans, kernel_size=2, stride=2, groups=n_chans)
-        self.temp_conv3 = nn.Conv1d(n_chans, n_chans, kernel_size=2, stride=2, groups=n_chans)
-        self.temp_conv4 = nn.Conv1d(n_chans, n_chans, kernel_size=2, stride=2, groups=n_chans)
-        self.temp_conv5 = nn.Conv1d(n_chans, n_chans, kernel_size=2, stride=2, groups=n_chans)
-        self.temp_conv6 = nn.Conv1d(n_chans, n_chans, kernel_size=2, stride=2, groups=n_chans)
+        self.temp_conv1 = nn.Conv1d(
+            n_chans, n_chans, kernel_size=2, stride=2, groups=n_chans
+        )
+        self.temp_conv2 = nn.Conv1d(
+            n_chans, n_chans, kernel_size=2, stride=2, groups=n_chans
+        )
+        self.temp_conv3 = nn.Conv1d(
+            n_chans, n_chans, kernel_size=2, stride=2, groups=n_chans
+        )
+        self.temp_conv4 = nn.Conv1d(
+            n_chans, n_chans, kernel_size=2, stride=2, groups=n_chans
+        )
+        self.temp_conv5 = nn.Conv1d(
+            n_chans, n_chans, kernel_size=2, stride=2, groups=n_chans
+        )
+        self.temp_conv6 = nn.Conv1d(
+            n_chans, n_chans, kernel_size=2, stride=2, groups=n_chans
+        )
 
         self.chpool1 = nn.Sequential(
             nn.Conv1d(n_chans, 32, kernel_size=4, groups=1),
@@ -18,7 +31,8 @@ class EEGWaveNet(nn.Module):
             nn.LeakyReLU(0.01),
             nn.Conv1d(32, 32, kernel_size=4, groups=1),
             nn.BatchNorm1d(32),
-            nn.LeakyReLU(0.01))
+            nn.LeakyReLU(0.01),
+        )
 
         self.chpool2 = nn.Sequential(
             nn.Conv1d(n_chans, 32, kernel_size=4, groups=1),
@@ -26,7 +40,8 @@ class EEGWaveNet(nn.Module):
             nn.LeakyReLU(0.01),
             nn.Conv1d(32, 32, kernel_size=4, groups=1),
             nn.BatchNorm1d(32),
-            nn.LeakyReLU(0.01))
+            nn.LeakyReLU(0.01),
+        )
 
         self.chpool3 = nn.Sequential(
             nn.Conv1d(n_chans, 32, kernel_size=4, groups=1),
@@ -34,7 +49,8 @@ class EEGWaveNet(nn.Module):
             nn.LeakyReLU(0.01),
             nn.Conv1d(32, 32, kernel_size=4, groups=1),
             nn.BatchNorm1d(32),
-            nn.LeakyReLU(0.01))
+            nn.LeakyReLU(0.01),
+        )
 
         self.chpool4 = nn.Sequential(
             nn.Conv1d(n_chans, 32, kernel_size=4, groups=1),
@@ -42,7 +58,8 @@ class EEGWaveNet(nn.Module):
             nn.LeakyReLU(0.01),
             nn.Conv1d(32, 32, kernel_size=4, groups=1),
             nn.BatchNorm1d(32),
-            nn.LeakyReLU(0.01))
+            nn.LeakyReLU(0.01),
+        )
 
         self.chpool5 = nn.Sequential(
             nn.Conv1d(n_chans, 32, kernel_size=4, groups=1),
@@ -50,14 +67,16 @@ class EEGWaveNet(nn.Module):
             nn.LeakyReLU(0.01),
             nn.Conv1d(32, 32, kernel_size=4, groups=1),
             nn.BatchNorm1d(32),
-            nn.LeakyReLU(0.01))
+            nn.LeakyReLU(0.01),
+        )
 
         self.classifier = nn.Sequential(
             nn.Linear(160, 64),
             nn.LeakyReLU(0.01),
             nn.Linear(64, 32),
             nn.Sigmoid(),
-            nn.Linear(32, n_classes))
+            nn.Linear(32, n_classes),
+        )
 
     def forward(self, x, return_feature=False):
         x = x.squeeze(2)

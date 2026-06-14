@@ -1,4 +1,4 @@
-'''
+"""
 =================================================
 coding:utf-8
 @Time:      2025/6/24 20:21
@@ -6,7 +6,8 @@ coding:utf-8
 @Author:    Ziwei Wang
 @Function:
 =================================================
-'''
+"""
+
 import os
 import sys
 import random
@@ -24,6 +25,7 @@ from einops import rearrange, repeat, einsum
 
 # https://blog.csdn.net/cskywit/article/details/137448871
 # https://github.com/johnma2006/mamba-minimal/blob/master/model.py
+
 
 class MambaBlock(nn.Module):
     def __init__(self, input_channels):
@@ -47,12 +49,14 @@ class MambaBlock(nn.Module):
         )
 
         # x_proj takes in `x` and outputs the input-specific Δ, B, C
-        self.x_proj = nn.Linear(self.d_inner, self.dt_rank + self.d_state * 2, bias=False)
+        self.x_proj = nn.Linear(
+            self.d_inner, self.dt_rank + self.d_state * 2, bias=False
+        )
 
         # dt_proj projects Δ from dt_rank to d_in
         self.dt_proj = nn.Linear(self.dt_rank, self.d_inner, bias=True)
 
-        A = repeat(torch.arange(1, self.d_state + 1), 'n -> d n', d=self.d_inner)
+        A = repeat(torch.arange(1, self.d_state + 1), "n -> d n", d=self.d_inner)
         self.A_log = nn.Parameter(torch.log(A))
         self.D = nn.Parameter(torch.ones(self.d_inner))
         self.out_proj = nn.Linear(self.d_inner, self.d_model)  # , bias=args.bias)
@@ -71,14 +75,14 @@ class MambaBlock(nn.Module):
             mamba_inner_ref(), https://github.com/state-spaces/mamba/blob/main/mamba_ssm/ops/selective_scan_interface.py#L311
 
         """
-        (b, l, d) = x.shape
+        b, l, d = x.shape
 
         x_and_res = self.in_proj(x)  # shape (b, l, 2 * d_in)
-        (x, res) = x_and_res.split(split_size=[self.d_inner, self.d_inner], dim=-1)
+        x, res = x_and_res.split(split_size=[self.d_inner, self.d_inner], dim=-1)
 
-        x = rearrange(x, 'b l d_in -> b d_in l')
+        x = rearrange(x, "b l d_in -> b d_in l")
         x = self.conv1d(x)[:, :, :l]
-        x = rearrange(x, 'b d_in l -> b l d_in')
+        x = rearrange(x, "b d_in l -> b l d_in")
 
         x = F.silu(x)
 
@@ -105,7 +109,7 @@ class MambaBlock(nn.Module):
             mamba_inner_ref(), https://github.com/state-spaces/mamba/blob/main/mamba_ssm/ops/selective_scan_interface.py#L311
 
         """
-        (d_in, n) = self.A_log.shape
+        d_in, n = self.A_log.shape
 
         # Compute ∆ A B C D, the state space parameters.
         #     A, D are input independent (see Mamba paper [1] Section 3.5.2 "Interpretation of A" for why A isn't selective)
@@ -117,10 +121,14 @@ class MambaBlock(nn.Module):
 
         x_dbl = self.x_proj(x)  # (b, l, dt_rank + 2*n)
 
-        (delta, B, C) = x_dbl.split(split_size=[self.dt_rank, n, n], dim=-1)  # delta: (b, l, dt_rank). B, C: (b, l, n)
+        delta, B, C = x_dbl.split(
+            split_size=[self.dt_rank, n, n], dim=-1
+        )  # delta: (b, l, dt_rank). B, C: (b, l, n)
         delta = F.softplus(self.dt_proj(delta))  # (b, l, d_in)
 
-        y = self.selective_scan(x, delta, A, B, C, D)  # This is similar to run_SSM(A, B, C, u) in The Annotated S4 [2]
+        y = self.selective_scan(
+            x, delta, A, B, C, D
+        )  # This is similar to run_SSM(A, B, C, u) in The Annotated S4 [2]
 
         return y
 
@@ -151,15 +159,15 @@ class MambaBlock(nn.Module):
             Note: I refactored some parts out of `selective_scan_ref` out, so the functionality doesn't match exactly.
 
         """
-        (b, l, d_in) = u.shape
+        b, l, d_in = u.shape
         n = A.shape[1]
 
         # Discretize continuous parameters (A, B)
         # - A is discretized using zero-order hold (ZOH) discretization (see Section 2 Equation 4 in the Mamba paper [1])
         # - B is discretized using a simplified Euler discretization instead of ZOH. From a discussion with authors:
         #   "A is the more important term and the performance doesn't change much with the simplification on B"
-        deltaA = torch.exp(einsum(delta, A, 'b l d_in, d_in n -> b l d_in n'))
-        deltaB_u = einsum(delta, B, u, 'b l d_in, b l n, b l d_in -> b l d_in n')
+        deltaA = torch.exp(einsum(delta, A, "b l d_in, d_in n -> b l d_in n"))
+        deltaB_u = einsum(delta, B, u, "b l d_in, b l n, b l d_in -> b l d_in n")
 
         # Perform selective scan (see scan_SSM() in The Annotated S4 [2])
         # Note that the below is sequential, while the official implementation does a much faster parallel scan that
@@ -168,7 +176,7 @@ class MambaBlock(nn.Module):
         ys = []
         for i in range(l):
             x = deltaA[:, i] * x + deltaB_u[:, i]
-            y = einsum(x, C[:, i, :], 'b d_in n, b n -> b d_in')
+            y = einsum(x, C[:, i, :], "b d_in n, b n -> b d_in")
             ys.append(y)
         y = torch.stack(ys, dim=1)  # shape (b, l, d_in)
 
@@ -178,15 +186,15 @@ class MambaBlock(nn.Module):
 
 
 class RMSNorm(nn.Module):
-    def __init__(self,
-                 d_model: int,
-                 eps: float = 1e-5):
+    def __init__(self, d_model: int, eps: float = 1e-5):
         super().__init__()
         self.eps = eps
         self.weight = nn.Parameter(torch.ones(d_model))
 
     def forward(self, x):
-        output = x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps) * self.weight
+        output = (
+            x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps) * self.weight
+        )
 
         return output
 
@@ -195,36 +203,51 @@ class RMSNorm(nn.Module):
 ## Patient-Specific Seizure Prediction via Adder Network and Supervised Contrastive Learning
 ## ADDNet-SCL-1d
 
+
 class SlimSeiz(nn.Module):
     def __init__(self, input_channels=3):
         super(SlimSeiz, self).__init__()
         self.input_channels = input_channels
 
         self.conv1 = nn.Sequential(
-            nn.Conv1d(in_channels=input_channels, out_channels=16, kernel_size=21, stride=1, padding=10),
+            nn.Conv1d(
+                in_channels=input_channels,
+                out_channels=16,
+                kernel_size=21,
+                stride=1,
+                padding=10,
+            ),
             nn.ReLU(),
-            nn.MaxPool1d(kernel_size=8, stride=8)
+            nn.MaxPool1d(kernel_size=8, stride=8),
         )
         self.conv2_1 = nn.Sequential(
             nn.Conv1d(in_channels=16, out_channels=16, kernel_size=1, stride=1),
-            nn.ReLU()
+            nn.ReLU(),
         )
         self.conv2_2 = nn.Sequential(
-            nn.Conv1d(in_channels=16, out_channels=16, kernel_size=11, stride=1, padding=5),
+            nn.Conv1d(
+                in_channels=16, out_channels=16, kernel_size=11, stride=1, padding=5
+            ),
             nn.ReLU(),
-            nn.Conv1d(in_channels=16, out_channels=16, kernel_size=3, stride=1, padding=1),
-            nn.ReLU()
+            nn.Conv1d(
+                in_channels=16, out_channels=16, kernel_size=3, stride=1, padding=1
+            ),
+            nn.ReLU(),
         )
         self.pool3 = nn.MaxPool1d(kernel_size=4, stride=4)
         self.conv4_1 = nn.Sequential(
             nn.Conv1d(in_channels=16, out_channels=32, kernel_size=1, stride=2),
-            nn.ReLU()
+            nn.ReLU(),
         )
         self.conv4_2 = nn.Sequential(
-            nn.Conv1d(in_channels=16, out_channels=32, kernel_size=5, stride=2, padding=2),
+            nn.Conv1d(
+                in_channels=16, out_channels=32, kernel_size=5, stride=2, padding=2
+            ),
             nn.ReLU(),
-            nn.Conv1d(in_channels=32, out_channels=32, kernel_size=3, stride=1, padding=1),
-            nn.ReLU()
+            nn.Conv1d(
+                in_channels=32, out_channels=32, kernel_size=3, stride=1, padding=1
+            ),
+            nn.ReLU(),
         )
 
         # self.conv5_1 = nn.Sequential(
@@ -243,9 +266,7 @@ class SlimSeiz(nn.Module):
 
         self.adaptive_avg_pool = nn.AdaptiveAvgPool1d(output_size=1)
 
-        self.classifier = nn.Sequential(
-            nn.Linear(32, 2)
-        )
+        self.classifier = nn.Sequential(nn.Linear(32, 2))
 
     def forward(self, x):
         # x = x.unsqueeze(1)

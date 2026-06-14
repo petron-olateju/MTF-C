@@ -50,22 +50,23 @@ def main():
             preprocessing_pipeline=None,
             t0=t0,
             t1=t1,
-            experiment_seed=args.seed
+            experiment_seed=args.seed,
         )
-        performance['experiment_seed'] = args.seed
+        performance["experiment_seed"] = args.seed
 
         experiment_path = os.path.join(args.output_dir, experiment_name)
         os.makedirs(experiment_path, exist_ok=True)
         if os.path.exists(f"{experiment_path}/history.yaml"):
-            with open(f"{experiment_path}/history.yaml", 'r') as f:
+            with open(f"{experiment_path}/history.yaml", "r") as f:
                 history = yaml.safe_load(f)
         else:
             history = {}
-        
+
         history[run_timestamp] = performance
 
-        with open(f"{experiment_path}/history.yaml", 'w') as f:
+        with open(f"{experiment_path}/history.yaml", "w") as f:
             yaml.dump(history, f, default_flow_style=False, sort_keys=False)
+
 
 if __name__ == "__main__":
     main()

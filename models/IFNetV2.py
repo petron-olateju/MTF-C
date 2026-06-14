@@ -11,7 +11,6 @@ import torch.nn.functional as F
 from timm.models.layers import trunc_normal_
 
 
-
 class Conv(nn.Module):
     def __init__(self, conv, activation=None, bn=None):
         nn.Module.__init__(self)
@@ -36,8 +35,8 @@ class LogPowerLayer(nn.Module):
         self.dim = dim
 
     def forward(self, x):
-        return torch.log(torch.clamp(torch.mean(x ** 2, dim=self.dim), 1e-4, 1e4))
-        #return torch.log(torch.clamp(x.var(dim=self.dim, keepdim=False), 1e-4, 1e4))
+        return torch.log(torch.clamp(torch.mean(x**2, dim=self.dim), 1e-4, 1e4))
+        # return torch.log(torch.clamp(x.var(dim=self.dim, keepdim=False), 1e-4, 1e4))
 
 
 class InterFre(nn.Module):
@@ -51,7 +50,7 @@ class InterFre(nn.Module):
 
 
 class Conv1dWithConstraint(nn.Conv1d):
-    def __init__(self, *args, doWeightNorm = True, max_norm=0.5, **kwargs):
+    def __init__(self, *args, doWeightNorm=True, max_norm=0.5, **kwargs):
         self.max_norm = max_norm
         self.doWeightNorm = doWeightNorm
         super(Conv1dWithConstraint, self).__init__(*args, **kwargs)
@@ -79,7 +78,15 @@ class LinearWithConstraint(nn.Linear):
 
 
 class Stem(nn.Module):
-    def __init__(self, data_name, in_planes, out_planes=64, kernel_size=63, patch_size=125, radix=2):
+    def __init__(
+        self,
+        data_name,
+        in_planes,
+        out_planes=64,
+        kernel_size=63,
+        patch_size=125,
+        radix=2,
+    ):
         nn.Module.__init__(self)
         self.in_planes = in_planes
         self.out_planes = out_planes
@@ -89,13 +96,29 @@ class Stem(nn.Module):
         self.patch_size = patch_size
         self.data_name = data_name
 
-        self.sconv = Conv(nn.Conv1d(self.in_planes, self.mid_planes, 1, bias=False, groups = radix),
-                          bn=nn.BatchNorm1d(self.mid_planes), activation=None)
+        self.sconv = Conv(
+            nn.Conv1d(self.in_planes, self.mid_planes, 1, bias=False, groups=radix),
+            bn=nn.BatchNorm1d(self.mid_planes),
+            activation=None,
+        )
 
         self.tconv = nn.ModuleList()
         for _ in range(self.radix):
-            self.tconv.append(Conv(nn.Conv1d(self.out_planes, self.out_planes, kernel_size, 1, groups=self.out_planes, padding=kernel_size // 2, bias=False,),
-                                   bn=nn.BatchNorm1d(self.out_planes), activation=None))
+            self.tconv.append(
+                Conv(
+                    nn.Conv1d(
+                        self.out_planes,
+                        self.out_planes,
+                        kernel_size,
+                        1,
+                        groups=self.out_planes,
+                        padding=kernel_size // 2,
+                        bias=False,
+                    ),
+                    bn=nn.BatchNorm1d(self.out_planes),
+                    activation=None,
+                )
+            )
             kernel_size //= 2
 
         self.interFre = InterFre()
@@ -110,7 +133,7 @@ class Stem(nn.Module):
         out = torch.split(out, self.out_planes, dim=1)
         out = [m(x) for x, m in zip(out, self.tconv)]
         out = self.interFre(out)
-        if self.data_name != 'MI1-7' and self.data_name != 'MI1':
+        if self.data_name != "MI1-7" and self.data_name != "MI1":
             out = out[:, :, :-1]
         out = out.reshape(N, self.out_planes, T // self.patch_size, self.patch_size)
         out = self.power(out)
@@ -119,8 +142,18 @@ class Stem(nn.Module):
 
 
 class IFNet(nn.Module):
-    def __init__(self, data_name, in_planes, out_planes, kernel_size, radix, patch_size, time_points, num_classes):
-        r'''Interactive Frequency Convolutional Neural Network V2
+    def __init__(
+        self,
+        data_name,
+        in_planes,
+        out_planes,
+        kernel_size,
+        radix,
+        patch_size,
+        time_points,
+        num_classes,
+    ):
+        r"""Interactive Frequency Convolutional Neural Network V2
 
         :param in_planes: Number of input EEG channels
         :param out_planes: Number of output feature dimensions
@@ -129,22 +162,31 @@ class IFNet(nn.Module):
         :param patch_size: Temporal pooling size
         :param time_points: Input window length
         :param num_classes: Number of classes
-        '''
+        """
         nn.Module.__init__(self)
         self.in_planes = in_planes * radix
         self.out_planes = out_planes
         self.data_name = data_name
-        self.stem = Stem(self.data_name, self.in_planes, self.out_planes, kernel_size, patch_size=patch_size, radix=radix)
+        self.stem = Stem(
+            self.data_name,
+            self.in_planes,
+            self.out_planes,
+            kernel_size,
+            patch_size=patch_size,
+            radix=radix,
+        )
 
         self.fc = nn.Sequential(
-            LinearWithConstraint(out_planes * (time_points // patch_size), num_classes, doWeightNorm=True),
+            LinearWithConstraint(
+                out_planes * (time_points // patch_size), num_classes, doWeightNorm=True
+            ),
         )
-        #print(f'fc layer feature dims:{self.fc[-1].weight.shape}')
+        # print(f'fc layer feature dims:{self.fc[-1].weight.shape}')
         self.apply(self.initParms)
 
     def initParms(self, m):
         if isinstance(m, nn.Linear):
-            trunc_normal_(m.weight, std=.01)
+            trunc_normal_(m.weight, std=0.01)
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, (nn.LayerNorm, nn.BatchNorm1d, nn.BatchNorm2d)):
@@ -153,7 +195,7 @@ class IFNet(nn.Module):
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, (nn.Conv1d, nn.Conv2d)):
-            trunc_normal_(m.weight, std=.01)
+            trunc_normal_(m.weight, std=0.01)
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)
 

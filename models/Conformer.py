@@ -5,6 +5,7 @@ Convolutional Transformer for EEG decoding
 
 Couple CNN and Transformer in a concise manner with amazing results
 """
+
 # remember to change paths
 
 import argparse
@@ -50,9 +51,11 @@ from PIL import Image
 from torchvision.transforms import Compose, Resize, ToTensor
 from einops import rearrange, reduce, repeat
 from einops.layers.torch import Rearrange, Reduce
+
 # from common_spatial_pattern import csp
 
 import matplotlib.pyplot as plt
+
 # from torch.utils.tensorboard import SummaryWriter
 from torch.backends import cudnn
 
@@ -81,8 +84,10 @@ class PatchEmbedding(nn.Module):
         )
 
         self.projection = nn.Sequential(
-            nn.Conv2d(40, emb_size, (1, 1), stride=(1, 1)),  # transpose, conv could enhance fiting ability slightly
-            Rearrange('b e (h) (w) -> b (h w) e'),
+            nn.Conv2d(
+                40, emb_size, (1, 1), stride=(1, 1)
+            ),  # transpose, conv could enhance fiting ability slightly
+            Rearrange("b e (h) (w) -> b (h w) e"),
         )
 
     def forward(self, x: Tensor) -> Tensor:
@@ -107,7 +112,7 @@ class MultiHeadAttention(nn.Module):
         queries = rearrange(self.queries(x), "b n (h d) -> b h n d", h=self.num_heads)
         keys = rearrange(self.keys(x), "b n (h d) -> b h n d", h=self.num_heads)
         values = rearrange(self.values(x), "b n (h d) -> b h n d", h=self.num_heads)
-        energy = torch.einsum('bhqd, bhkd -> bhqk', queries, keys)
+        energy = torch.einsum("bhqd, bhkd -> bhqk", queries, keys)
         if mask is not None:
             fill_value = torch.finfo(torch.float32).min
             energy.mask_fill(~mask, fill_value)
@@ -115,7 +120,7 @@ class MultiHeadAttention(nn.Module):
         scaling = self.emb_size ** (1 / 2)
         att = F.softmax(energy / scaling, dim=-1)
         att = self.att_drop(att)
-        out = torch.einsum('bhal, bhlv -> bhav ', att, values)
+        out = torch.einsum("bhal, bhlv -> bhav ", att, values)
         out = rearrange(out, "b h n d -> b n (h d)")
         out = self.projection(out)
         return out
@@ -149,25 +154,32 @@ class GELU(nn.Module):
 
 
 class TransformerEncoderBlock(nn.Sequential):
-    def __init__(self,
-                 emb_size,
-                 num_heads=10,
-                 drop_p=0.5,
-                 forward_expansion=4,
-                 forward_drop_p=0.5):
+    def __init__(
+        self,
+        emb_size,
+        num_heads=10,
+        drop_p=0.5,
+        forward_expansion=4,
+        forward_drop_p=0.5,
+    ):
         super().__init__(
-            ResidualAdd(nn.Sequential(
-                nn.LayerNorm(emb_size),
-                MultiHeadAttention(emb_size, num_heads, drop_p),
-                nn.Dropout(drop_p)
-            )),
-            ResidualAdd(nn.Sequential(
-                nn.LayerNorm(emb_size),
-                FeedForwardBlock(
-                    emb_size, expansion=forward_expansion, drop_p=forward_drop_p),
-                nn.Dropout(drop_p)
-            )
-            ))
+            ResidualAdd(
+                nn.Sequential(
+                    nn.LayerNorm(emb_size),
+                    MultiHeadAttention(emb_size, num_heads, drop_p),
+                    nn.Dropout(drop_p),
+                )
+            ),
+            ResidualAdd(
+                nn.Sequential(
+                    nn.LayerNorm(emb_size),
+                    FeedForwardBlock(
+                        emb_size, expansion=forward_expansion, drop_p=forward_drop_p
+                    ),
+                    nn.Dropout(drop_p),
+                )
+            ),
+        )
 
 
 class TransformerEncoder(nn.Sequential):
@@ -181,9 +193,9 @@ class ClassificationHead(nn.Sequential):
 
         # global average pooling
         self.clshead = nn.Sequential(
-            Reduce('b n e -> b e', reduction='mean'),
+            Reduce("b n e -> b e", reduction="mean"),
             nn.LayerNorm(emb_size),
-            nn.Linear(emb_size, n_classes)
+            nn.Linear(emb_size, n_classes),
         )
         self.fc = nn.Sequential(
             nn.Linear(args.feature_deep_dim, 256),
@@ -192,7 +204,7 @@ class ClassificationHead(nn.Sequential):
             nn.Linear(256, 32),
             nn.ELU(),
             nn.Dropout(0.3),
-            nn.Linear(32, n_classes)
+            nn.Linear(32, n_classes),
         )
 
     def forward(self, x):
@@ -204,27 +216,25 @@ class ClassificationHead(nn.Sequential):
 class Conformer(nn.Sequential):
     def __init__(self, args, emb_size=40, depth=6, chn=-1, n_classes=2, **kwargs):
         super().__init__(
-
             PatchEmbedding(chn, emb_size),  # conv layers
             TransformerEncoder(depth, emb_size),  # encoders
-            ClassificationHead(args, emb_size, n_classes)  # no classifier needed, use FC_xy
+            ClassificationHead(
+                args, emb_size, n_classes
+            ),  # no classifier needed, use FC_xy
         )
+
 
 class Conformer_patchembedding(nn.Sequential):
     def __init__(self, emb_size=40, depth=6, chn=22, n_classes=2, **kwargs):
-        super().__init__(
+        super().__init__(PatchEmbedding(chn, emb_size))
 
-            PatchEmbedding(chn, emb_size)
-        )
 
 class Conformer_encoder(nn.Sequential):
     def __init__(self, emb_size=40, depth=6, chn=22, n_classes=2, **kwargs):
-        super().__init__(
+        super().__init__(TransformerEncoder(depth, emb_size))
 
-            TransformerEncoder(depth, emb_size)
-        )
 
-class ExP():
+class ExP:
     def __init__(self, nsub):
         super(ExP, self).__init__()
         self.batch_size = 72
@@ -237,7 +247,7 @@ class ExP():
         self.nSub = nsub
 
         self.start_epoch = 0
-        self.root = '/Data/strict_TE/'
+        self.root = "/Data/strict_TE/"
 
         self.log_write = open("./results/log_subject%d.txt" % self.nSub, "w")
 
@@ -250,10 +260,12 @@ class ExP():
 
         self.model = Conformer().cuda()
 
-        gpus = [0,1,2,3,4,5,6,7]
-        os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-        os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(map(str, gpus))
-        self.model = nn.DataParallel(self.model, device_ids=[i for i in range(len(gpus))])
+        gpus = [0, 1, 2, 3, 4, 5, 6, 7]
+        os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+        os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, gpus))
+        self.model = nn.DataParallel(
+            self.model, device_ids=[i for i in range(len(gpus))]
+        )
         self.model = self.model.cuda()
         # summary(self.model, (1, 22, 1000))
 
@@ -270,11 +282,12 @@ class ExP():
             for ri in range(int(self.batch_size / 4)):
                 for rj in range(8):
                     rand_idx = np.random.randint(0, tmp_data.shape[0], 8)
-                    tmp_aug_data[ri, :, :, rj * 125:(rj + 1) * 125] = tmp_data[rand_idx[rj], :, :,
-                                                                      rj * 125:(rj + 1) * 125]
+                    tmp_aug_data[ri, :, :, rj * 125 : (rj + 1) * 125] = tmp_data[
+                        rand_idx[rj], :, :, rj * 125 : (rj + 1) * 125
+                    ]
 
             aug_data.append(tmp_aug_data)
-            aug_label.append(tmp_label[:int(self.batch_size / 4)])
+            aug_label.append(tmp_label[: int(self.batch_size / 4)])
         aug_data = np.concatenate(aug_data)
         aug_label = np.concatenate(aug_label)
         aug_shuffle = np.random.permutation(len(aug_data))
@@ -290,9 +303,9 @@ class ExP():
     def get_source_data(self):
 
         # train data
-        self.total_data = scipy.io.loadmat(self.root + 'A0%dT.mat' % self.nSub)
-        self.train_data = self.total_data['data']
-        self.train_label = self.total_data['label']
+        self.total_data = scipy.io.loadmat(self.root + "A0%dT.mat" % self.nSub)
+        self.train_data = self.total_data["data"]
+        self.train_label = self.total_data["label"]
 
         self.train_data = np.transpose(self.train_data, (2, 1, 0))
         self.train_data = np.expand_dims(self.train_data, axis=1)
@@ -306,9 +319,9 @@ class ExP():
         self.allLabel = self.allLabel[shuffle_num]
 
         # test data
-        self.test_tmp = scipy.io.loadmat(self.root + 'A0%dE.mat' % self.nSub)
-        self.test_data = self.test_tmp['data']
-        self.test_label = self.test_tmp['label']
+        self.test_tmp = scipy.io.loadmat(self.root + "A0%dE.mat" % self.nSub)
+        self.test_data = self.test_tmp["data"]
+        self.test_label = self.test_tmp["label"]
 
         self.test_data = np.transpose(self.test_data, (2, 1, 0))
         self.test_data = np.expand_dims(self.test_data, axis=1)
@@ -334,16 +347,21 @@ class ExP():
         label = torch.from_numpy(label - 1)
 
         dataset = torch.utils.data.TensorDataset(img, label)
-        self.dataloader = torch.utils.data.DataLoader(dataset=dataset, batch_size=self.batch_size, shuffle=True)
+        self.dataloader = torch.utils.data.DataLoader(
+            dataset=dataset, batch_size=self.batch_size, shuffle=True
+        )
 
         test_data = torch.from_numpy(test_data)
         test_label = torch.from_numpy(test_label - 1)
         test_dataset = torch.utils.data.TensorDataset(test_data, test_label)
-        self.test_dataloader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=self.batch_size,
-                                                           shuffle=True)
+        self.test_dataloader = torch.utils.data.DataLoader(
+            dataset=test_dataset, batch_size=self.batch_size, shuffle=True
+        )
 
         # Optimizers
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, betas=(self.b1, self.b2))
+        self.optimizer = torch.optim.Adam(
+            self.model.parameters(), lr=self.lr, betas=(self.b1, self.b2)
+        )
 
         test_data = Variable(test_data.type(self.Tensor))
         test_label = Variable(test_label.type(self.LongTensor))
@@ -387,15 +405,22 @@ class ExP():
 
                 loss_test = self.criterion_cls(Cls, test_label)
                 y_pred = torch.max(Cls, 1)[1]
-                acc = float((y_pred == test_label).cpu().numpy().astype(int).sum()) / float(test_label.size(0))
+                acc = float(
+                    (y_pred == test_label).cpu().numpy().astype(int).sum()
+                ) / float(test_label.size(0))
                 train_pred = torch.max(outputs, 1)[1]
-                train_acc = float((train_pred == label).cpu().numpy().astype(int).sum()) / float(label.size(0))
+                train_acc = float(
+                    (train_pred == label).cpu().numpy().astype(int).sum()
+                ) / float(label.size(0))
 
-                print('Epoch:', e,
-                      '  Train loss: %.6f' % loss.detach().cpu().numpy(),
-                      '  Test loss: %.6f' % loss_test.detach().cpu().numpy(),
-                      '  Train accuracy %.6f' % train_acc,
-                      '  Test accuracy is %.6f' % acc)
+                print(
+                    "Epoch:",
+                    e,
+                    "  Train loss: %.6f" % loss.detach().cpu().numpy(),
+                    "  Test loss: %.6f" % loss_test.detach().cpu().numpy(),
+                    "  Train accuracy %.6f" % train_acc,
+                    "  Test accuracy is %.6f" % acc,
+                )
 
                 self.log_write.write(str(e) + "    " + str(acc) + "\n")
                 num = num + 1
@@ -405,12 +430,12 @@ class ExP():
                     Y_true = test_label
                     Y_pred = y_pred
 
-        torch.save(self.model.module.state_dict(), 'model.pth')
+        torch.save(self.model.module.state_dict(), "model.pth")
         averAcc = averAcc / num
-        print('The average accuracy is:', averAcc)
-        print('The best accuracy is:', bestAcc)
-        self.log_write.write('The average accuracy is: ' + str(averAcc) + "\n")
-        self.log_write.write('The best accuracy is: ' + str(bestAcc) + "\n")
+        print("The average accuracy is:", averAcc)
+        print("The best accuracy is:", bestAcc)
+        self.log_write.write("The average accuracy is: " + str(averAcc) + "\n")
+        self.log_write.write("The best accuracy is: " + str(bestAcc) + "\n")
 
         return bestAcc, averAcc, Y_true, Y_pred
         # writer.close()
@@ -425,24 +450,40 @@ def main():
         starttime = datetime.datetime.now()
 
         seed_n = np.random.randint(2021)
-        print('seed is ' + str(seed_n))
+        print("seed is " + str(seed_n))
         random.seed(seed_n)
         np.random.seed(seed_n)
         torch.manual_seed(seed_n)
         torch.cuda.manual_seed(seed_n)
         torch.cuda.manual_seed_all(seed_n)
 
-        print('Subject %d' % (i + 1))
+        print("Subject %d" % (i + 1))
         exp = ExP(i + 1)
 
         bestAcc, averAcc, Y_true, Y_pred = exp.train()
-        print('THE BEST ACCURACY IS ' + str(bestAcc))
-        result_write.write('Subject ' + str(i + 1) + ' : ' + 'Seed is: ' + str(seed_n) + "\n")
-        result_write.write('Subject ' + str(i + 1) + ' : ' + 'The best accuracy is: ' + str(bestAcc) + "\n")
-        result_write.write('Subject ' + str(i + 1) + ' : ' + 'The average accuracy is: ' + str(averAcc) + "\n")
+        print("THE BEST ACCURACY IS " + str(bestAcc))
+        result_write.write(
+            "Subject " + str(i + 1) + " : " + "Seed is: " + str(seed_n) + "\n"
+        )
+        result_write.write(
+            "Subject "
+            + str(i + 1)
+            + " : "
+            + "The best accuracy is: "
+            + str(bestAcc)
+            + "\n"
+        )
+        result_write.write(
+            "Subject "
+            + str(i + 1)
+            + " : "
+            + "The average accuracy is: "
+            + str(averAcc)
+            + "\n"
+        )
 
         endtime = datetime.datetime.now()
-        print('subject %d duration: ' % (i + 1) + str(endtime - starttime))
+        print("subject %d duration: " % (i + 1) + str(endtime - starttime))
         best = best + bestAcc
         aver = aver + averAcc
         if i == 0:
@@ -455,8 +496,8 @@ def main():
     best = best / 9
     aver = aver / 9
 
-    result_write.write('**The average Best accuracy is: ' + str(best) + "\n")
-    result_write.write('The average Aver accuracy is: ' + str(aver) + "\n")
+    result_write.write("**The average Best accuracy is: " + str(best) + "\n")
+    result_write.write("The average Aver accuracy is: " + str(aver) + "\n")
     result_write.close()
 
 

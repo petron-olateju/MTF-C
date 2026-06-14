@@ -1,4 +1,4 @@
-'''
+"""
 =================================================
 coding:utf-8
 @Time:      2025/8/18 02:37
@@ -6,7 +6,8 @@ coding:utf-8
 @Author:    Ziwei Wang
 @Function:
 =================================================
-'''
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,18 +17,18 @@ from einops.layers.torch import Rearrange
 class TSConv(nn.Sequential):
     def __init__(self, nCh, F, C1, C2, D, P1, P2, Pc) -> None:
         super().__init__(
-            nn.Conv2d(1, F, (1, C1), padding='same', bias=False),
+            nn.Conv2d(1, F, (1, C1), padding="same", bias=False),
             nn.BatchNorm2d(F),
             nn.Conv2d(F, F * D, (nCh, 1), groups=F, bias=False),
             nn.BatchNorm2d(F * D),
             nn.ELU(),
             nn.AvgPool2d((1, P1)),
             nn.Dropout(Pc),
-            nn.Conv2d(F * D, F * D, (1, C2), padding='same', groups=F * D, bias=False),
+            nn.Conv2d(F * D, F * D, (1, C2), padding="same", groups=F * D, bias=False),
             nn.BatchNorm2d(F * D),
             nn.ELU(),
             nn.AvgPool2d((1, P2)),
-            nn.Dropout(Pc)
+            nn.Dropout(Pc),
         )
 
 
@@ -45,13 +46,13 @@ class PositionalEncoding(nn.Module):
 
 class Transformer(nn.Module):
     def __init__(
-            self,
-            seq_len,
-            d_model,
-            nhead,
-            ff_ratio,
-            Pt=0.5,
-            num_layers=4,
+        self,
+        seq_len,
+        d_model,
+        nhead,
+        ff_ratio,
+        Pt=0.5,
+        num_layers=4,
     ) -> None:
         super().__init__()
         self.cls_embedding = nn.Parameter(torch.zeros(1, 1, d_model))
@@ -59,9 +60,13 @@ class Transformer(nn.Module):
 
         dim_ff = d_model * ff_ratio
         self.dropout = nn.Dropout(Pt)
-        self.trans = nn.TransformerEncoder(nn.TransformerEncoderLayer(
-            d_model, nhead, dim_ff, Pt, batch_first=True, norm_first=True
-        ), num_layers, norm=nn.LayerNorm(d_model))
+        self.trans = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(
+                d_model, nhead, dim_ff, Pt, batch_first=True, norm_first=True
+            ),
+            num_layers,
+            norm=nn.LayerNorm(d_model),
+        )
 
     def forward(self, x):
         b = x.shape[0]
@@ -73,48 +78,48 @@ class Transformer(nn.Module):
 
 class ClsHead(nn.Sequential):
     def __init__(self, linear_in, cls):
-        super().__init__(
-            nn.Flatten(),
-            nn.Linear(linear_in, cls),
-            nn.LogSoftmax(dim=1)
-        )
+        super().__init__(nn.Flatten(), nn.Linear(linear_in, cls), nn.LogSoftmax(dim=1))
 
 
 class MSVTNet(nn.Module):
     def __init__(
-            self,
-            args,
-            F=[9, 9, 9, 9],
-            C1=[15, 31, 63, 125],
-            C2=15,
-            D=2,
-            P1=8,
-            P2=7,
-            Pc=0.3,
-            nhead=8,
-            ff_ratio=1,
-            Pt=0.5,
-            layers=2,
-            b_preds=False,
+        self,
+        args,
+        F=[9, 9, 9, 9],
+        C1=[15, 31, 63, 125],
+        C2=15,
+        D=2,
+        P1=8,
+        P2=7,
+        Pc=0.3,
+        nhead=8,
+        ff_ratio=1,
+        Pt=0.5,
+        layers=2,
+        b_preds=False,
     ) -> None:
         super().__init__()
         self.nCh = args.chn
         self.nTime = args.time_sample_num
         self.b_preds = b_preds
-        assert len(F) == len(C1), 'The length of F and C1 should be equal.'
+        assert len(F) == len(C1), "The length of F and C1 should be equal."
 
-        self.mstsconv = nn.ModuleList([
-            nn.Sequential(
-                TSConv(args.chn, F[b], C1[b], C2, D, P1, P2, Pc),
-                Rearrange('b d 1 t -> b t d')
-            )
-            for b in range(len(F))
-        ])
+        self.mstsconv = nn.ModuleList(
+            [
+                nn.Sequential(
+                    TSConv(args.chn, F[b], C1[b], C2, D, P1, P2, Pc),
+                    Rearrange("b d 1 t -> b t d"),
+                )
+                for b in range(len(F))
+            ]
+        )
         branch_linear_in = self._forward_flatten(cat=False)
-        self.branch_head = nn.ModuleList([
-            ClsHead(branch_linear_in[b].shape[1], args.class_num)
-            for b in range(len(F))
-        ])
+        self.branch_head = nn.ModuleList(
+            [
+                ClsHead(branch_linear_in[b].shape[1], args.class_num)
+                for b in range(len(F))
+            ]
+        )
 
         seq_len, d_model = self._forward_mstsconv().shape[1:3]  # type: ignore
         self.transformer = Transformer(seq_len, d_model, nhead, ff_ratio, Pt, layers)
@@ -165,7 +170,7 @@ class JointCrossEntoryLoss(nn.Module):
         return loss
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from torchinfo import summary
 
     net = MSVTNet(nCh=22, nTime=1000).cuda()

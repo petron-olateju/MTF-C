@@ -1,4 +1,4 @@
-'''
+"""
 =================================================
 coding:utf-8
 @Time:      2024/9/27 21:04
@@ -6,7 +6,8 @@ coding:utf-8
 @Author:    Ziwei Wang
 @Function:
 =================================================
-'''
+"""
+
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -26,7 +27,7 @@ class Conv2dWithConstraint(nn.Conv2d):
 
 
 class LazyLinearWithConstraint(nn.LazyLinear):
-    def __init__(self, *args, max_norm=1., **kwargs):
+    def __init__(self, *args, max_norm=1.0, **kwargs):
         super(LazyLinearWithConstraint, self).__init__(*args, **kwargs)
         self.max_norm = max_norm
 
@@ -62,7 +63,9 @@ class LayerNorm(nn.Module):
 
     def forward(self, x):
         if self.data_format == "channels_last":
-            return F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
+            return F.layer_norm(
+                x, self.normalized_shape, self.weight, self.bias, self.eps
+            )
         elif self.data_format == "channels_first":
             u = x.mean(1, keepdim=True)
             s = (x - u).pow(2).mean(1, keepdim=True)
@@ -94,47 +97,72 @@ class PositionalEncodingFourier(nn.Module):
 
         pos_x = x_embed[:, :, :, None] / dim_t
         pos_y = y_embed[:, :, :, None] / dim_t
-        pos_x = torch.stack((pos_x[:, :, :, 0::2].sin(),
-                             pos_x[:, :, :, 1::2].cos()), dim=4).flatten(3)
-        pos_y = torch.stack((pos_y[:, :, :, 0::2].sin(),
-                             pos_y[:, :, :, 1::2].cos()), dim=4).flatten(3)
+        pos_x = torch.stack(
+            (pos_x[:, :, :, 0::2].sin(), pos_x[:, :, :, 1::2].cos()), dim=4
+        ).flatten(3)
+        pos_y = torch.stack(
+            (pos_y[:, :, :, 0::2].sin(), pos_y[:, :, :, 1::2].cos()), dim=4
+        ).flatten(3)
         pos = torch.cat((pos_y, pos_x), dim=3).permute(0, 3, 1, 2)
         pos = self.token_projection(pos)
 
         return pos
 
+
 class ADFCNN(nn.Module):
-    def __init__(self,
-                 num_channels: int,
-                 sampling_rate: int,
-                 F1=8, D=1, F2='auto', P1=4, P2=8, pool_mode='mean',
-                 drop_out=0.25, layer_scale_init_value=1e-6, nums=4):
+    def __init__(
+        self,
+        num_channels: int,
+        sampling_rate: int,
+        F1=8,
+        D=1,
+        F2="auto",
+        P1=4,
+        P2=8,
+        pool_mode="mean",
+        drop_out=0.25,
+        layer_scale_init_value=1e-6,
+        nums=4,
+    ):
         super(ADFCNN, self).__init__()
 
         pooling_layer = dict(max=nn.MaxPool2d, mean=nn.AvgPool2d)[pool_mode]
         pooling_size = 0.3
         hop_size = 0.7
-        if F2 == 'auto':
+        if F2 == "auto":
             F2 = F1 * D
 
         # Spectral
         self.spectral_1 = nn.Sequential(
-            Conv2dWithConstraint(1, F1, kernel_size=[1, 125], padding='same', max_norm=2.),
+            Conv2dWithConstraint(
+                1, F1, kernel_size=[1, 125], padding="same", max_norm=2.0
+            ),
             nn.BatchNorm2d(F1),
         )
         self.spectral_2 = nn.Sequential(
-            Conv2dWithConstraint(1, F1, kernel_size=[1, 30], padding='same', max_norm=2.),
+            Conv2dWithConstraint(
+                1, F1, kernel_size=[1, 30], padding="same", max_norm=2.0
+            ),
             nn.BatchNorm2d(F1),
         )
 
         # Spatial
         self.spatial_1 = nn.Sequential(
-            Conv2dWithConstraint(F2, F2, (num_channels, 1), padding=0, groups=F2, bias=False, max_norm=2.),
+            Conv2dWithConstraint(
+                F2,
+                F2,
+                (num_channels, 1),
+                padding=0,
+                groups=F2,
+                bias=False,
+                max_norm=2.0,
+            ),
             nn.BatchNorm2d(F2),
             nn.ELU(),
             nn.Dropout(drop_out),
-            Conv2dWithConstraint(F2, F2, kernel_size=[1, 1], padding='valid',
-                                 max_norm=2.),
+            Conv2dWithConstraint(
+                F2, F2, kernel_size=[1, 1], padding="valid", max_norm=2.0
+            ),
             nn.BatchNorm2d(F2),
             nn.ELU(),
             pooling_layer((1, 32), stride=32),
@@ -142,14 +170,14 @@ class ADFCNN(nn.Module):
         )
 
         self.spatial_2 = nn.Sequential(
-            Conv2dWithConstraint(F2, F2, kernel_size=[num_channels, 1], padding='valid',
-                                 max_norm=2.),
+            Conv2dWithConstraint(
+                F2, F2, kernel_size=[num_channels, 1], padding="valid", max_norm=2.0
+            ),
             nn.BatchNorm2d(F2),
             ActSquare(),
             pooling_layer((1, 75), stride=25),
             ActLog(),
             nn.Dropout(drop_out),
-
         )
 
         self.flatten = nn.Flatten()
@@ -167,7 +195,9 @@ class ADFCNN(nn.Module):
         x_filter_2 = self.spatial_2(x_2)
         x_noattention = torch.cat((x_filter_1, x_filter_2), 3)
         B2, C2, H2, W2 = x_noattention.shape
-        x_attention = x_noattention.reshape(B2, C2, H2 * W2).permute(0, 2, 1)  #### the last one is channel
+        x_attention = x_noattention.reshape(B2, C2, H2 * W2).permute(
+            0, 2, 1
+        )  #### the last one is channel
 
         B, N, C = x_attention.shape
 
@@ -195,8 +225,7 @@ class classifier(nn.Module):
         super(classifier, self).__init__()
 
         self.dense = nn.Sequential(
-            nn.Conv2d(8, num_classes, (1, 51)),
-            nn.LogSoftmax(dim=1)
+            nn.Conv2d(8, num_classes, (1, 51)), nn.LogSoftmax(dim=1)
         )
 
     def forward(self, x):
@@ -207,10 +236,7 @@ class classifier(nn.Module):
 
 
 class ADFCNet(nn.Module):
-    def __init__(self,
-                 num_classes: 2,
-                 num_channels: int,
-                 sampling_rate: int):
+    def __init__(self, num_classes: 2, num_channels: int, sampling_rate: int):
         super(ADFCNet, self).__init__()
 
         self.backbone = ADFCNN(num_channels=num_channels, sampling_rate=sampling_rate)
@@ -223,9 +249,11 @@ class ADFCNet(nn.Module):
 
 
 def get_model(args):
-    model = ADFCNet(num_classes=args.class_num,
-                num_channels=args.chn,
-                sampling_rate=args.sample_rate)
+    model = ADFCNet(
+        num_classes=args.class_num,
+        num_channels=args.chn,
+        sampling_rate=args.sample_rate,
+    )
 
     return model
 
