@@ -8,10 +8,10 @@ from dataloader import TrainValTest_Split_Loader
 from utils.data_loader import (
     MI_DATASETS,
     SSVEP_DATASETS,
-    SLEEP_DATASETS,
+    RESTING_STATE_DATASETS,
     MI_DataLoader,
     SSVEP_DataLoader,
-    Sleep_Loader,
+    RestingState_DataLoader,
 )
 from pl_models import db_conformer
 from pl_models import NAME_MODEL_MAP
@@ -25,8 +25,8 @@ def get_data_subjects(dataset_name):
         return MI_DataLoader.get_subjects(dataset_name=dataset_name)
     elif dataset_name in SSVEP_DATASETS:
         return SSVEP_DataLoader.get_subjects(dataset_name=dataset_name)
-    elif dataset_name in SLEEP_DATASETS:
-        return Sleep_Loader.get_subjects(dataset_name=dataset_name)
+    elif dataset_name in RESTING_STATE_DATASETS:
+        return RestingState_DataLoader.get_subjects(dataset_name=dataset_name)
 
 
 def get_data_loader(dataset_name, subject, preprocessing_pipeline, t0, t1):
@@ -34,8 +34,8 @@ def get_data_loader(dataset_name, subject, preprocessing_pipeline, t0, t1):
         return MI_DataLoader(dataset_name, subject, preprocessing_pipeline, t0, t1)
     elif dataset_name in SSVEP_DATASETS:
         return SSVEP_DataLoader(dataset_name, subject, preprocessing_pipeline, t0, t1)
-    elif dataset_name in SLEEP_DATASETS:
-        return Sleep_Loader(dataset_name, subject, preprocessing_pipeline, t0, t1)
+    elif dataset_name in RESTING_STATE_DATASETS:
+        return RestingState_DataLoader(dataset_name, subject, preprocessing_pipeline, t0, t1)
 
 
 def get_model(model_name, dataset_name, dataset_info):
