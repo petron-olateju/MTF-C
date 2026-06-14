@@ -32,6 +32,28 @@ import kaggle
 from kaggle.api.kaggle_api_extended import KaggleApi
 import mne
 
+MI_DATASETS = [
+    "BNCI2014_001",
+    "BNCI2014_002",
+    "BNCI2014_004",
+    "BNCI2015_001",
+    "BNCI2015_004",
+    "Liu2024",
+    "AlexMI",
+]
+SSVEP_DATASETS = ["Kalunga2016", "Nakanishi2015", "Wang2021Combined"]
+SLEEP_DATASETS = ["SleepPhysionet"]
+RESTING_STATE_DATASETS = [
+    "Cattan2019_PHMD",
+    "Hinss2021",
+    "Rodrigues2017",
+    "ButtonToneSZ",
+]
+
+DATASET_TASK_MAP = {
+    "BNCI2014_001": 'binary'
+}
+
 
 class ButtonToneSZ:
     """Custom dataset for Kaggle button-tone-sz (Schizophrenia) EEG data.
