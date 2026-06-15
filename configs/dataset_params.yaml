@@ -1,6 +1,6 @@
 BNCI2014_001:
-  epoch_start: 3.2
-  epoch_end: 6.0
+  epoch_start: 0.5
+  epoch_end: 3.5
 
 BNCI2014_002:
   epoch_start: 2.0
