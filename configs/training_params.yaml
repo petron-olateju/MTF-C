@@ -2,7 +2,7 @@ val_size: 0.0
 test_size: 0.1
 
 n_folds: 5
-n_repeats: 5
+n_repeats: 1
 
 eval_inter: 5
 lr: 1.0e-3
