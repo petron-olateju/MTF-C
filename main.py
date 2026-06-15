@@ -42,7 +42,8 @@ def main():
 
         experiment = {
             'model': args.model_name,
-            'experiment_seed': args.seed
+            'experiment_seed': args.seed,
+            'taining_params': TRAINING_PARAMS
         }
 
         performance = cross_validation(
