@@ -5,7 +5,7 @@ from utils.preprocessing import compute_band_powers
 import pytorch_lightning as pl
 from utils.data_loader import MI_DATASETS
 from utils.data_loader import MI_DataLoader, SSVEP_DataLoader, RestingState_DataLoader
-from utils.preprocessing import train_val_test_split
+from utils.preprocessing import train_val_test_split, StratifiedKFold
 
 import torch
 from torch.utils.data import random_split, TensorDataset, DataLoader
@@ -131,7 +131,7 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         return DataLoader(
             self.val_dataset,
             batch_size=self.batch_size,
-            shuffle=False,
+            shuffle=True,
             num_workers=self.num_workers,
         )
 
@@ -141,6 +141,15 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         return DataLoader(
             self.test_dataset,
             batch_size=self.batch_size,
-            shuffle=False,
+            shuffle=True,
             num_workers=self.num_workers,
         )
+
+
+class StratifiedKFoldDataModule(TrainValTest_Split_Loader):
+
+    def __init__(
+        self,
+        dataset_name,
+    ):
+        pass
