@@ -4,7 +4,7 @@ from argparse import Namespace
 import numpy as np
 import torch
 
-from dataloader import TrainValTest_Split_Loader
+from dataloader import TrainValTest_Split_Loader, StratifiedKFoldDataModule
 from utils.data_loader import (
     MI_DATASETS,
     SSVEP_DATASETS,
@@ -112,14 +112,13 @@ def cross_validation(
                     spectrum = None
                     n_filter_banks = 0
 
-                dm = TrainValTest_Split_Loader(
+                dm = StratifiedKFoldDataModule(
                     dataset_name=dataset_name,
                     subject=subject,
                     batch_size=batch_size,
-                    seed=fold,
                     num_workers=0,
-                    val_split=None,
                     cv=n_folds,
+                    fold_index=fold,
                     preprocessing_pipeline=preprocessing_pipeline,
                     preprocessing_args=preprocessing_args,
                     t0=t0,

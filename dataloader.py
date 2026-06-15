@@ -152,5 +152,66 @@ class StratifiedKFoldDataModule(TrainValTest_Split_Loader):
     def __init__(
         self,
         dataset_name,
+        subject,
+        batch_size,
+        num_workers=0,
+        cv=5,
+        fold_index=0,
+        preprocessing_pipeline=None,
+        preprocessing_args=None,
+        t0=0.5,
+        t1=3.5,
+        spectrum=None,
+        n_filter_banks=0
     ):
-        pass
+        self.fold_index = fold_index
+
+        super().__init__(
+            dataset_name=dataset_name,
+            subject=subject,
+            batch_size=batch_size,
+            num_workers=num_workers,
+            cv=cv,
+            preprocessing_pipeline=preprocessing_pipeline,
+            preprocessing_args=preprocessing_args,
+            t0=t0,
+            t1=t1,
+            spectrum=spectrum,
+            n_filter_banks=n_filter_banks
+        )
+
+        self.setup()
+
+    def setup(self, stage=None):
+        args = {
+            "dataset_name": self.dataset_name,
+            "subject": self.subject,
+            "preprocessing_pipeline": self.preprocessing_pipeline,
+            "t0": self.t0,
+            "t1": self.t1,
+        }
+        if self.dataset_name in MI_DATASETS:
+            X, y, self.info = MI_DataLoader(**args).get_data()
+
+        skf = StratifiedKFold(
+            n_splits = self.cv,
+            shuffle=False
+        )
+        splits = list(skf.split(range(X.shape[0]), y))
+        train_idx, val_idx = splits[self.fold_index]
+
+        X = torch.tensor(X, dtype=torch.float32)
+        y = torch.tensor(y, dtype=torch.long)
+        X_train, y_train = X[train_idx], y[train_idx]
+        X_val, y_val = X[val_idx], y[val_idx]
+
+        if self.spectrum is not None:
+            X_spectrum = self.compute_spectrum(torch.tensor(X))
+            X_train_spectrum = X_spectrum[train_idx]
+            X_val_spectrum = X_spectrum[val_idx]
+
+            self.train_dataset = TensorDataset(X_train_spectrum, X_train, y_train)
+            self.val_dataset = TensorDataset(X_val_spectrum, X_val, y_val)
+        else:
+            self.train_dataset = TensorDataset(X_train, y_train)
+            self.val_dataset = TensorDataset(X_val, y_val)
