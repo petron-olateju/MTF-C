@@ -1,14 +1,12 @@
-val_size: 0.0
-test_size: 0.1
-
-n_folds: 5
+n_folds: 1
 n_repeats: 1
+val_split: 0.1
+test_split: 0.0
 
-eval_inter: 5
 lr: 1.0e-3
 batch_size: 32
 n_epochs: 100
 
-preprocessing:
+preprocessing_args:
  - 'bandpass'
  - 'EA'

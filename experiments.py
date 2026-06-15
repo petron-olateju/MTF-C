@@ -38,19 +38,15 @@ def get_data_loader(dataset_name, subject, preprocessing_pipeline, t0, t1):
     elif dataset_name in RESTING_STATE_DATASETS:
         return RestingState_DataLoader(dataset_name, subject, preprocessing_pipeline, t0, t1)
 
-
-def get_model(model_name, dataset_name, dataset_info):
+def get_model(model_name, dataset_name, dataset_info, lr):
     with open("configs/model_params.yaml", "r") as f:
         MODEL_PARAMS = yaml.safe_load(f)[model_name]
-
-    with open("configs/training_params.yaml", "r") as f:
-        TRAINING_PARAMS = yaml.safe_load(f)
 
     MODEL_PARAMS["data_name"] = dataset_name
     MODEL_PARAMS["chn"] = dataset_info["n_ch"]
     MODEL_PARAMS["time_sample_num"] = dataset_info["n_times"]
     MODEL_PARAMS["class_num"] = dataset_info["n_classes"]
-    MODEL_PARAMS["lr"] = TRAINING_PARAMS["lr"]
+    MODEL_PARAMS["lr"] = lr
     MODEL_PARAMS["fs"] = dataset_info['fs']
 
     return NAME_MODEL_MAP[model_name](MODEL_PARAMS), MODEL_PARAMS
@@ -67,18 +63,22 @@ def make_preprocessing_pipeline(preprocessing_arg):
         pipeline.append(bandpass_filtering)
 
 
-# Cross Validation Experiment
-def cross_validation(
+# Across subject evaluation experiments
+def across_subjects_evaluation(
     dataset_name,
     model_name,
-    batch_size,
-    n_epochs,
-    n_folds,
-    n_repeats,
-    preprocessing_args,
     t0,
     t1,
     experiment_seed,
+    batch_size,
+    lr,
+    n_epochs,
+    n_folds,
+    val_split,
+    test_split,
+    n_repeats,
+    preprocessing_args,
+    validation_strategy='cv',
 ):
 
     SUBJECTS = get_data_subjects(dataset_name=dataset_name)
@@ -93,10 +93,10 @@ def cross_validation(
     for subject in SUBJECTS:
 
         for repeat in range(1, n_repeats+1):
-            np.random.seed(repeat)
-            torch.manual_seed(repeat)
+            np.random.seed(experiment_seed+repeat)
+            torch.manual_seed(experiment_seed+repeat)
             if torch.cuda.is_available():
-                torch.cuda.manual_seed(repeat)
+                torch.cuda.manual_seed(experiment_seed+repeat)
 
             folds_acc = []
             folds_reconstruction = []
@@ -112,25 +112,43 @@ def cross_validation(
                     spectrum = None
                     n_filter_banks = 0
 
-                dm = StratifiedKFoldDataModule(
-                    dataset_name=dataset_name,
-                    subject=subject,
-                    batch_size=batch_size,
-                    num_workers=0,
-                    cv=n_folds,
-                    fold_index=fold,
-                    preprocessing_pipeline=preprocessing_pipeline,
-                    preprocessing_args=preprocessing_args,
-                    t0=t0,
-                    t1=t1,
-                    spectrum = spectrum,
-                    n_filter_banks = n_filter_banks
-                )
+                if validation_strategy == 'cv':
+                    dm = StratifiedKFoldDataModule(
+                        dataset_name=dataset_name,
+                        subject=subject,
+                        batch_size=batch_size,
+                        num_workers=0,
+                        cv=n_folds,
+                        fold_index=fold,
+                        preprocessing_pipeline=preprocessing_pipeline,
+                        preprocessing_args=preprocessing_args,
+                        t0=t0,
+                        t1=t1,
+                        spectrum = spectrum,
+                        n_filter_banks = n_filter_banks
+                    )
+                elif validation_strategy == 'train_test':
+                    dm = TrainValTest_Split_Loader(
+                        dataset_name=dataset_name,
+                        subject=subject,
+                        batch_size=batch_size,
+                        seed=fold,
+                        num_workers=0,
+                        val_split=val_split,
+                        test_split=test_split,
+                        preprocessing_pipeline=preprocessing_pipeline,
+                        preprocessing_args=preprocessing_args,
+                        t0=t0,
+                        t1=t1,
+                        spectrum = spectrum,
+                        n_filter_banks = n_filter_banks
+                    )
 
                 model, model_params = get_model(
                     model_name=model_name,
                     dataset_name=dataset_name,
                     dataset_info=dm.info,
+                    lr=lr
                 )
 
                 trainer = pl.Trainer(

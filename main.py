@@ -4,7 +4,7 @@ import argparse
 from datetime import datetime
 
 from dataloader import TrainValTest_Split_Loader
-from experiments import cross_validation
+from experiments import across_subjects_evaluation
 
 
 def parse_args():
@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument("--model_name", type=str, default="mtf_c")
     parser.add_argument("--dataset_name", type=str, default="BNCI2014_001")
     parser.add_argument(
-        "--validation_strategy", type=str, choices=["cv", "loso"], default="cv"
+        "--validation_strategy", type=str, choices=["cv", "loso", "train_test"], default="cv"
     )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output_dir", type=str, default="experiments")
@@ -30,37 +30,26 @@ def main():
 
     with open("configs/training_params.yaml", "r") as f:
         TRAINING_PARAMS = yaml.safe_load(f)
-    N_REPEATS = TRAINING_PARAMS["n_repeats"]
-
     with open("configs/dataset_params.yaml", "r") as f:
         DATASET_PARAMS = yaml.safe_load(f)
+    t0 = DATASET_PARAMS[args.dataset_name]["epoch_start"]
+    t1 = DATASET_PARAMS[args.dataset_name]["epoch_end"]
 
-    if args.validation_strategy == "cv":
-        pass
-        N_FOLDS = TRAINING_PARAMS["n_folds"]
-        BATCH_SIZE = TRAINING_PARAMS["batch_size"]
-        N_EPOCHS = TRAINING_PARAMS["n_epochs"]
-        t0 = DATASET_PARAMS[args.dataset_name]["epoch_start"]
-        t1 = DATASET_PARAMS[args.dataset_name]["epoch_end"]
+    experiment = {
+        'model': args.model_name,
+        'experiment_seed': args.seed,
+        'taining_params': TRAINING_PARAMS
+    }
 
-        experiment = {
-            'model': args.model_name,
-            'experiment_seed': args.seed,
-            'taining_params': TRAINING_PARAMS
-        }
-
-        performance = cross_validation(
-            dataset_name=args.dataset_name,
-            model_name=args.model_name,
-            batch_size=BATCH_SIZE,
-            n_epochs=N_EPOCHS,
-            n_folds=N_FOLDS,
-            n_repeats=N_REPEATS,
-            preprocessing_args=TRAINING_PARAMS['preprocessing'],
-            t0=t0,
-            t1=t1,
-            experiment_seed=args.seed,
-        )
+    performance = across_subjects_evaluation(
+        dataset_name=args.dataset_name,
+        model_name=args.model_name,
+        experiment_seed=args.seed,
+        validation_strategy=args.validation_strategy,
+        t0=t0,
+        t1=t1,
+        **TRAINING_PARAMS
+    )
 
     experiment = {**experiment, **performance}
     experiment_path = os.path.join(args.output_dir, experiment_name)
