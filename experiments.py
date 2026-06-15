@@ -90,7 +90,7 @@ def cross_validation(
         sub_acc = []
         sub_reconstruction = []
         sub_loss = []
-        
+
         for repeat in range(n_repeats):
             np.random.seed(experiment_seed+repeat)
             torch.manual_seed(experiment_seed+repeat)
@@ -130,6 +130,8 @@ def cross_validation(
 
                 trainer = pl.Trainer(
                     max_epochs=n_epochs,
+                    accelerator="auto",
+                    devices="auto"
                 )
 
                 trainer.fit(model, datamodule=dm)
