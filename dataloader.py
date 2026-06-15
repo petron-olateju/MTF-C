@@ -89,7 +89,7 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
             (X_train, y_train, X_cal, y_val, X_test, y_test) = train_val_test_split(
                 X, y,
                 self.train_split, self.val_split, self.test_split,
-                self.preprocessing_args, self.seed
+                self.preprocessing_args
             )
             
             X_test = torch.tensor(X_test, dtype=torch.float32)

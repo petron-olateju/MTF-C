@@ -78,7 +78,7 @@ def EA_online(x, sqrtRefEA):
     return XEA
 
 
-def train_val_test_split(X, y, train_split, val_split, test_split, ppo, seed):
+def train_val_test_split(X, y, train_split, val_split, test_split, ppo):
     n = X.shape[0]
     train_len = int(n * train_split)
     val_len = int(n * val_split)
@@ -90,14 +90,12 @@ def train_val_test_split(X, y, train_split, val_split, test_split, ppo, seed):
             X, y,
             test_size=test_len,
             stratify=y,
-            random_state=seed
         )
 
         X_train, X_val, y_train, y_val = train_test_split(
             X_temp, y_temp,
             test_size=val_len,
             stratify=y_temp,
-            random_state=seed
         )
     else:
         val_len = n - train_len
@@ -105,7 +103,6 @@ def train_val_test_split(X, y, train_split, val_split, test_split, ppo, seed):
             X, y,
             test_size=val_len,
             stratify=y,
-            random_state=seed
         )
 
     if 'EA' in ppo:
