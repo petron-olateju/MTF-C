@@ -27,9 +27,6 @@ from moabb.paradigms import MotorImagery, SSVEP, RestingStateToP300Adapter
 from braindecode.datasets import SleepPhysionet
 from braindecode.preprocessing import create_windows_from_events
 
-import os
-import kaggle
-from kaggle.api.kaggle_api_extended import KaggleApi
 import mne
 
 MI_DATASETS = ["BNCI2014_001", "BNCI2014_002", "BNCI2014_004", "BNCI2015_001", "BNCI2015_004", "Liu2024", "AlexMI"]

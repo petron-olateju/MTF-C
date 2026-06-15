@@ -77,7 +77,6 @@ def cross_validation(
 ):
 
     SUBJECTS = get_data_subjects(dataset_name=dataset_name)
-    SUBJECTS = SUBJECTS[0:1]  # Remove after testing code restructuring
 
     acc = []
     reconstruction = []
@@ -136,10 +135,6 @@ def cross_validation(
 
                 trainer.fit(model, datamodule=dm)
                 val_metrics = trainer.validate(model, dm)[0]
-                print(
-                    f"Subject-{subject} ({fold+1} / {n_folds}) Performance:",
-                    val_metrics,
-                )
 
                 sub_acc.append(val_metrics["val_acc"])
                 sub_loss.append(val_metrics["val_loss"])
@@ -156,6 +151,11 @@ def cross_validation(
 
         acc.append(sub_acc)
         loss.append(sub_loss)
+
+        print(
+            f"Subject-{subject} ({repeat+1} / {n_repeats}) Performance:",
+            {'acc': np.mean(acc), 'loss': np.mean(loss)},
+        )
 
     acc_mean = np.mean(acc).item()
     acc_std = np.std(acc).item()
