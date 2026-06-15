@@ -1,0 +1,59 @@
+BNCI2014_001:
+  epoch_start: 3.2
+  epoch_end: 6.0
+
+BNCI2014_002:
+  epoch_start: 2.0
+  epoch_end: 5.0
+
+BNCI2014_004:
+  epoch_start: 2.0
+  epoch_end: 7.5
+
+BNCI2015_001:
+  epoch_start: 2.0
+  epoch_end: 11.0
+
+BNCI2015_004:
+  epoch_start: 2.0
+  epoch_end: 11.0
+
+AlexMI:
+  epoch_start: 2.0
+  epoch_end: 3.0
+
+Liu2024:
+  epoch_start: 2.0
+  epoch_end: 8.0
+
+Kalunga2016:
+  epoch_start: 0.5
+  epoch_end: 5.5
+
+Nakinishi2015:
+  epoch_start: 0.5
+  epoch_end: 3.5
+
+Wang2021Combined:
+  epoch_start: 0.5
+  epoch_end: 4.5
+
+MAMEM2:
+  epoch_start: 0.5
+  epoch_end: 4.5
+
+MAMEM3:
+  epoch_start: 0.5
+  epoch_end: 4.5
+
+Wang2016:
+  epoch_start: 0.5
+  epoch_end: 5.5
+
+Cattan2019_PHMD:
+  epoch_start: 10.0
+  epoch_end: 50.0
+
+Rodrigues2017:
+  epoch_start: 0
+  epoch_end: 10
