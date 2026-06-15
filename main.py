@@ -32,13 +32,16 @@ def main():
         TRAINING_PARAMS = yaml.safe_load(f)
     N_REPEATS = TRAINING_PARAMS["n_repeats"]
 
+    with open("configs/model_params.yaml", "r") as f:
+        MODEL_PARAMS = yaml.safe_load(f)
+
     if args.validation_strategy == "cv":
         pass
         N_FOLDS = TRAINING_PARAMS["n_folds"]
         BATCH_SIZE = TRAINING_PARAMS["batch_size"]
         N_EPOCHS = TRAINING_PARAMS["n_epochs"]
-        t0 = TRAINING_PARAMS["epoch_start"]
-        t1 = TRAINING_PARAMS["epoch_end"]
+        t0 = MODEL_PARAMS[args.dataset_name]["epoch_start"]
+        t1 = MODEL_PARAMS[args.dataset_name]["epoch_end"]
 
         experiment = {
             'model': args.model_name,

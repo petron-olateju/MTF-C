@@ -482,7 +482,7 @@ class SSVEP_DataLoader:
         subject,
         preprocessing_pipeline=None,
         t0=0.0,
-        tmax=None,
+        t1=None,
         fmin=7,
         fmax=45,
     ):
@@ -493,7 +493,7 @@ class SSVEP_DataLoader:
             subject: Subject ID (integer)
             preprocessing_pipeline: Optional list of preprocessing functions
             t0: Start time for epoching (seconds)
-            tmax: End time for epoching (seconds, default is None)
+            t1: End time for epoching (seconds, default is None)
             fmin: Low cutoff frequency for bandpass filter (Hz)
             fmax: High cutoff frequency for bandpass filter (Hz)
         """
@@ -501,7 +501,7 @@ class SSVEP_DataLoader:
         self.subject = subject
         self.preprocessing_pipeline = preprocessing_pipeline
         self.t0 = t0
-        self.tmax = tmax
+        self.tmax = t1
         self.fmin = fmin
         self.fmax = fmax
 
@@ -870,8 +870,8 @@ class RestingState_DataLoader:
         dataset_name,
         subject,
         preprocessing_pipeline=None,
-        tmin=10,
-        tmax=50,
+        t0=10,
+        t1=50,
         fmin=1,
         fmax=35,
         resample=128,
@@ -891,8 +891,8 @@ class RestingState_DataLoader:
         self.dataset_name = dataset_name
         self.subject = subject
         self.preprocessing_pipeline = preprocessing_pipeline
-        self.tmin = tmin
-        self.tmax = tmax
+        self.tmin = t0
+        self.tmax = t1
         self.fmin = fmin
         self.fmax = fmax
         self.resample = resample

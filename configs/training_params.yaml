@@ -8,6 +8,3 @@ eval_inter: 5
 lr: 1.0e-3
 batch_size: 32
 n_epochs: 100
-
-epoch_start: 0.5
-epoch_end: 3.5
