@@ -1,0 +1,93 @@
+'2026-06-15T03:07:52.755472':
+  model: db_conformer
+  experiment_seed: 42
+  taining_params:
+    val_size: 0.0
+    test_size: 0.1
+    n_folds: 5
+    n_repeats: 5
+    eval_inter: 5
+    lr: 0.001
+    batch_size: 32
+    n_epochs: 100
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    patch_size: 100
+    spa_dim: 16
+    gate_flag: false
+    posemb_flag: true
+    branch: all
+    chn_attn_flag: true
+    emb_size: 40
+    tem_depth: 1
+    chn_depth: 1
+    data_name: BNCI2014_004
+    chn: 3
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7237500009271834
+  std_acc: 0.12224179004661569
+  loss: 0.5814395312799348
+  subjects_acc:
+    1: 0.9116666674613952
+    2: 0.5516666698455811
+    3: 0.6416666746139527
+    4: 0.8866666698455811
+    5: 0.8166666579246521
+    6: 0.765
+    7: 0.6450000011920929
+    8: 0.58375
+    9: 0.7116666674613953
+'2026-06-15T04:57:06.808729':
+  model: mtf_c
+  experiment_seed: 42
+  taining_params:
+    val_size: 0.0
+    test_size: 0.1
+    n_folds: 5
+    n_repeats: 5
+    eval_inter: 5
+    lr: 0.001
+    batch_size: 32
+    n_epochs: 100
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    patch_size: 100
+    spa_dim: 16
+    gate_flag: false
+    posemb_flag: true
+    chn_attn_flag: true
+    patch_emb_size: 40
+    tem_depth: 1
+    chn_depth: 1
+    spec_depth: 1
+    sst_method: frequency_backbone
+    spectrum_attn_flag: true
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    wsize_divisor: 2
+    temporal_kernel: 43
+    data_name: BNCI2014_004
+    chn: 3
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7312962985038758
+  std_acc: 0.12062792872465923
+  loss: 0.9596721255779267
+  subjects_acc:
+    1: 0.9216666650772095
+    2: 0.5516666674613953
+    3: 0.6500000071525573
+    4: 0.8716666674613953
+    5: 0.836666669845581
+    6: 0.7516666698455811
+    7: 0.6750000071525574
+    8: 0.585
+    9: 0.7383333325386048
