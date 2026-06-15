@@ -25,7 +25,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    experiment_name = f"model={args.model_name} | dataset={args.dataset_name} | validation_strategy={args.validation_strategy}"
+    experiment_name = f"dataset={args.dataset_name} | validation_strategy={args.validation_strategy}"
     run_timestamp = datetime.now().isoformat()
 
     with open("configs/training_params.yaml", "r") as f:
@@ -40,6 +40,11 @@ def main():
         t0 = TRAINING_PARAMS["epoch_start"]
         t1 = TRAINING_PARAMS["epoch_end"]
 
+        experiment = {
+            'model': args.model_name,
+            'experiment_seed': args.seed
+        }
+
         performance = cross_validation(
             dataset_name=args.dataset_name,
             model_name=args.model_name,
@@ -52,20 +57,18 @@ def main():
             t1=t1,
             experiment_seed=args.seed,
         )
-        performance["experiment_seed"] = args.seed
 
-        experiment_path = os.path.join(args.output_dir, experiment_name)
-        os.makedirs(experiment_path, exist_ok=True)
-        if os.path.exists(f"{experiment_path}/history.yaml"):
-            with open(f"{experiment_path}/history.yaml", "r") as f:
-                history = yaml.safe_load(f)
-        else:
-            history = {}
-
-        history[run_timestamp] = performance
-
-        with open(f"{experiment_path}/history.yaml", "w") as f:
-            yaml.dump(history, f, default_flow_style=False, sort_keys=False)
+    experiment = {**experiment, **performance}
+    experiment_path = os.path.join(args.output_dir, experiment_name)
+    os.makedirs(experiment_path, exist_ok=True)
+    if os.path.exists(f"{experiment_path}/history.yaml"):
+        with open(f"{experiment_path}/history.yaml", "r") as f:
+            history = yaml.safe_load(f)
+    else:
+        history = {}
+    history[run_timestamp] = experiment
+    with open(f"{experiment_path}/history.yaml", "w") as f:
+        yaml.dump(history, f, default_flow_style=False, sort_keys=False)
 
 
 if __name__ == "__main__":

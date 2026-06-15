@@ -1,3 +1,7 @@
+import numpy as np
+import mne
+from utils.preprocessing import compute_band_powers
+
 import pytorch_lightning as pl
 from utils.data_loader import MI_DATASETS
 from utils.data_loader import MI_DataLoader
@@ -21,6 +25,8 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         preprocessing_pipeline=None,
         t0=0.5,
         t1=3.5,
+        spectrum=None,
+        n_filter_banks = 0
     ):
         super().__init__()
 
@@ -46,6 +52,9 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         self.t0 = t0
         self.t1 = t1
 
+        self.spectrum = spectrum
+        self.n_filter_banks = n_filter_banks
+
         self.setup()
 
     def setup(self, stage=None):
@@ -61,10 +70,22 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         }
         if self.dataset_name in MI_DATASETS:
             X, y, self.info = MI_DataLoader(**args).get_data()
+            if self.spectrum is not None:
+                if self.spectrum.upper() == 'FREQUENCY_BACKBONE':
+                    X_spectrum = compute_band_powers(
+                        X, 
+                        n_filter_banks=self.n_filter_banks, 
+                        fs=self.info['fs']
+                    )
+                    X_spectrum = torch.tensor(X_spectrum, dtype=torch.float32)
+
             X = torch.tensor(X, dtype=torch.float32)
             y = torch.tensor(y, dtype=torch.long)
             n = X.size(0)
-            dataset = TensorDataset(X, y)
+            if self.spectrum is not None:
+                dataset = TensorDataset(X_spectrum, X, y)
+            else:
+                dataset = TensorDataset(X, y)
 
             train_len = int(n * self.train_split)
             val_len = int(n * self.val_split)
