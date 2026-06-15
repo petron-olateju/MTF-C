@@ -84,23 +84,23 @@ def cross_validation(
     SUBJECTS = get_data_subjects(dataset_name=dataset_name)
     preprocessing_pipeline = make_preprocessing_pipeline(preprocessing_args)
 
-    acc = []
-    reconstruction = []
-    loss = []
     subjects_acc = {}
     subjects_reconstruction = {}
-
+    sub_acc = []
+    sub_reconstruction = []
+    sub_loss = []
+    
     for subject in SUBJECTS:
 
-        sub_acc = []
-        sub_reconstruction = []
-        sub_loss = []
-
-        for repeat in range(n_repeats):
-            np.random.seed(experiment_seed+repeat)
-            torch.manual_seed(experiment_seed+repeat)
+        for repeat in range(1, n_repeats+1):
+            np.random.seed(repeat)
+            torch.manual_seed(repeat)
             if torch.cuda.is_available():
-                torch.cuda.manual_seed(experiment_seed+repeat)
+                torch.cuda.manual_seed(repeat)
+
+            folds_acc = []
+            folds_reconstruction = []
+            folds_loss = []
 
             for fold in range(n_folds):
 
@@ -143,34 +143,35 @@ def cross_validation(
                 trainer.fit(model, datamodule=dm)
                 val_metrics = trainer.validate(model, dm)[0]
 
-                sub_acc.append(val_metrics["val_acc"])
-                sub_loss.append(val_metrics["val_loss"])
+                folds_acc.append(val_metrics["val_acc"])
+                folds_loss.append(val_metrics["val_loss"])
                 if "val_reconstruction" in val_metrics:
-                    sub_reconstruction.append(val_metrics["val_reconstruction"])
+                    folds_reconstruction.append(val_metrics["val_reconstruction"])
+                
+            folds_acc = np.mean(folds_acc)
+            folds_loss = np.mean(folds_loss)
+            sub_acc.append(folds_acc)
+            sub_loss.append(folds_loss)
+            if len(folds_reconstruction) > 0:
+                folds_reconstruction = np.mean(folds_reconstruction)
+                sub_reconstruction.append(folds_reconstruction)
 
-        sub_acc = np.mean(sub_acc).item()
-        sub_loss = np.mean(sub_loss).item()
-        subjects_acc[subject] = sub_acc
+        subjects_acc[subject] = np.mean(sub_acc[-n_repeats:]).item()
         if len(sub_reconstruction) > 0:
-            sub_reconstruction = np.mean(sub_reconstruction).item()
-            subjects_reconstruction[subject] = sub_reconstruction
-            reconstruction.append(sub_reconstruction)
-
-        acc.append(sub_acc)
-        loss.append(sub_loss)
+            subjects_reconstruction[subject] = np.mean(sub_reconstruction[-n_repeats:]).item()
 
         print(
-            f"Subject-{subject} ({repeat+1} / {n_repeats}) Performance:",
-            {'acc': np.mean(acc), 'loss': np.mean(loss)},
+            f"Subject-{subject} Performance:",
+            {'acc': subjects_acc[subject]},
         )
 
-    acc_mean = np.mean(acc).item()
-    acc_std = np.std(acc).item()
-    loss = np.mean(loss).item()
+    acc_mean = np.mean(sub_acc).item()
+    acc_std = np.std(sub_acc).item()
+    loss = np.mean(sub_loss).item()
     
-    if len(reconstruction) > 0:
-        reconstruction_mean = np.mean(reconstruction).item()
-        reconstruction_std = np.std(reconstruction).item()
+    if len(sub_reconstruction) > 0:
+        reconstruction_mean = np.mean(sub_reconstruction).item()
+        reconstruction_std = np.std(sub_reconstruction).item()
 
         return {
             "model_params": model_params,
