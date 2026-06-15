@@ -5,7 +5,8 @@ from utils.preprocessing import compute_band_powers
 import pytorch_lightning as pl
 from utils.data_loader import MI_DATASETS
 from utils.data_loader import MI_DataLoader, SSVEP_DataLoader, RestingState_DataLoader
-from utils.preprocessing import train_val_test_split, StratifiedKFold
+from utils.preprocessing import train_val_test_split
+from sklearn.model_selection import StratifiedKFold
 
 import torch
 from torch.utils.data import random_split, TensorDataset, DataLoader
