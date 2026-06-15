@@ -6,8 +6,8 @@ db_conformer:
   branch: 'all'
   chn_attn_flag: True
   emb_size: 40
-  tem_depth: 1
-  chn_depth: 1
+  tem_depth: 2
+  chn_depth: 2
 
 mtf_c:
   patch_size: 100
@@ -16,9 +16,9 @@ mtf_c:
   posemb_flag: True
   chn_attn_flag: True
   patch_emb_size: 40
-  tem_depth: 1
-  chn_depth: 1
-  spec_depth: 1
+  tem_depth: 2
+  chn_depth: 2
+  spec_depth: 2
 
   sst_method: 'frequency_backbone'
   spectrum_attn_flag: True

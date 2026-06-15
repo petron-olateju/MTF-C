@@ -38,7 +38,8 @@ def main():
     experiment = {
         'model': args.model_name,
         'experiment_seed': args.seed,
-        'taining_params': TRAINING_PARAMS
+        'taining_params': TRAINING_PARAMS,
+        'dataset_params': DATASET_PARAMS[args.dataset_name]
     }
 
     performance = across_subjects_evaluation(
