@@ -90,12 +90,16 @@ def train_val_test_split(X, y, train_split, val_split, test_split, ppo):
             X, y,
             test_size=test_len,
             stratify=y,
+            random_state=None,
+            shuffle=False
         )
 
         X_train, X_val, y_train, y_val = train_test_split(
             X_temp, y_temp,
             test_size=val_len,
             stratify=y_temp,
+            random_state=None,
+            shuffle=False
         )
     else:
         val_len = n - train_len
@@ -103,6 +107,8 @@ def train_val_test_split(X, y, train_split, val_split, test_split, ppo):
             X, y,
             test_size=val_len,
             stratify=y,
+            random_state=None,
+            shuffle=False
         )
 
     if 'EA' in ppo:
