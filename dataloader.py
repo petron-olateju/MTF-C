@@ -4,7 +4,8 @@ from utils.preprocessing import compute_band_powers
 
 import pytorch_lightning as pl
 from utils.data_loader import MI_DATASETS
-from utils.data_loader import MI_DataLoader
+from utils.data_loader import MI_DataLoader, SSVEP_DataLoader, RestingState_DataLoader
+from utils.preprocessing import train_val_test_split
 
 import torch
 from torch.utils.data import random_split, TensorDataset, DataLoader
@@ -23,6 +24,7 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         test_split=0.0,
         cv=5,
         preprocessing_pipeline=None,
+        preprocessing_args=None,
         t0=0.5,
         t1=3.5,
         spectrum=None,
@@ -49,6 +51,7 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.preprocessing_pipeline = preprocessing_pipeline
+        self.preprocessing_args = preprocessing_args
         self.t0 = t0
         self.t1 = t1
 
@@ -56,6 +59,17 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         self.n_filter_banks = n_filter_banks
 
         self.setup()
+
+    def compute_spectrum(self, X):
+        if self.spectrum.upper() == 'FREQUENCY_BACKBONE':
+            X_spectrum = compute_band_powers(
+                X, 
+                n_filter_banks=self.n_filter_banks, 
+                fs=self.info['fs']
+            )
+            X_spectrum = torch.tensor(X_spectrum, dtype=torch.float32)
+        
+        return X_spectrum
 
     def setup(self, stage=None):
         if hasattr(self, "train_dataset"):
@@ -70,39 +84,40 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         }
         if self.dataset_name in MI_DATASETS:
             X, y, self.info = MI_DataLoader(**args).get_data()
+        
+        if self.test_split > 0:
+            (X_train, y_train, X_cal, y_val, X_test, y_test) = train_val_test_split(
+                X, y,
+                self.train_split, self.val_split, self.test_split,
+                self.preprocessing_args, self.seed
+            )
+            
+            X_test = torch.tensor(X_test, dtype=torch.float32)
+            y_test = torch.tensor(y_test, dtype=torch.long)
             if self.spectrum is not None:
-                if self.spectrum.upper() == 'FREQUENCY_BACKBONE':
-                    X_spectrum = compute_band_powers(
-                        X, 
-                        n_filter_banks=self.n_filter_banks, 
-                        fs=self.info['fs']
-                    )
-                    X_spectrum = torch.tensor(X_spectrum, dtype=torch.float32)
-
-            X = torch.tensor(X, dtype=torch.float32)
-            y = torch.tensor(y, dtype=torch.long)
-            n = X.size(0)
-            if self.spectrum is not None:
-                dataset = TensorDataset(X_spectrum, X, y)
+                X_test_spectrum = self.compute_spectrum(X_test.cpu().detach().numpy())
+                self.test_dataset = TensorDataset(X_test_spectrum, X_test, y_test)
             else:
-                dataset = TensorDataset(X, y)
+                self.test_dataset = TensorDataset(X_test, y_test)
+        else:
+            (X_train, y_train, X_val, y_val) = train_val_test_split(
+                X, y,
+                self.train_split, self.val_split, self.test_split,
+                self.preprocessing_args, self.seed
+            )
 
-            train_len = int(n * self.train_split)
-            val_len = int(n * self.val_split)
-            if self.test_split > 0:
-                test_len = n - train_len - val_len
-                self.train_dataset, self.val_dataset, self.test_dataset = random_split(
-                    dataset,
-                    [train_len, val_len, test_len],
-                    generator=torch.Generator().manual_seed(self.seed),
-                )
-            else:
-                val_len = n - train_len
-                self.train_dataset, self.val_dataset = random_split(
-                    dataset,
-                    [train_len, val_len],
-                    generator=torch.Generator().manual_seed(self.seed),
-                )
+        X_train = torch.tensor(X_train, dtype=torch.float32)
+        y_train = torch.tensor(y_train, dtype=torch.long)
+        X_val = torch.tensor(X_val, dtype=torch.float32)
+        y_val = torch.tensor(y_val, dtype=torch.long)
+        if self.spectrum is not None:
+            X_train_spectrum = self.compute_spectrum(X_train.cpu().detach().numpy())
+            X_val_spectrum = self.compute_spectrum(X_val.cpu().detach().numpy())
+            self.train_dataset = TensorDataset(X_train_spectrum, X_train, y_train)
+            self.val_dataset = TensorDataset(X_val_spectrum, X_val, y_val)
+        else:
+            self.train_dataset = TensorDataset(X_train, y_train)
+            self.val_dataset = TensorDataset(X_val, y_val)
 
     def train_dataloader(self):
         return DataLoader(

@@ -4,6 +4,8 @@ from scipy.signal import butter, sosfiltfilt
 
 from mne.decoding import Scaler
 
+from sklearn.model_selection import train_test_split
+
 
 def compute_band_powers(x, n_filter_banks, fs):
     """
@@ -74,6 +76,46 @@ def EA_online(x, sqrtRefEA):
     for i in range(x.shape[0]):
         XEA[i] = np.dot(sqrtRefEA, x[i])
     return XEA
+
+
+def train_val_test_split(X, y, train_split, val_split, test_split, ppo, seed):
+    n = X.shape[0]
+    train_len = int(n * train_split)
+    val_len = int(n * val_split)
+    test_len = int(n * test_split)
+
+    if test_split > 0:
+        train_split = n - val_len - test_len
+        X_temp, X_test, y_temp, y_test = train_test_split(
+            X, y,
+            test_size=test_len,
+            stratify=y,
+            random_state=seed
+        )
+
+        X_train, X_val, y_train, y_val = train_test_split(
+            X_temp, y_temp,
+            test_size=val_len,
+            stratify=y_temp,
+            random_state=seed
+        )
+    else:
+        val_len = n - train_len
+        X_train, X_val, y_train, y_val = train_test_split(
+            X, y,
+            test_size=val_len,
+            stratify=y,
+            random_state=seed
+        )
+
+    if 'EA' in ppo:
+        print("Using Euclidean Alignment")
+        X_train, sqrtRefEA = EA(X_train)
+        X_val = EA_online(X_val, sqrtRefEA)
+        if test_split > 0:
+            X_test = EA_online(X_test, sqrtRefEA)
+            return (X_train, y_train, X_val, y_val, X_test, y_test)
+        return (X_train, y_train, X_val, y_val)
 
 
 def bandpass_filtering(X, low=8.0, high=30.0, fs=250):

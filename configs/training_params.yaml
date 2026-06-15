@@ -8,3 +8,7 @@ eval_inter: 5
 lr: 1.0e-3
 batch_size: 32
 n_epochs: 100
+
+preprocessing:
+ - 'bandpass'
+ - 'EA'

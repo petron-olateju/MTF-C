@@ -56,7 +56,7 @@ def main():
             n_epochs=N_EPOCHS,
             n_folds=N_FOLDS,
             n_repeats=N_REPEATS,
-            preprocessing_pipeline=None,
+            preprocessing_args=TRAINING_PARAMS['preprocessing'],
             t0=t0,
             t1=t1,
             experiment_seed=args.seed,

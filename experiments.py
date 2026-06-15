@@ -13,6 +13,7 @@ from utils.data_loader import (
     SSVEP_DataLoader,
     RestingState_DataLoader,
 )
+from utils.preprocessing import bandpass_filtering
 from pl_models import db_conformer
 from pl_models import NAME_MODEL_MAP
 
@@ -59,7 +60,11 @@ def get_model_params(model_name):
         MODEL_PARAMS = yaml.safe_load(f)[model_name]
     return MODEL_PARAMS
 
-
+def make_preprocessing_pipeline(preprocessing_arg):
+    pipeline = []
+    if 'bandpass' in preprocessing_arg:
+        print("Using bandpass filter")
+        pipeline.append(bandpass_filtering)
 
 
 # Cross Validation Experiment
@@ -70,13 +75,14 @@ def cross_validation(
     n_epochs,
     n_folds,
     n_repeats,
-    preprocessing_pipeline,
+    preprocessing_args,
     t0,
     t1,
     experiment_seed,
 ):
 
     SUBJECTS = get_data_subjects(dataset_name=dataset_name)
+    preprocessing_pipeline = make_preprocessing_pipeline(preprocessing_args)
 
     acc = []
     reconstruction = []
@@ -115,6 +121,7 @@ def cross_validation(
                     val_split=None,
                     cv=n_folds,
                     preprocessing_pipeline=preprocessing_pipeline,
+                    preprocessing_args=preprocessing_args,
                     t0=t0,
                     t1=t1,
                     spectrum = spectrum,
