@@ -4,40 +4,19 @@ from argparse import Namespace
 import numpy as np
 import torch
 
-from dataloader import TrainValTest_Split_Loader, StratifiedKFoldDataModule
-from utils.data_loader import (
-    MI_DATASETS,
-    SSVEP_DATASETS,
-    RESTING_STATE_DATASETS,
-    MI_DataLoader,
-    SSVEP_DataLoader,
-    RestingState_DataLoader,
+from utils.data_loader import get_data_subjects
+from dataloader import (
+    TrainValTest_Split_Loader, 
+    StratifiedKFoldDataModule,
+    LOSO_Loader
 )
 from utils.preprocessing import bandpass_filtering
-from pl_models import db_conformer
 from pl_models import NAME_MODEL_MAP
 
 import pytorch_lightning as pl
 
 
 # Helper Functions
-def get_data_subjects(dataset_name):
-    if dataset_name in MI_DATASETS:
-        return MI_DataLoader.get_subjects(dataset_name=dataset_name)
-    elif dataset_name in SSVEP_DATASETS:
-        return SSVEP_DataLoader.get_subjects(dataset_name=dataset_name)
-    elif dataset_name in RESTING_STATE_DATASETS:
-        return RestingState_DataLoader.get_subjects(dataset_name=dataset_name)
-
-
-def get_data_loader(dataset_name, subject, preprocessing_pipeline, t0, t1):
-    if dataset_name in MI_DATASETS:
-        return MI_DataLoader(dataset_name, subject, preprocessing_pipeline, t0, t1)
-    elif dataset_name in SSVEP_DATASETS:
-        return SSVEP_DataLoader(dataset_name, subject, preprocessing_pipeline, t0, t1)
-    elif dataset_name in RESTING_STATE_DATASETS:
-        return RestingState_DataLoader(dataset_name, subject, preprocessing_pipeline, t0, t1)
-
 def get_model(model_name, dataset_name, dataset_info, lr):
     with open("configs/model_params.yaml", "r") as f:
         MODEL_PARAMS = yaml.safe_load(f)[model_name]
@@ -142,6 +121,20 @@ def across_subjects_evaluation(
                         t1=t1,
                         spectrum = spectrum,
                         n_filter_banks = n_filter_banks
+                    )
+                elif validation_strategy == 'loso':
+                    dm = LOSO_Loader(
+                        dataset_name=dataset_name,
+                        subject=subject,
+                        batch_size=batch_size,
+                        seed=fold,
+                        num_workers=0,
+                        preprocessing_pipeline=preprocessing_pipeline,
+                        preprocessing_args=preprocessing_args,
+                        t0=t0,
+                        t1=t1,
+                        spectrum=spectrum,
+                        n_filter_banks=n_filter_banks
                     )
 
                 model, model_params = get_model(

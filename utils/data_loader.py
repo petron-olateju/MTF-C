@@ -1013,82 +1013,20 @@ class RestingState_DataLoader:
 
 
 # ============================================================================
-# Legacy functions for backward compatibility
+# Helper Functions
 # ============================================================================
-
-
-def load_Liu2024(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5) -> Tuple:
-    """Load Liu2024 dataset (legacy function)."""
-    loader = MI_DataLoader("Liu2024", subject, preprocessing_pipeline, t0, t1)
-    return loader.get_data()
-
-
-def get_subjects_Liu2024():
-    """Get Liu2024 subjects (legacy function)."""
-    return MI_DataLoader.get_subjects("Liu2024")
-
-
-def load_BNCI2014_001(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5) -> Tuple:
-    """Load BNCI2014_001 dataset (legacy function)."""
-    loader = MI_DataLoader("BNCI2014_001", subject, preprocessing_pipeline, t0, t1)
-    return loader.get_data()
-
-
-def get_subjects_BNCI2014_001():
-    """Get BNCI2014_001 subjects (legacy function)."""
-    return MI_DataLoader.get_subjects("BNCI2014_001")
-
-
-def load_BNCI2014_004(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5) -> Tuple:
-    """Load BNCI2014_004 dataset (legacy function)."""
-    loader = MI_DataLoader("BNCI2014_004", subject, preprocessing_pipeline, t0, t1)
-    return loader.get_data()
-
-
-def get_subjects_BNCI2014_004():
-    """Get BNCI2014_004 subjects (legacy function)."""
-    return MI_DataLoader.get_subjects("BNCI2014_004")
-
-
-def load_BNCI2015_001(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5) -> Tuple:
-    """Load BNCI2015_001 dataset (legacy function)."""
-    loader = MI_DataLoader("BNCI2015_001", subject, preprocessing_pipeline, t0, t1)
-    return loader.get_data()
-
-
-def get_subjects_BNCI2015_001():
-    """Get BNCI2015_001 subjects (legacy function)."""
-    return MI_DataLoader.get_subjects("BNCI2015_001")
-
-
-def load_BNCI2014_002(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5) -> Tuple:
-    """Load BNCI2014_002 dataset (legacy function)."""
-    loader = MI_DataLoader("BNCI2014_002", subject, preprocessing_pipeline, t0, t1)
-    return loader.get_data()
-
-
-def get_subjects_BNCI2014_002():
-    """Get BNCI2014_002 subjects (legacy function)."""
-    return MI_DataLoader.get_subjects("BNCI2014_002")
-
-
-def load_BNCI2015_004(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5) -> Tuple:
-    """Load BNCI2015_004 dataset (legacy function)."""
-    loader = MI_DataLoader("BNCI2015_004", subject, preprocessing_pipeline, t0, t1)
-    return loader.get_data()
-
-
-def get_subjects_BNCI2015_004():
-    """Get BNCI2015_004 subjects (legacy function)."""
-    return MI_DataLoader.get_subjects("BNCI2015_004")
-
-
-def load_AlexMI(subject, preprocessing_pipeline=None, t0=0.5, t1=3.5) -> Tuple:
-    """Load AlexMI dataset (legacy function)."""
-    loader = MI_DataLoader("AlexMI", subject, preprocessing_pipeline, t0, t1)
-    return loader.get_data()
-
-
-def get_subjects_AlexMI():
-    """Get AlexMI subjects (legacy function)."""
-    return MI_DataLoader.get_subjects("AlexMI")
+def get_data_subjects(dataset_name):
+    if dataset_name in MI_DATASETS:
+        return MI_DataLoader.get_subjects(dataset_name=dataset_name)
+    elif dataset_name in SSVEP_DATASETS:
+        return SSVEP_DataLoader.get_subjects(dataset_name=dataset_name)
+    elif dataset_name in RESTING_STATE_DATASETS:
+        return RestingState_DataLoader.get_subjects(dataset_name=dataset_name)
+    
+def get_data_loader(dataset_name, subject, preprocessing_pipeline, t0, t1):
+    if dataset_name in MI_DATASETS:
+        return MI_DataLoader(dataset_name, subject, preprocessing_pipeline, t0, t1)
+    elif dataset_name in SSVEP_DATASETS:
+        return SSVEP_DataLoader(dataset_name, subject, preprocessing_pipeline, t0, t1)
+    elif dataset_name in RESTING_STATE_DATASETS:
+        return RestingState_DataLoader(dataset_name, subject, preprocessing_pipeline, t0, t1)
