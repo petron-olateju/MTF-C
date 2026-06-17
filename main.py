@@ -27,6 +27,8 @@ def main():
     args = parse_args()
     experiment_name = f"dataset={args.dataset_name} | validation_strategy={args.validation_strategy}"
     run_timestamp = datetime.now().isoformat()
+    experiment_path = os.path.join(args.output_dir, experiment_name)
+    
 
     with open("configs/training_params.yaml", "r") as f:
         TRAINING_PARAMS = yaml.safe_load(f)
@@ -49,11 +51,12 @@ def main():
         validation_strategy=args.validation_strategy,
         t0=t0,
         t1=t1,
+        experiment_path=experiment_path,
+        run_timestamp=run_timestamp,
         **TRAINING_PARAMS
     )
 
     experiment = {**experiment, **performance}
-    experiment_path = os.path.join(args.output_dir, experiment_name)
     os.makedirs(experiment_path, exist_ok=True)
     if os.path.exists(f"{experiment_path}/history.yaml"):
         with open(f"{experiment_path}/history.yaml", "r") as f:

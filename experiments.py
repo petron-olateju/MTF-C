@@ -14,6 +14,7 @@ from utils.preprocessing import bandpass_filtering
 from pl_models import NAME_MODEL_MAP
 
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 
 # Helper Functions
@@ -48,6 +49,8 @@ def across_subjects_evaluation(
     model_name,
     t0,
     t1,
+    experiment_path,
+    run_timestamp,
     experiment_seed,
     batch_size,
     lr,
@@ -144,14 +147,23 @@ def across_subjects_evaluation(
                     lr=lr
                 )
 
+
+                checkpoint_callback = ModelCheckpoint(
+                    monitor="val_loss",
+                    mode="min",
+                    save_top_k=1,
+                    dirpath=experiment_path,
+                    filename=f'{run_timestamp}_subject-{subject}'
+                )
                 trainer = pl.Trainer(
                     max_epochs=n_epochs,
                     accelerator="auto",
-                    devices="auto"
+                    devices="auto",
+                    callbacks=[checkpoint_callback]
                 )
 
                 trainer.fit(model, datamodule=dm)
-                val_metrics = trainer.validate(model, dm)[0]
+                val_metrics = trainer.validate(model, dm, ckpt_path="best")[0]
 
                 folds_acc.append(val_metrics["val_acc"])
                 folds_loss.append(val_metrics["val_loss"])
