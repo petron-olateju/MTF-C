@@ -153,7 +153,7 @@ def across_subjects_evaluation(
                     mode="min",
                     save_top_k=1,
                     dirpath=experiment_path,
-                    filename=f'{run_timestamp}_subject-{subject}'
+                    filename=f'{run_timestamp}|model:{model_name}|subject:{subject}'
                 )
                 trainer = pl.Trainer(
                     max_epochs=n_epochs,
