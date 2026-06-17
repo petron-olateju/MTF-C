@@ -259,19 +259,17 @@ class LOSO_Loader(TrainValTest_Split_Loader):
         self.setup()
 
     def setup(self, stage=None):
-        args = {
-            "dataset_name": self.dataset_name,
-            "subject": self.subject,
-            "preprocessing_pipeline": self.preprocessing_pipeline,
-            "t0": self.t0,
-            "t1": self.t1,
-        }
-        # if self.dataset_name in MI_DATASETS:
-        #     X, y, self.info = MI_DataLoader(**args).get_data()
-        loader = get_data_loader(**args)
         X_train, y_train = [], []
         X_val, y_val = [], []
         for subject in get_data_subjects(self.dataset_name):
+            args = {
+                "dataset_name": self.dataset_name,
+                "subject": subject,
+                "preprocessing_pipeline": self.preprocessing_pipeline,
+                "t0": self.t0,
+                "t1": self.t1,
+            }
+            loader = get_data_loader(**args)
             X, y, _info = loader.get_data()
             if subject != self.subject:
                 X_train.append(X)
