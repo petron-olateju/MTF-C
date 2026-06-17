@@ -27,9 +27,7 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
     def __init__(
         self,
         dataset_name,
-        subject,
         batch_size,
-        seed=0,
         num_workers=0,
         val_split=0.1,
         test_split=0.0,
@@ -55,10 +53,7 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         assert 0 <= test_split < 1
         self.train_split = 1 - (self.test_split + self.val_split)
 
-        self.seed = seed
-
         self.dataset_name = dataset_name
-        self.subject = subject
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.preprocessing_pipeline = preprocessing_pipeline
@@ -69,7 +64,24 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         self.spectrum = spectrum
         self.n_filter_banks = n_filter_banks
 
-        self.setup()
+    def preload_data(self):
+        self.subjects_data = {}
+        for subject in get_data_subjects(self.dataset_name):
+            args = {
+                "dataset_name": self.dataset_name,
+                "subject": subject,
+                "preprocessing_pipeline": self.preprocessing_pipeline,
+                "t0": self.t0,
+                "t1": self.t1,
+            }
+            loader = get_data_loader(**args)
+            X, y, _info = loader.get_data()
+
+            self.subjects_data[subject]={'X': X, 'y': y, 'info': _info}
+    
+    def update_subject(self, subject, seed, fold=None):
+        self.subject = subject
+        self.setup_data(seed, fold)
 
     def compute_spectrum(self, X):
         if self.spectrum.upper() == 'FREQUENCY_BACKBONE':
@@ -82,25 +94,20 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         
         return X_spectrum
 
-    def setup(self, stage=None):
+    def setup_data(self, seed=0, fold=None):
         if hasattr(self, "train_dataset"):
             return
 
-        args = {
-            "dataset_name": self.dataset_name,
-            "subject": self.subject,
-            "preprocessing_pipeline": self.preprocessing_pipeline,
-            "t0": self.t0,
-            "t1": self.t1,
-        }
-        loader = get_data_loader(**args)
-        X, y, self.info = loader.get_data()
+        data = self.subjects_data[self.subject]
+        X = data['X']
+        y = data['y']
+        self.info = data['info']
         
         if self.test_split > 0:
             (X_train, y_train, X_val, y_val, X_test, y_test) = train_val_test_split(
                 X, y,
                 self.train_split, self.val_split, self.test_split,
-                self.preprocessing_args, self.seed
+                self.preprocessing_args, seed
             )
             
             X_test = torch.tensor(X_test, dtype=torch.float32)
@@ -114,7 +121,7 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
             (X_train, y_train, X_val, y_val) = train_val_test_split(
                 X, y,
                 self.train_split, self.val_split, self.test_split,
-                self.preprocessing_args, self.seed
+                self.preprocessing_args, seed
             )
 
         X_train = torch.tensor(X_train, dtype=torch.float32)
@@ -161,7 +168,6 @@ class StratifiedKFoldDataModule(TrainValTest_Split_Loader):
     def __init__(
         self,
         dataset_name,
-        subject,
         batch_size,
         num_workers=0,
         cv=5,
@@ -177,7 +183,6 @@ class StratifiedKFoldDataModule(TrainValTest_Split_Loader):
 
         super().__init__(
             dataset_name=dataset_name,
-            subject=subject,
             batch_size=batch_size,
             num_workers=num_workers,
             cv=cv,
@@ -189,25 +194,18 @@ class StratifiedKFoldDataModule(TrainValTest_Split_Loader):
             n_filter_banks=n_filter_banks
         )
 
-        self.setup()
-
-    def setup(self, stage=None):
-        args = {
-            "dataset_name": self.dataset_name,
-            "subject": self.subject,
-            "preprocessing_pipeline": self.preprocessing_pipeline,
-            "t0": self.t0,
-            "t1": self.t1,
-        }
-        loader = get_data_loader(**args)
-        X, y, self.info = loader.get_data()
+    def setup_data(self, seed=None, fold=0):
+        data = self.subjects_data[self.subject]
+        X = data['X']
+        y = data['y']
+        self.info = data['info']
 
         skf = StratifiedKFold(
             n_splits = self.cv,
             shuffle=False
         )
         splits = list(skf.split(range(X.shape[0]), y))
-        train_idx, val_idx = splits[self.fold_index]
+        train_idx, val_idx = splits[fold]
 
         X = torch.tensor(X, dtype=torch.float32)
         y = torch.tensor(y, dtype=torch.long)
@@ -230,9 +228,7 @@ class LOSO_Loader(TrainValTest_Split_Loader):
     def __init__(
         self,
         dataset_name,
-        subject,
         batch_size,
-        seed=0,
         num_workers=0,
         preprocessing_pipeline=None,
         preprocessing_args=None,
@@ -244,9 +240,7 @@ class LOSO_Loader(TrainValTest_Split_Loader):
 
         super().__init__(
             dataset_name=dataset_name,
-            subject=subject,
             batch_size=batch_size,
-            seed=seed,
             num_workers=num_workers,
             preprocessing_pipeline=preprocessing_pipeline,
             preprocessing_args=preprocessing_args,
@@ -256,28 +250,20 @@ class LOSO_Loader(TrainValTest_Split_Loader):
             n_filter_banks=n_filter_banks
         )
 
-        self.setup()
-
-    def setup(self, stage=None):
+    def setup_data(self, seed=None, fold=None):
+        self.subject 
         X_train, y_train = [], []
         X_val, y_val = [], []
         for subject in get_data_subjects(self.dataset_name):
-            args = {
-                "dataset_name": self.dataset_name,
-                "subject": subject,
-                "preprocessing_pipeline": self.preprocessing_pipeline,
-                "t0": self.t0,
-                "t1": self.t1,
-            }
-            loader = get_data_loader(**args)
-            X, y, _info = loader.get_data()
+            data = self.subjects_data[subject]
+
             if subject != self.subject:
-                X_train.append(X)
-                y_train.append(y)
+                X_train.append(data['X'])
+                y_train.append(data['y'])
             else:
-                X_val.append(X)
-                y_val.append(y)
-                self.info = _info
+                X_val.append(data['X'])
+                y_val.append(data['y'])
+                self.info = data['info']
         
         X_train = np.concat(X_train, axis=0)
         y_train = np.concat(y_train, axis=-1)
