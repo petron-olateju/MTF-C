@@ -1,0 +1,99 @@
+'2026-06-17T12:46:41.464122':
+  model: db_conformer
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 32
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    patch_size: 100
+    spa_dim: 16
+    gate_flag: false
+    posemb_flag: true
+    branch: all
+    chn_attn_flag: true
+    emb_size: 40
+    tem_depth: 2
+    chn_depth: 2
+    data_name: BNCI2014_001
+    chn: 22
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7621913572152456
+  std_acc: 0.15659619076577735
+  loss: 0.4486970553795497
+  subjects_acc:
+    1: 0.7944444417953491
+    2: 0.6402777791023254
+    3: 0.9708333373069763
+    4: 0.7527777791023255
+    5: 0.5166666686534882
+    6: 0.7208333373069763
+    7: 0.5833333253860473
+    8: 0.9486110925674438
+    9: 0.9319444537162781
+'2026-06-18T09:02:49.393866':
+  model: mtf_c
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 32
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    patch_size: 100
+    spa_dim: 16
+    gate_flag: false
+    posemb_flag: true
+    chn_attn_flag: true
+    patch_emb_size: 40
+    tem_depth: 2
+    chn_depth: 2
+    spec_depth: 2
+    sst_method: frequency_backbone
+    spectrum_attn_flag: true
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    wsize_divisor: 2
+    temporal_kernel: 43
+    data_name: BNCI2014_001
+    chn: 22
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7549382673369514
+  std_acc: 0.1548237147308883
+  loss: 1.0181422392527262
+  subjects_acc:
+    1: 0.8097222089767456
+    2: 0.6166666626930237
+    3: 0.9416666507720948
+    4: 0.7361111044883728
+    5: 0.5277777791023255
+    6: 0.7291666746139527
+    7: 0.5652777791023255
+    8: 0.9486111044883728
+    9: 0.9194444417953491

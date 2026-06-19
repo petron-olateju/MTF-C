@@ -1,0 +1,109 @@
+'2026-06-17T16:00:25.048188':
+  model: db_conformer
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 32
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    patch_size: 100
+    spa_dim: 16
+    gate_flag: false
+    posemb_flag: true
+    branch: all
+    chn_attn_flag: true
+    emb_size: 40
+    tem_depth: 2
+    chn_depth: 2
+    data_name: BNCI2014_002
+    chn: 15
+    time_sample_num: 1536
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.75625
+  std_acc: 0.12595616366639936
+  loss: 0.5159071155956814
+  subjects_acc:
+    1: 0.63125
+    2: 0.8099999904632569
+    3: 0.9549999952316284
+    4: 0.8362500071525574
+    5: 0.7087499976158143
+    6: 0.7850000023841858
+    7: 0.9112499952316284
+    8: 0.5450000047683716
+    9: 0.9412500023841858
+    10: 0.7074999928474426
+    11: 0.7750000119209289
+    12: 0.7625
+    13: 0.5962499976158142
+    14: 0.6225000023841858
+'2026-06-18T13:09:37.002761':
+  model: mtf_c
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 32
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    patch_size: 100
+    spa_dim: 16
+    gate_flag: false
+    posemb_flag: true
+    chn_attn_flag: true
+    patch_emb_size: 40
+    tem_depth: 2
+    chn_depth: 2
+    spec_depth: 2
+    sst_method: frequency_backbone
+    spectrum_attn_flag: true
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    wsize_divisor: 2
+    temporal_kernel: 43
+    data_name: BNCI2014_002
+    chn: 15
+    time_sample_num: 1536
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.7325000009366445
+  std_acc: 0.1429387030321536
+  loss: 2.695520749262401
+  subjects_acc:
+    1: 0.587499988079071
+    2: 0.8087500095367431
+    3: 0.9275000095367432
+    4: 0.8262500047683716
+    5: 0.7
+    6: 0.78125
+    7: 0.9074999928474426
+    8: 0.5387500166893006
+    9: 0.93125
+    10: 0.6799999952316285
+    11: 0.7774999976158142
+    12: 0.7337499976158142
+    13: 0.5549999952316285
+    14: 0.5000000059604645
