@@ -71,6 +71,55 @@ def across_subjects_evaluation(
     sub_acc = []
     sub_reconstruction = []
     sub_loss = []
+
+    if model_name == 'mtf_c':
+        model_params = get_model_params('mtf_c')
+        spectrum = model_params['sst_method']
+        n_filter_banks = model_params['filter_banks']
+    elif model_name == 'db_conformer':
+        spectrum = None
+        n_filter_banks = 0
+
+    if validation_strategy == 'cv':
+        dm = StratifiedKFoldDataModule(
+            dataset_name=dataset_name,
+            batch_size=batch_size,
+            num_workers=0,
+            cv=n_folds,
+            preprocessing_pipeline=preprocessing_pipeline,
+            preprocessing_args=preprocessing_args,
+            t0=t0,
+            t1=t1,
+            spectrum = spectrum,
+            n_filter_banks = n_filter_banks
+        )
+    elif validation_strategy == 'train_test':
+        dm = TrainValTest_Split_Loader(
+            dataset_name=dataset_name,
+            batch_size=batch_size,
+            num_workers=0,
+            val_split=val_split,
+            test_split=test_split,
+            preprocessing_pipeline=preprocessing_pipeline,
+            preprocessing_args=preprocessing_args,
+            t0=t0,
+            t1=t1,
+            spectrum = spectrum,
+            n_filter_banks = n_filter_banks
+        )
+    elif validation_strategy == 'loso':
+        dm = LOSO_Loader(
+            dataset_name=dataset_name,
+            batch_size=batch_size,
+            num_workers=0,
+            preprocessing_pipeline=preprocessing_pipeline,
+            preprocessing_args=preprocessing_args,
+            t0=t0,
+            t1=t1,
+            spectrum=spectrum,
+            n_filter_banks=n_filter_banks
+        )
+    dm.preload_data()
     
     for subject in SUBJECTS:
 
@@ -85,69 +134,14 @@ def across_subjects_evaluation(
             folds_loss = []
 
             for fold in range(n_folds):
-
-                if model_name == 'mtf_c':
-                    model_params = get_model_params('mtf_c')
-                    spectrum = model_params['sst_method']
-                    n_filter_banks = model_params['filter_banks']
-                elif model_name == 'db_conformer':
-                    spectrum = None
-                    n_filter_banks = 0
-
-                if validation_strategy == 'cv':
-                    dm = StratifiedKFoldDataModule(
-                        dataset_name=dataset_name,
-                        subject=subject,
-                        batch_size=batch_size,
-                        num_workers=0,
-                        cv=n_folds,
-                        fold_index=fold,
-                        preprocessing_pipeline=preprocessing_pipeline,
-                        preprocessing_args=preprocessing_args,
-                        t0=t0,
-                        t1=t1,
-                        spectrum = spectrum,
-                        n_filter_banks = n_filter_banks
-                    )
-                elif validation_strategy == 'train_test':
-                    dm = TrainValTest_Split_Loader(
-                        dataset_name=dataset_name,
-                        subject=subject,
-                        batch_size=batch_size,
-                        seed=fold,
-                        num_workers=0,
-                        val_split=val_split,
-                        test_split=test_split,
-                        preprocessing_pipeline=preprocessing_pipeline,
-                        preprocessing_args=preprocessing_args,
-                        t0=t0,
-                        t1=t1,
-                        spectrum = spectrum,
-                        n_filter_banks = n_filter_banks
-                    )
-                elif validation_strategy == 'loso':
-                    dm = LOSO_Loader(
-                        dataset_name=dataset_name,
-                        subject=subject,
-                        batch_size=batch_size,
-                        seed=fold,
-                        num_workers=0,
-                        preprocessing_pipeline=preprocessing_pipeline,
-                        preprocessing_args=preprocessing_args,
-                        t0=t0,
-                        t1=t1,
-                        spectrum=spectrum,
-                        n_filter_banks=n_filter_banks
-                    )
-
+                dm.update_subject(subject=subject, seed=experiment_seed+repeat, fold=fold)
+                
                 model, model_params = get_model(
                     model_name=model_name,
                     dataset_name=dataset_name,
                     dataset_info=dm.info,
                     lr=lr
                 )
-
-
                 checkpoint_callback = ModelCheckpoint(
                     monitor="val_loss",
                     mode="min",
