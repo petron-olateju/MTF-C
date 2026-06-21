@@ -14,7 +14,7 @@ mtf_c:
   spa_dim: 16
   gate_flag: False
   posemb_flag: True
-  chn_attn_flag: True
+  chn_attn_flag: False
   patch_emb_size: 40
   tem_depth: 2
   chn_depth: 2

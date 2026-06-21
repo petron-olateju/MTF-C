@@ -209,17 +209,19 @@ class StratifiedKFoldDataModule(TrainValTest_Split_Loader):
 
         X_train, y_train = X[train_idx], y[train_idx]
         X_val, y_val = X[val_idx], y[val_idx]
+
         if 'EA' in self.preprocessing_args:
             X_train, sqrtRefEA = EA(X_train)
             X_val = EA_online(X_val, sqrtRefEA)
 
-        X = torch.tensor(X, dtype=torch.float32)
-        y = torch.tensor(y, dtype=torch.long)
+        X_train = torch.tensor(X_train, dtype=torch.float32)
+        y_train = torch.tensor(y_train, dtype=torch.long)
+        X_val = torch.tensor(X_val, dtype=torch.float32)
+        y_val = torch.tensor(y_val, dtype=torch.long)
 
         if self.spectrum is not None:
-            X_spectrum = self.compute_spectrum(torch.tensor(X))
-            X_train_spectrum = X_spectrum[train_idx]
-            X_val_spectrum = X_spectrum[val_idx]
+            X_train_spectrum = self.compute_spectrum(torch.tensor(X_train))
+            X_val_spectrum = self.compute_spectrum(torch.tensor(X_val))
 
             self.train_dataset = TensorDataset(X_train_spectrum, X_train, y_train)
             self.val_dataset = TensorDataset(X_val_spectrum, X_val, y_val)
