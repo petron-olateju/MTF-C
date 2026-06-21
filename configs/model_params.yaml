@@ -22,6 +22,7 @@ mtf_c:
 
   sst_method: 'frequency_backbone'
   spectrum_attn_flag: True
+  temporal_attn_flag: True
   filter_banks: 11
   filter_banks_variant: 'MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks'
   freq_downsample: 1

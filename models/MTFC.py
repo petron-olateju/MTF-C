@@ -623,6 +623,7 @@ class MTFC(nn.Module):
         self.posemb_flag = args.posemb_flag
         self.chn_attn_flag = args.chn_attn_flag
         self.spectrum_attn_flag = args.spectrum_attn_flag
+        self.temporal_attn_flag = args.temporal_attn_flag
         self.sst_method = args.sst_method
         self.ct_shared_projection = getattr(args, "ct_shared_projection", True)
         self.sst_shared_projection = getattr(args, "sst_shared_projection", True)
@@ -720,8 +721,14 @@ class MTFC(nn.Module):
             self.spectrum_attn_pool = nn.Sequential(
                     nn.Linear(self.D, self.D),  # D → D
                     nn.Tanh(),
-                    nn.Linear(self.D, 1),  # D → 1 (score per channel)
-                )
+                    nn.Linear(self.D, 1),  # D → 1 (score per spectrum-component embedding)
+            )
+        if self.temporal_attn_flag:
+            self.temporal_attn_pool = nn.Sequential(
+                    nn.Linear(self.D, self.D),  # D → D
+                    nn.Tanh(),
+                    nn.Linear(self.D, 1),  # D → 1 (score per temporal-component embedding)
+            )
 
     def _build_classifier(self):
         """Build classifier head based on total concatenated embedding dimension.
@@ -771,7 +778,12 @@ class MTFC(nn.Module):
             x_s = torch.sum(spectrum_attn_weights * x_s, dim=1)
         else:
             x_s = x_s.mean(dim=1)
-        x_t = x_t.mean(dim=1)
+        if self.temporal_attn_flag:
+            temporal_attn_scores = self.temporal_attn_pool(x_t)
+            temporal_attn_weights = F.softmax(temporal_attn_scores, dim=1)
+            x_t = torch.sum(temporal_attn_weights * x_t, dim=1)
+        else:
+            x_t = x_t.mean(dim=1)
         
         x_fused = torch.cat([x_s, x_t, x_c], dim=-1)
 

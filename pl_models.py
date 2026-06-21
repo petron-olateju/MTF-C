@@ -119,6 +119,7 @@ class mtf_c(pl.LightningModule):
                 "posemb_flag",
                 "chn_attn_flag",
                 "spectrum_attn_flag",
+                "temporal_attn_flag",
                 "sst_method",
                 "spa_dim",
             ]
