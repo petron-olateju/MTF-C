@@ -6,7 +6,7 @@ import pytorch_lightning as pl
 from utils.data_loader import get_data_subjects, get_data_loader
 from utils.data_loader import MI_DATASETS, SSVEP_DATASETS, RESTING_STATE_DATASETS
 from utils.data_loader import MI_DataLoader, SSVEP_DataLoader, RestingState_DataLoader
-from utils.preprocessing import train_val_test_split
+from utils.preprocessing import train_val_test_split, EA, EA_online
 from sklearn.model_selection import StratifiedKFold
 
 import torch
@@ -207,10 +207,14 @@ class StratifiedKFoldDataModule(TrainValTest_Split_Loader):
         splits = list(skf.split(range(X.shape[0]), y))
         train_idx, val_idx = splits[fold]
 
-        X = torch.tensor(X, dtype=torch.float32)
-        y = torch.tensor(y, dtype=torch.long)
         X_train, y_train = X[train_idx], y[train_idx]
         X_val, y_val = X[val_idx], y[val_idx]
+        if 'EA' in self.preprocessing_args:
+            X_train, sqrtRefEA = EA(X_train)
+            X_val = EA_online(X_val, sqrtRefEA)
+
+        X = torch.tensor(X, dtype=torch.float32)
+        y = torch.tensor(y, dtype=torch.long)
 
         if self.spectrum is not None:
             X_spectrum = self.compute_spectrum(torch.tensor(X))
@@ -269,6 +273,10 @@ class LOSO_Loader(TrainValTest_Split_Loader):
         y_train = np.concat(y_train, axis=-1)
         X_val = np.concat(X_val, axis=0)
         y_val = np.concat(y_val, axis=-1)
+
+        if 'EA' in self.preprocessing_args:
+            X_train, sqrtRefEA = EA(X_train)
+            X_val = EA_online(X_val, sqrtRefEA)
 
         X_train = torch.tensor(X_train, dtype=torch.float32)
         y_train = torch.tensor(y_train, dtype=torch.long)
