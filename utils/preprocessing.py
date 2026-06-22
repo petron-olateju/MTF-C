@@ -26,8 +26,9 @@ def compute_band_powers(x, n_filter_banks, fs):
     power = power.mean(axis=1)  # (B, T//2+1) — avg over channels
 
     freqs = np.fft.rfftfreq(T, d=1.0 / fs)  # (T//2+1,) in Hz
-    nyquist = fs / 2.0
-    band_width = nyquist / n_filter_banks
+    # nyquist = fs / 2.0
+    # band_width = nyquist / n_filter_banks
+    band_width = 29 / n_filter_banks
 
     band_powers = []
     for i in range(n_filter_banks):
