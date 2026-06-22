@@ -20,10 +20,10 @@ mtf_c:
   chn_depth: 2
   spec_depth: 2
 
-  sst_method: null
-  reconstruction_lambda: 0.0
+  sst_method: 'frequency_backbone'
+  reconstruction_lambda: 1.0
   spectrum_attn_flag: False
-  temporal_attn_flag: False
+  temporal_attn_flag: True
   filter_banks: 11
   filter_banks_variant: 'MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks'
   freq_downsample: 1
