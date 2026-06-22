@@ -14,14 +14,14 @@ mtf_c:
   spa_dim: 16
   gate_flag: False
   posemb_flag: True
-  chn_attn_flag: False
+  chn_attn_flag: True
   patch_emb_size: 40
   tem_depth: 2
   chn_depth: 2
   spec_depth: 2
 
-  sst_method: 'frequency_backbone'
-  reconstruction_lambda: 0.5
+  sst_method: null
+  reconstruction_lambda: 0.0
   spectrum_attn_flag: False
   temporal_attn_flag: False
   filter_banks: 11

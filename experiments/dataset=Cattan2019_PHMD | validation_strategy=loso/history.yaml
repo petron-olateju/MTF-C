@@ -338,3 +338,65 @@
     10: 0.8399999856948852
     11: 0.5600000143051147
     12: 0.5400000095367432
+'2026-06-22T20:45:48.103947':
+  model: mtf_c
+  details:
+  - Increase batch size to 64
+  - disable spectrum reconstruction
+  - enable channel attention pooling to mimick DBConformer dual-path
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    patch_size: 100
+    spa_dim: 16
+    gate_flag: false
+    posemb_flag: true
+    chn_attn_flag: true
+    patch_emb_size: 40
+    tem_depth: 2
+    chn_depth: 2
+    spec_depth: 2
+    sst_method: null
+    reconstruction_lambda: 0.0
+    spectrum_attn_flag: false
+    temporal_attn_flag: false
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    wsize_divisor: 2
+    temporal_kernel: 43
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.6683333357175191
+  std_acc: 0.13353110017199532
+  loss: 0.7856077502171198
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.6399999976158142
+    3: 0.7200000047683716
+    4: 0.6200000047683716
+    5: 0.5600000143051147
+    6: 0.6
+    7: 0.7199999928474426
+    8: 0.5600000023841858
+    9: 0.6600000023841858
+    10: 0.9199999809265137
+    11: 0.6400000095367432
+    12: 0.5800000071525574
