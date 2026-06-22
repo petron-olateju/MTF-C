@@ -21,7 +21,7 @@ mtf_c:
   spec_depth: 2
 
   sst_method: 'frequency_backbone'
-  reconstruction_lambda: 1.0
+  reconstruction_lambda: 0.5
   spectrum_attn_flag: False
   temporal_attn_flag: False
   filter_banks: 11
