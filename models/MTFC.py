@@ -569,7 +569,7 @@ class MTFC(nn.Module):
             - posemb_flag: Positional embedding flag
             - chn_attn_flag: Channel attention flag
             - spectrum_attn_flag: Spectrum attention flag
-            - sst_method: Spectral-spatio-temporal method
+            - sst_method: Spectrum reconstruction: frequency, STFT, wavelet, Spectral-spatio-temporal method
             - spa_dim: Spatial dimension
         n_filter_banks: Number of filter banks.
         wsize_divisor: Window size divisor for STFT.
