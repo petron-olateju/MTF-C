@@ -143,8 +143,8 @@ def across_subjects_evaluation(
                     lr=lr
                 )
                 checkpoint_callback = ModelCheckpoint(
-                    monitor="val_loss",
-                    mode="min",
+                    monitor="val_acc",
+                    mode="max",
                     save_top_k=1,
                     dirpath=experiment_path,
                     filename=f'{run_timestamp}|model:{model_name}|subject:{subject}'
