@@ -19,6 +19,7 @@ def parse_args():
     )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output_dir", type=str, default="experiments")
+    parser.add_argument("--experiment_details", type=str, default="")
 
     return parser.parse_args()
 
@@ -28,6 +29,7 @@ def main():
     experiment_name = f"dataset={args.dataset_name} | validation_strategy={args.validation_strategy}"
     run_timestamp = datetime.now().isoformat()
     experiment_path = os.path.join(args.output_dir, experiment_name)
+    experiment_details = [msg.strip() for msg in args.experiment_details.split("  ") if msg.strip()]
     
 
     with open("configs/training_params.yaml", "r") as f:
@@ -39,6 +41,7 @@ def main():
 
     experiment = {
         'model': args.model_name,
+        'details': experiment_details,
         'experiment_seed': args.seed,
         'taining_params': TRAINING_PARAMS,
         'dataset_params': DATASET_PARAMS[args.dataset_name]
