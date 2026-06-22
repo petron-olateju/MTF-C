@@ -155,62 +155,85 @@ class mtf_c(pl.LightningModule):
             self.train_acc = Accuracy(task="binary")
             self.val_acc = Accuracy(task="binary")
             self.test_acc = Accuracy(task="binary")
-
-        self.train_reconstruction = MeanSquaredError()
-        self.val_reconstruction = MeanSquaredError()
-        self.test_reconstruction = MeanSquaredError()
+        
+        if self.model.sst_method is not None:
+            self.train_reconstruction = MeanSquaredError()
+            self.val_reconstruction = MeanSquaredError()
+            self.test_reconstruction = MeanSquaredError()
 
     def forward(self, x):
         return self.model(x)
 
     def _common_step(self, batch, batch_idx):
-        spectrum, x, y = batch
-        spectrum_est, x_fused, logits = self(x)
+        if self.model.sst_method is not None:
+            spectrum, x, y = batch
+            spectrum_est, x_fused, logits = self(x)
+        else:
+            x, y = batch
+            x_fused, logits = self(x)
 
         task_loss = F.cross_entropy(logits, y)
-        reconstruction_loss = F.mse_loss(spectrum_est, spectrum)
-        loss = task_loss + (self.reconstruction_lambda * reconstruction_loss)
-        return spectrum_est, spectrum, x_fused, logits, loss, y
+        if self.model.sst_method is not None:
+            reconstruction_loss = F.mse_loss(spectrum_est, spectrum)
+            loss = task_loss + (self.reconstruction_lambda * reconstruction_loss)
+            return spectrum_est, spectrum, x_fused, logits, loss, y
+        else:
+            loss = task_loss
+            return x_fused, logits, loss, y
 
     def training_step(self, batch, batch_idx):
-        spectrum_est, spectrum, _, logits, loss, y = self._common_step(batch, batch_idx)
+        if self.model.sst_method is not None:
+            spectrum_est, spectrum, _, logits, loss, y = self._common_step(batch, batch_idx)
+        else:
+            _, logits, loss, y = self._common_step(batch, batch_idx)
 
         preds = logits.argmax(dim=1)
         self.train_acc.update(preds, y)
 
-        self.train_reconstruction.update(spectrum_est, spectrum)
+        if self.model.sst_method is not None:
+            self.train_reconstruction.update(spectrum_est, spectrum)
 
         self.log("train_loss", loss, prog_bar=True)
         self.log("train_acc", self.train_acc, prog_bar=True)
-        self.log("train_mse", self.train_reconstruction, prog_bar=True)
+        if self.model.sst_method is not None:
+            self.log("train_mse", self.train_reconstruction, prog_bar=True)
 
         return loss
 
     def validation_step(self, batch, batch_idx):
         with torch.no_grad():
-            spectrum_est, spectrum, _, logits, loss, y = self._common_step(batch, batch_idx)
+            if self.model.sst_method is not None:
+                spectrum_est, spectrum, _, logits, loss, y = self._common_step(batch, batch_idx)
+            else:
+                _, logits, loss, y = self._common_step(batch, batch_idx)
 
             preds = logits.argmax(dim=1)
             self.val_acc.update(preds, y)
 
-            self.val_reconstruction.update(spectrum_est, spectrum)
+            if self.model.sst_method is not None:
+                self.val_reconstruction.update(spectrum_est, spectrum)
 
             self.log("val_loss", loss, prog_bar=True)
             self.log("val_acc", self.val_acc, prog_bar=True)
-            self.log("val_mse", self.val_reconstruction, prog_bar=True)
+            if self.model.sst_method is not None:
+                self.log("val_mse", self.val_reconstruction, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
         with torch.no_grad():
-            spectrum_est, spectrum, _, logits, loss, y = self._common_step(batch, batch_idx)
+            if self.model.sst_method is not None:
+                spectrum_est, spectrum, _, logits, loss, y = self._common_step(batch, batch_idx)
+            else:
+                _, logits, loss, y = self._common_step(batch, batch_idx)
 
             preds = logits.argmax(dim=1)
             self.test_acc.update(preds, y)
-
-            self.test_reconstruction.update(spectrum_est, spectrum)
+            if self.model.sst_method is not None:
+                self.test_reconstruction.update(spectrum_est, spectrum)
 
             self.log("test_loss", loss, prog_bar=True)
             self.log("test_acc", self.test_acc, prog_bar=True)
-            self.log("test_mse", self.test_reconstruction, prog_bar=True)
+            if self.model.sst_method is not None:
+                self.log("test_mse", self.test_reconstruction, prog_bar=True)
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)

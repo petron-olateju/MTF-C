@@ -736,7 +736,10 @@ class MTFC(nn.Module):
         The classifier input dimension is transformer_dim * num_branches since embeddings
         from all branches are concatenated.
         """
-        classifier_input_dim = self.D * 3
+        if self.sst_method is not None:
+            classifier_input_dim = self.D * 3
+        else:
+            classifier_input_dim = self.D * 2
         self.classifier = ClassificationHead(classifier_input_dim, self.n_classes)
 
     def forward(self, x):
@@ -753,7 +756,10 @@ class MTFC(nn.Module):
         """
         stft = None
 
-        x_embed_spectrum = self.spectrum_embedding(x.squeeze(1))
+        if self.sst_method is not None:
+            x_embed_spectrum = self.spectrum_embedding(x.squeeze(1))
+        else:
+            x_embed_spectrum = None
         x_embed_temporal = self.temporal_embedding(x.squeeze(1))
         x_embed_channel = self.channel_embedding(x.squeeze(1))
         x_embed_temporal, x_embed_channel, x_embed_spectrum = (
@@ -762,7 +768,8 @@ class MTFC(nn.Module):
             )
         )
 
-        x_s = self.transformers['s'](x_embed_spectrum)
+        if self.sst_method is not None:
+            x_s = self.transformers['s'](x_embed_spectrum)
         x_t = self.transformers['t'](x_embed_temporal)
         x_c = self.transformers['c'](x_embed_channel)
 
@@ -772,25 +779,34 @@ class MTFC(nn.Module):
             x_c = torch.sum(chn_attn_weights * x_c, dim=1)
         else:
             x_c = x_c.mean(dim=1)
-        if self.spectrum_attn_flag:
-            spectrum_attn_scores = self.spectrum_attn_pool(x_s)
-            spectrum_attn_weights = F.softmax(spectrum_attn_scores, dim=1)
-            x_s = torch.sum(spectrum_attn_weights * x_s, dim=1)
-        else:
-            x_s = x_s.mean(dim=1)
+
+        if self.sst_method is not None:
+            if self.spectrum_attn_flag:
+                spectrum_attn_scores = self.spectrum_attn_pool(x_s)
+                spectrum_attn_weights = F.softmax(spectrum_attn_scores, dim=1)
+                x_s = torch.sum(spectrum_attn_weights * x_s, dim=1)
+            else:
+                x_s = x_s.mean(dim=1)
+
         if self.temporal_attn_flag:
             temporal_attn_scores = self.temporal_attn_pool(x_t)
             temporal_attn_weights = F.softmax(temporal_attn_scores, dim=1)
             x_t = torch.sum(temporal_attn_weights * x_t, dim=1)
         else:
             x_t = x_t.mean(dim=1)
-        
-        x_fused = torch.cat([x_s, x_t, x_c], dim=-1)
+            
+        if self.sst_method is not None:
+            x_fused = torch.cat([x_s, x_t, x_c], dim=-1)
+        else:
+            x_fused = torch.cat([x_t, x_c], dim=-1)
 
         _, out = self.classifier(x_fused)
 
-        spectrum = self.spectrum_embedding_to_spectrum(x_embed_spectrum).squeeze(-1)
-        return spectrum, x_fused, out
+        if self.sst_method is not None:
+            spectrum = self.spectrum_embedding_to_spectrum(x_embed_spectrum).squeeze(-1)
+            return spectrum, x_fused, out
+        else:
+            return x_fused, out
 
     def _apply_positional_encoding(
         self, x_embed_temporal, x_embed_channel, x_embed_spectrum
