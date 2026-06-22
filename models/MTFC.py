@@ -701,9 +701,10 @@ class MTFC(nn.Module):
         from its specified dimensions.
         """
         self.transformers = nn.ModuleDict()
-        self.transformers['s'] = TransformerEncoder(spec_depth, self.D)
-        self.transformers['t'] = TransformerEncoder(chn_depth, self.D)
-        self.transformers['c'] = TransformerEncoder(tem_depth, self.D)
+        if self.sst_method is not None:
+            self.transformers['s'] = TransformerEncoder(spec_depth, self.D)
+        self.transformers['t'] = TransformerEncoder(tem_depth, self.D)
+        self.transformers['c'] = TransformerEncoder(chn_depth, self.D)
 
     def _build_branch_attention_pooling(self):
         """Build attention pooling for each branch and embedding type.
