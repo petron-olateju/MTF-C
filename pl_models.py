@@ -139,6 +139,8 @@ class mtf_c(pl.LightningModule):
             fs=MODEL_ARGS['fs']
         )
 
+        self.reconstruction_lambda = MODEL_ARGS['reconstruction_lambda']
+
         if self.task == "multiclass":
             self.train_acc = Accuracy(
                 task="multiclass", num_classes=MODEL_ARGS["class_num"]
@@ -167,7 +169,7 @@ class mtf_c(pl.LightningModule):
 
         task_loss = F.cross_entropy(logits, y)
         reconstruction_loss = F.mse_loss(spectrum_est, spectrum)
-        loss = task_loss + reconstruction_loss
+        loss = task_loss + (self.self.reconstruction_lambda * reconstruction_loss)
         return spectrum_est, spectrum, x_fused, logits, loss, y
 
     def training_step(self, batch, batch_idx):
