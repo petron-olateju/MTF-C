@@ -103,3 +103,109 @@
     10: 0.7
     11: 0.5600000083446502
     12: 0.48000000715255736
+'2026-06-21T23:59:49.060590':
+  model: mtf_c
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 32
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    patch_size: 100
+    spa_dim: 16
+    gate_flag: false
+    posemb_flag: true
+    chn_attn_flag: false
+    patch_emb_size: 40
+    tem_depth: 2
+    chn_depth: 2
+    spec_depth: 2
+    sst_method: frequency_backbone
+    spectrum_attn_flag: false
+    temporal_attn_flag: false
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    wsize_divisor: 2
+    temporal_kernel: 43
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.6783333361148834
+  std_acc: 0.12395115221417459
+  loss: 19.14221048553785
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.7
+    3: 0.6799999952316285
+    4: 0.7
+    5: 0.600000011920929
+    6: 0.6800000071525574
+    7: 0.6799999952316285
+    8: 0.5200000047683716
+    9: 0.7
+    10: 0.8799999952316284
+    11: 0.6399999976158142
+    12: 0.5600000143051147
+'2026-06-22T00:33:40.324147':
+  model: db_conformer
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 32
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    patch_size: 100
+    spa_dim: 16
+    gate_flag: false
+    posemb_flag: true
+    branch: all
+    chn_attn_flag: true
+    emb_size: 40
+    tem_depth: 2
+    chn_depth: 2
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.6766666700442632
+  std_acc: 0.11308796933401741
+  loss: 0.7498144090175629
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.6400000095367432
+    3: 0.7199999928474426
+    4: 0.6400000095367432
+    5: 0.5
+    6: 0.7600000023841857
+    7: 0.7600000023841857
+    8: 0.5400000095367432
+    9: 0.7199999928474426
+    10: 0.8
+    11: 0.6799999952316285
+    12: 0.5600000143051147
