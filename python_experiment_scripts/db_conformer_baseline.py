@@ -1,5 +1,6 @@
 import yaml
 import subprocess
+from tqdm import tqdm
 
 with open('configs/model_params.yaml', 'r') as f:
     MODEL_PARAMS = yaml.safe_load(f)
@@ -11,7 +12,7 @@ DATASETS = [
 ]
 VALIDATION = "loso"
 
-for dataset in DATASETS:
+for dataset in tqdm(DATASETS, total=len(DATASETS)):
     subprocess.run(
         [
             "python",
