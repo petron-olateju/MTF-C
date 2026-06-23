@@ -583,3 +583,189 @@
     10: 0.8799999833106995
     11: 0.5600000023841858
     12: 0.6200000166893005
+'2026-06-22T22:58:52.274808':
+  model: mtf_c
+  details:
+  - Increase batch size to 64
+  - frequency spectrum reconstruction with channel attention pooling
+  - fix:restrict compute_bandpowers frequency range to 1-30Hz
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    patch_size: 100
+    spa_dim: 16
+    gate_flag: false
+    posemb_flag: true
+    chn_attn_flag: true
+    patch_emb_size: 40
+    tem_depth: 2
+    chn_depth: 2
+    spec_depth: 2
+    sst_method: frequency_backbone
+    reconstruction_lambda: 1.0
+    spectrum_attn_flag: false
+    temporal_attn_flag: false
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    wsize_divisor: 2
+    temporal_kernel: 43
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.6850000043710073
+  std_acc: 0.1301601544420809
+  loss: 29.93391468822956
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.6600000023841858
+    3: 0.7799999952316284
+    4: 0.800000011920929
+    5: 0.5600000143051147
+    6: 0.6600000023841858
+    7: 0.7399999976158143
+    8: 0.5200000047683716
+    9: 0.6600000023841858
+    10: 0.8599999904632568
+    11: 0.5800000071525574
+    12: 0.600000011920929
+'2026-06-22T23:27:03.587125':
+  model: mtf_c
+  details:
+  - Increase batch size to 64
+  - frequency spectrum reconstruction (lambda=0.5) with channel attention pooling
+  - fix:restrict compute_bandpowers frequency range to 1-30Hz
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    patch_size: 100
+    spa_dim: 16
+    gate_flag: false
+    posemb_flag: true
+    chn_attn_flag: true
+    patch_emb_size: 40
+    tem_depth: 2
+    chn_depth: 2
+    spec_depth: 2
+    sst_method: frequency_backbone
+    reconstruction_lambda: 0.5
+    spectrum_attn_flag: false
+    temporal_attn_flag: false
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    wsize_divisor: 2
+    temporal_kernel: 43
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.6850000043710073
+  std_acc: 0.1301601544420809
+  loss: 15.387772288918494
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.6600000023841858
+    3: 0.7799999952316284
+    4: 0.800000011920929
+    5: 0.5600000143051147
+    6: 0.6600000023841858
+    7: 0.7399999976158143
+    8: 0.5200000047683716
+    9: 0.6600000023841858
+    10: 0.8599999904632568
+    11: 0.5800000071525574
+    12: 0.600000011920929
+'2026-06-22T23:53:51.471817':
+  model: mtf_c
+  details:
+  - Increase batch size to 64
+  - frequency spectrum reconstruction (lambda=0.1) with channel attention pooling
+  - fix:restrict compute_bandpowers frequency range to 1-30Hz
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    patch_size: 100
+    spa_dim: 16
+    gate_flag: false
+    posemb_flag: true
+    chn_attn_flag: true
+    patch_emb_size: 40
+    tem_depth: 2
+    chn_depth: 2
+    spec_depth: 2
+    sst_method: frequency_backbone
+    reconstruction_lambda: 0.1
+    spectrum_attn_flag: false
+    temporal_attn_flag: false
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    wsize_divisor: 2
+    temporal_kernel: 43
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.6866666704416275
+  std_acc: 0.12970050658709922
+  loss: 3.7350771645704905
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.6600000023841858
+    3: 0.7799999952316284
+    4: 0.800000011920929
+    5: 0.5800000071525574
+    6: 0.6600000023841858
+    7: 0.7399999976158143
+    8: 0.5200000047683716
+    9: 0.6600000023841858
+    10: 0.8599999904632568
+    11: 0.5800000071525574
+    12: 0.600000011920929
