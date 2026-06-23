@@ -1,5 +1,6 @@
 import yaml
 import subprocess
+from tqdm import tqdm
 
 with open('configs/model_params.yaml', 'r') as f:
     MODEL_PARAMS = yaml.safe_load(f)
@@ -13,17 +14,31 @@ LAMBDAS = [0.001, 0.01, 0.1, 0.3, 0.5, 0.7, 1.0]
 
 VALIDATION = "loso"
 
-for dataset in DATASETS:
+for dataset in tqdm(DATASETS, total=len(DATASETS)):
     MODEL_PARAMS['mtf_c']['sst_method'] = None
     MODEL_PARAMS['mtf_c']['reconstruction_lambda'] = 0.0
     with open('configs/model_params.yaml', 'w') as f:
         yaml.dump(MODEL_PARAMS, f)
+    EXPERIMENT_DETAILS = "Deactivate spectrum reconstruction"
+    subprocess.run(
+        [
+            "python",
+            "main.py",
+            "--validation_strategy", VALIDATION,
+            "--dataset_name", dataset,
+            "--model_name", "mtf_c",
+            "--experiment_details", EXPERIMENT_DETAILS,
+        ],
+        check=True,
+    )
+        
     for lambda_ in LAMBDAS:
+        MODEL_PARAMS['mtf_c']['sst_method'] = 'frequency_backbone'
         MODEL_PARAMS['mtf_c']['reconstruction_lambda'] = lambda_
         with open('configs/model_params.yaml', 'w') as f:
             yaml.dump(MODEL_PARAMS, f)
 
-        EXPERIMENT_DETAILS = f"Increase batch size to 64  frequency spectrum reconstruction (lambda={lambda_}) with channel attention pooling"
+        EXPERIMENT_DETAILS = f"frequency spectrum reconstruction (lambda={lambda_}) with channel attention pooling"
 
         subprocess.run(
             [
