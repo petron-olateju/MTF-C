@@ -1,0 +1,504 @@
+'2026-06-23T10:38:17.927891':
+  model: db_conformer
+  details:
+  - db_conformer baseline
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    patch_size: 100
+    spa_dim: 16
+    gate_flag: false
+    posemb_flag: true
+    branch: all
+    chn_attn_flag: true
+    emb_size: 40
+    tem_depth: 2
+    chn_depth: 2
+    data_name: BNCI2014_001
+    chn: 22
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.782870372136434
+  std_acc: 0.13424648571575235
+  loss: 0.5301755640241835
+  subjects_acc:
+    1: 0.8597222208976746
+    2: 0.6569444537162781
+    3: 0.9444444417953491
+    4: 0.7541666626930237
+    5: 0.5875000119209289
+    6: 0.737499988079071
+    7: 0.6305555582046509
+    8: 0.9430555462837219
+    9: 0.931944465637207
+'2026-06-23T18:22:53.320812':
+  model: mtf_c
+  details:
+  - Deactivate spectrum reconstruction
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.0
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: null
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_001
+    chn: 22
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7783950593736436
+  std_acc: 0.13411407756310945
+  loss: 0.5496325191524294
+  subjects_acc:
+    1: 0.8361111164093018
+    2: 0.6583333373069763
+    3: 0.949999988079071
+    4: 0.762499988079071
+    5: 0.5847222328186035
+    6: 0.7083333373069763
+    7: 0.6347222208976746
+    8: 0.9458333134651185
+    9: 0.925
+'2026-06-23T18:55:20.850393':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.001) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_001
+    chn: 22
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.779475310113695
+  std_acc: 0.13704920241345991
+  loss: 0.6006184462043974
+  subjects_acc:
+    1: 0.8388888835906982
+    2: 0.65
+    3: 0.9416666865348816
+    4: 0.7708333373069763
+    5: 0.5930555582046508
+    6: 0.7277777791023254
+    7: 0.6097222208976746
+    8: 0.9611111044883728
+    9: 0.9222222208976746
+'2026-06-23T19:50:29.666225':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.01) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.01
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_001
+    chn: 22
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7825617286894057
+  std_acc: 0.13456878536014014
+  loss: 0.5529392759005228
+  subjects_acc:
+    1: 0.8458333253860474
+    2: 0.6541666626930237
+    3: 0.9541666746139527
+    4: 0.7680555582046509
+    5: 0.5875
+    6: 0.7263888955116272
+    7: 0.6333333373069763
+    8: 0.9472222089767456
+    9: 0.9263888955116272
+'2026-06-23T20:46:22.341836':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.1) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.1
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_001
+    chn: 22
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7819444431198967
+  std_acc: 0.13543862458700956
+  loss: 0.5516676475604375
+  subjects_acc:
+    1: 0.8486111044883728
+    2: 0.6555555582046508
+    3: 0.9555555582046509
+    4: 0.7680555582046509
+    5: 0.5861111164093018
+    6: 0.7263888955116272
+    7: 0.6277777671813964
+    8: 0.9472222089767456
+    9: 0.9222222208976746
+'2026-06-23T21:42:50.082039':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.3) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.3
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_001
+    chn: 22
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7814814832475451
+  std_acc: 0.13563787399930338
+  loss: 0.5728415605094698
+  subjects_acc:
+    1: 0.8486111044883728
+    2: 0.6527777791023255
+    3: 0.9555555582046509
+    4: 0.7680555582046509
+    5: 0.5847222328186035
+    6: 0.7277777910232544
+    7: 0.6277777791023255
+    8: 0.9472222089767456
+    9: 0.9208333373069764
+'2026-06-23T22:40:42.310387':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.5) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.5
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_001
+    chn: 22
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7816358036465115
+  std_acc: 0.13517848675734692
+  loss: 0.5997892426119911
+  subjects_acc:
+    1: 0.8486111044883728
+    2: 0.6541666746139526
+    3: 0.9555555582046509
+    4: 0.7680555582046509
+    5: 0.5847222328186035
+    6: 0.7277777910232544
+    7: 0.6291666626930237
+    8: 0.9472222089767456
+    9: 0.9194444417953491
+'2026-06-23T23:38:06.881384':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.7) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.7
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_001
+    chn: 22
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7816358049710591
+  std_acc: 0.13525774305775615
+  loss: 0.619760274887085
+  subjects_acc:
+    1: 0.8472222208976745
+    2: 0.6541666746139526
+    3: 0.9555555582046509
+    4: 0.7680555582046509
+    5: 0.5847222328186035
+    6: 0.7277777910232544
+    7: 0.6291666626930237
+    8: 0.9472222089767456
+    9: 0.9208333373069764
+'2026-06-24T00:35:37.412193':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=1.0) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 1.0
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_001
+    chn: 22
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7811728411250645
+  std_acc: 0.13543246807316753
+  loss: 0.6536250727044212
+  subjects_acc:
+    1: 0.8472222208976745
+    2: 0.6527777791023255
+    3: 0.9555555582046509
+    4: 0.7680555582046509
+    5: 0.5847222328186035
+    6: 0.7277777910232544
+    7: 0.6277777791023255
+    8: 0.9472222089767456
+    9: 0.9194444417953491

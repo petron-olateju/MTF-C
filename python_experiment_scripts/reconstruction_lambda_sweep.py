@@ -7,7 +7,7 @@ with open('configs/model_params.yaml', 'r') as f:
 DATASETS = [
     # "Cattan2019_PHMD", 
     "Rodrigues2017", 
-    "Nakinishi2015", "Kalunga2016", "Wang2021Combined", 
+    # "Nakinishi2015", "Kalunga2016", "Wang2021Combined", 
     "BNCI2014_001", "BNCI2014_002", "BNCI2014_004"
 ]
 LAMBDAS = [0.001, 0.01, 0.1, 0.3, 0.5, 0.7, 1.0]
