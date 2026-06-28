@@ -22,7 +22,7 @@ mtf_c:
   spa_dim: 16
   spec_depth: 2
   spectrum_attn_flag: false
-  sst_method: frequency_backbone
+  sst_method: channels_frequency_backbone
   tem_depth: 2
   temporal_attn_flag: false
   temporal_kernel: 43

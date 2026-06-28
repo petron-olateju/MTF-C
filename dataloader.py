@@ -1,6 +1,6 @@
 import numpy as np
 import mne
-from utils.preprocessing import compute_band_powers
+from utils.preprocessing import compute_band_powers, compute_channels_band_powers
 
 import pytorch_lightning as pl
 from utils.data_loader import get_data_subjects, get_data_loader
@@ -91,7 +91,16 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
                 fs=self.info['fs']
             )
             X_spectrum = torch.tensor(X_spectrum, dtype=torch.float32)
+        elif self.spectrum.upper() == 'CHANNELS_FREQUENCY_BACKBONE':
+            X_spectrum = compute_channels_band_powers(
+                X, 
+                n_filter_banks=self.n_filter_banks, 
+                fs=self.info['fs']
+            )
+            X_spectrum = torch.tensor(X_spectrum, dtype=torch.float32)
+            X_spectrum = torch.mean(X_spectrum, dim=1)
         
+        print(f"Spectrum Data Shape: {X_spectrum.size()}")
         return X_spectrum
 
     def setup_data(self, seed=0, fold=None):

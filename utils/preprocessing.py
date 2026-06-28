@@ -26,8 +26,6 @@ def compute_band_powers(x, n_filter_banks, fs):
     power = power.mean(axis=1)  # (B, T//2+1) — avg over channels
 
     freqs = np.fft.rfftfreq(T, d=1.0 / fs)  # (T//2+1,) in Hz
-    # nyquist = fs / 2.0
-    # band_width = nyquist / n_filter_banks
     band_width = 29 / n_filter_banks
 
     band_powers = []
@@ -47,6 +45,44 @@ def compute_band_powers(x, n_filter_banks, fs):
 
     band_powers = np.stack(band_powers, axis=1)  # (B, F)
     return np.log1p(band_powers)  # (B, F) log-normalised
+
+def compute_channels_band_powers(x, n_filter_banks, fs):
+    """
+    Compute log band powers for n_filter_banks equally spaced bands.
+
+    Args:
+        x:              (B, C, T) numpy array of raw EEG signal
+        n_filter_banks: number of frequency bands F
+        fs:             sampling frequency in Hz
+
+    Returns:
+        (B, C, F) log-normalised mean band power per-channel
+    """
+    B, C, T = x.shape
+
+    fft = np.fft.rfft(x, axis=-1)  # (B, C, T//2+1)
+    power = np.abs(fft) ** 2  # (B, C, T//2+1)
+
+    freqs = np.fft.rfftfreq(T, d=1.0 / fs)  # (T//2+1,) in Hz
+    band_width = 29 / n_filter_banks
+
+    band_powers = []
+    for i in range(n_filter_banks):
+        low = i * band_width
+        high = (i + 1) * band_width
+        mask = (freqs >= low) & (freqs < high)
+
+        if mask.sum() == 0:
+            # frequency resolution coarser than band width — take nearest bin
+            mid_freq = (low + high) / 2.0
+            nearest = np.argmin(np.abs(freqs - mid_freq))
+            mask = np.zeros(len(freqs), dtype=bool)
+            mask[nearest] = True
+
+        band_powers.append(power[:, :, mask].mean(axis=-1))  # (B, C)
+
+    band_powers = np.stack(band_powers, axis=-1)  # (B, C, F)
+    return np.log1p(band_powers)  # (B, C, F) log-normalised
 
 
 def EA(x):

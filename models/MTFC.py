@@ -662,7 +662,7 @@ class MTFC(nn.Module):
             num_classes=args.class_num,
         )
 
-        if self.sst_method == "frequency_backbone":
+        if self.sst_method in ["frequency_backbone", "channels_frequency_backbone"]:
             FilterBanksClass = FILTER_BANKS_VARIANTS.get(
                 self.filter_banks_variant, DEFAULT_FILTER_BANKS_VARIANT
             )
