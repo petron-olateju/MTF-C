@@ -1,0 +1,531 @@
+'2026-06-26T22:00:27.518738':
+  model: db_conformer
+  details:
+  - db_conformer baseline
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    spa_dim: 16
+    tem_depth: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.7129600703716278
+  std_acc: 0.11502598037969723
+  loss: 0.856152918934822
+  subjects_acc:
+    1: 0.64375
+    2: 0.634375
+    3: 0.871875
+    4: 0.89375
+    5: 0.609375
+    6: 0.625
+    7: 0.8333333373069763
+    8: 0.734375
+    9: 0.625
+    10: 0.5453125
+    11: 0.709375
+    12: 0.8300000071525574
+'2026-06-27T09:13:37.921243':
+  model: mtf_c
+  details:
+  - Deactivate spectrum reconstruction
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.0
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: null
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.7145486106475194
+  std_acc: 0.1134071920049835
+  loss: 0.8270191724101702
+  subjects_acc:
+    1: 0.615625
+    2: 0.6375
+    3: 0.878125
+    4: 0.878125
+    5: 0.63125
+    6: 0.621875
+    7: 0.8458333253860474
+    8: 0.734375
+    9: 0.628125
+    10: 0.565625
+    11: 0.709375
+    12: 0.8287500023841858
+'2026-06-27T09:42:59.495014':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.001) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.7187413205703099
+  std_acc: 0.11459779464493404
+  loss: 0.8196091045935948
+  subjects_acc:
+    1: 0.65
+    2: 0.65
+    3: 0.88125
+    4: 0.8875
+    5: 0.640625
+    6: 0.565625
+    7: 0.8583333492279053
+    8: 0.734375
+    9: 0.621875
+    10: 0.5765625
+    11: 0.75625
+    12: 0.8024999976158143
+'2026-06-27T10:35:08.514422':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.01) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.01
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.7220659722884496
+  std_acc: 0.10880472917133847
+  loss: 0.8249814311663309
+  subjects_acc:
+    1: 0.659375
+    2: 0.659375
+    3: 0.884375
+    4: 0.878125
+    5: 0.61875
+    6: 0.61875
+    7: 0.8354166746139526
+    8: 0.7375
+    9: 0.65625
+    10: 0.55625
+    11: 0.753125
+    12: 0.8074999928474427
+'2026-06-27T11:27:03.822765':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.1) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.1
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.7164670139551162
+  std_acc: 0.11528329804367841
+  loss: 0.8813164328535398
+  subjects_acc:
+    1: 0.65
+    2: 0.665625
+    3: 0.884375
+    4: 0.896875
+    5: 0.63125
+    6: 0.59375
+    7: 0.8354166626930237
+    8: 0.725
+    9: 0.625
+    10: 0.5390625
+    11: 0.7375
+    12: 0.8137500047683716
+'2026-06-27T12:18:51.203567':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.3) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.3
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.710711807012558
+  std_acc: 0.11679406963852654
+  loss: 1.0440622195601463
+  subjects_acc:
+    1: 0.6375
+    2: 0.665625
+    3: 0.878125
+    4: 0.896875
+    5: 0.61875
+    6: 0.58125
+    7: 0.8291666746139527
+    8: 0.73125
+    9: 0.609375
+    10: 0.54375
+    11: 0.721875
+    12: 0.8150000095367431
+'2026-06-27T13:10:22.730031':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.5) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.5
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.7104513893524805
+  std_acc: 0.11704802194927655
+  loss: 1.1700341393550238
+  subjects_acc:
+    1: 0.64375
+    2: 0.65625
+    3: 0.878125
+    4: 0.9
+    5: 0.621875
+    6: 0.58125
+    7: 0.8291666746139527
+    8: 0.73125
+    9: 0.609375
+    10: 0.54375
+    11: 0.715625
+    12: 0.8149999976158142
+'2026-06-27T14:02:28.968459':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.7) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.7
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.7104513893524805
+  std_acc: 0.11715226632352584
+  loss: 1.3028208514054616
+  subjects_acc:
+    1: 0.64375
+    2: 0.65625
+    3: 0.878125
+    4: 0.9
+    5: 0.621875
+    6: 0.578125
+    7: 0.8291666746139527
+    8: 0.73125
+    9: 0.6125
+    10: 0.54375
+    11: 0.715625
+    12: 0.8149999976158142
+'2026-06-27T14:55:36.177067':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=1.0) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 1.0
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.7102777779102325
+  std_acc: 0.11700853903382592
+  loss: 1.5075294857223829
+  subjects_acc:
+    1: 0.64375
+    2: 0.65625
+    3: 0.878125
+    4: 0.9
+    5: 0.621875
+    6: 0.578125
+    7: 0.8270833373069764
+    8: 0.73125
+    9: 0.6125
+    10: 0.54375
+    11: 0.715625
+    12: 0.8149999976158142

@@ -1,0 +1,504 @@
+'2026-06-26T21:21:08.022676':
+  model: db_conformer
+  details:
+  - db_conformer baseline
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    spa_dim: 16
+    tem_depth: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.8171604964468214
+  std_acc: 0.18592010343937335
+  loss: 0.670331581433614
+  subjects_acc:
+    1: 0.6255555629730225
+    2: 0.40111111402511596
+    3: 0.7700000047683716
+    4: 0.9700000047683716
+    5: 0.853333342075348
+    6: 0.9588888883590698
+    7: 0.9144444346427918
+    8: 1.0
+    9: 0.8611111164093017
+'2026-06-27T00:49:46.902831':
+  model: mtf_c
+  details:
+  - Deactivate spectrum reconstruction
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.0
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: null
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.8293827142980363
+  std_acc: 0.18093501473415277
+  loss: 0.6471016569270028
+  subjects_acc:
+    1: 0.6377777695655823
+    2: 0.42333332896232606
+    3: 0.7888888835906982
+    4: 0.9811111092567444
+    5: 0.8544444561004638
+    6: 0.9733333349227905
+    7: 0.9299999833106994
+    8: 1.0
+    9: 0.8755555629730225
+'2026-06-27T01:28:55.605391':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.001) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.8216049373149872
+  std_acc: 0.17970110678861384
+  loss: 0.6387178134587076
+  subjects_acc:
+    1: 0.6388888716697693
+    2: 0.41222221255302427
+    3: 0.7866666674613952
+    4: 0.9877777814865112
+    5: 0.8444444417953492
+    6: 0.9266666769981384
+    7: 0.8777777910232544
+    8: 1.0
+    9: 0.9199999928474426
+'2026-06-27T02:35:03.159362':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.01) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.01
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.8109876526726617
+  std_acc: 0.18059681855698925
+  loss: 0.6886281809873052
+  subjects_acc:
+    1: 0.6277777791023255
+    2: 0.40333333015441897
+    3: 0.7755555629730224
+    4: 0.9822222113609314
+    5: 0.8166666626930237
+    6: 0.9244444489479064
+    7: 0.8855555534362793
+    8: 1.0
+    9: 0.8833333253860474
+'2026-06-27T03:43:12.281382':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.1) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.1
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.8043209877279069
+  std_acc: 0.19180354062450783
+  loss: 0.7157777286238141
+  subjects_acc:
+    1: 0.6033333301544189
+    2: 0.3777777850627899
+    3: 0.7588888883590699
+    4: 0.9677777767181397
+    5: 0.8422222256660461
+    6: 0.952222204208374
+    7: 0.901111114025116
+    8: 1.0
+    9: 0.8355555653572082
+'2026-06-27T04:49:07.520064':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.3) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.3
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.7974074065685273
+  std_acc: 0.19312462064714556
+  loss: 0.7845164630148146
+  subjects_acc:
+    1: 0.595555555820465
+    2: 0.374444442987442
+    3: 0.7422222137451172
+    4: 0.9611111044883728
+    5: 0.8211111187934875
+    6: 0.9488888740539551
+    7: 0.901111114025116
+    8: 1.0
+    9: 0.8322222352027893
+'2026-06-27T05:55:35.023174':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.5) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.5
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.7975308643447028
+  std_acc: 0.19342255348591902
+  loss: 0.8327127635478974
+  subjects_acc:
+    1: 0.595555555820465
+    2: 0.3733333349227905
+    3: 0.7433333277702332
+    4: 0.9611111044883728
+    5: 0.8222222328186035
+    6: 0.9488888740539551
+    7: 0.901111114025116
+    8: 1.0
+    9: 0.8322222352027893
+'2026-06-27T07:01:03.602439':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.7) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.7
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.7975308643447028
+  std_acc: 0.19356788258398142
+  loss: 0.8785585019323561
+  subjects_acc:
+    1: 0.5944444537162781
+    2: 0.3733333349227905
+    3: 0.7433333277702332
+    4: 0.9611111044883728
+    5: 0.8233333349227905
+    6: 0.9488888740539551
+    7: 0.901111114025116
+    8: 1.0
+    9: 0.8322222352027893
+'2026-06-27T08:05:59.589169':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=1.0) with channel attention pooling
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 5
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 1.0
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.7975308643447028
+  std_acc: 0.1936599869919941
+  loss: 0.9477654576301575
+  subjects_acc:
+    1: 0.5933333396911621
+    2: 0.3733333349227905
+    3: 0.7444444417953491
+    4: 0.9611111044883728
+    5: 0.8233333349227905
+    6: 0.9488888740539551
+    7: 0.901111114025116
+    8: 1.0
+    9: 0.8322222352027893
