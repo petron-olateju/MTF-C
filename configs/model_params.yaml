@@ -1,16 +1,16 @@
 db_conformer:
   branch: all
   chn_attn_flag: true
-  chn_depth: 2
+  chn_depth: 1
   emb_size: 40
   gate_flag: false
   patch_size: 100
   posemb_flag: true
   spa_dim: 16
-  tem_depth: 2
+  tem_depth: 1
 mtf_c:
   chn_attn_flag: true
-  chn_depth: 2
+  chn_depth: 1
   filter_banks: 11
   filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
   freq_downsample: 1
@@ -18,12 +18,12 @@ mtf_c:
   patch_emb_size: 40
   patch_size: 100
   posemb_flag: true
-  reconstruction_lambda: 1.0
+  reconstruction_lambda: 0.01
   spa_dim: 16
-  spec_depth: 2
+  spec_depth: 1
   spectrum_attn_flag: false
-  sst_method: channels_frequency_backbone
-  tem_depth: 2
+  sst_method: frequency_backbone
+  tem_depth: 1
   temporal_attn_flag: false
   temporal_kernel: 43
   wsize_divisor: 2

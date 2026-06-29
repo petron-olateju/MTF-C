@@ -1,5 +1,5 @@
 n_folds: 1
-n_repeats: 5
+n_repeats: 1
 val_split: 0.2
 test_split: 0.0
 

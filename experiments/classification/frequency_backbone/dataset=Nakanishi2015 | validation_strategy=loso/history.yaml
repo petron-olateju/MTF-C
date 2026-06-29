@@ -502,3 +502,53 @@
     7: 0.901111114025116
     8: 1.0
     9: 0.8322222352027893
+'2026-06-28T23:36:30.478403':
+  model: db_conformer
+  details:
+  - db_conformer baseline
+  - make transformer depth=1 across all branches
+  - use just one LOSO repeat
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 1
+    emb_size: 40
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    spa_dim: 16
+    tem_depth: 1
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.8382716046439277
+  std_acc: 0.17983844948750738
+  loss: 0.6251991324954562
+  subjects_acc:
+    1: 0.6777777671813965
+    2: 0.41111111640930176
+    3: 0.8055555820465088
+    4: 0.9833333492279053
+    5: 0.8444444537162781
+    6: 0.9777777791023254
+    7: 0.9444444179534912
+    8: 1.0
+    9: 0.8999999761581421
