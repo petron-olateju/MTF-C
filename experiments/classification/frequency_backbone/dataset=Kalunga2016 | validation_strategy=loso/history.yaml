@@ -582,3 +582,189 @@
     10: 0.5390625
     11: 0.734375
     12: 0.8187500238418579
+'2026-06-29T05:55:14.839241':
+  model: mtf_c
+  details:
+  - Deactivate spectrum reconstruction
+  - make transformer depth=1 across all branches
+  - use just one LOSO repeat
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 1
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.0
+    spa_dim: 16
+    spec_depth: 1
+    spectrum_attn_flag: false
+    sst_method: null
+    tem_depth: 1
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.7071614563465118
+  std_acc: 0.11684055824278222
+  loss: 0.8257158001263937
+  subjects_acc:
+    1: 0.65625
+    2: 0.640625
+    3: 0.875
+    4: 0.90625
+    5: 0.609375
+    6: 0.578125
+    7: 0.8125
+    8: 0.75
+    9: 0.578125
+    10: 0.5546875
+    11: 0.71875
+    12: 0.8062499761581421
+'2026-06-29T05:59:51.394707':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.001) with channel attention pooling
+  - make transformer depth=1 across all branches
+  - use just one LOSO repeat
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 1
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 1
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 1
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.7233941008647283
+  std_acc: 0.11288343619671035
+  loss: 0.8296358436346054
+  subjects_acc:
+    1: 0.640625
+    2: 0.65625
+    3: 0.828125
+    4: 0.90625
+    5: 0.671875
+    6: 0.53125
+    7: 0.8854166865348816
+    8: 0.765625
+    9: 0.6875
+    10: 0.5703125
+    11: 0.75
+    12: 0.7875000238418579
+'2026-06-29T06:08:24.173092':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.01) with channel attention pooling
+  - make transformer depth=1 across all branches
+  - use just one LOSO repeat
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 1
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.01
+    spa_dim: 16
+    spec_depth: 1
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 1
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+  mean_acc: 0.7179687519868215
+  std_acc: 0.1010936708667424
+  loss: 0.8397605841358503
+  subjects_acc:
+    1: 0.640625
+    2: 0.671875
+    3: 0.828125
+    4: 0.90625
+    5: 0.625
+    6: 0.59375
+    7: 0.84375
+    8: 0.734375
+    9: 0.671875
+    10: 0.578125
+    11: 0.734375
+    12: 0.7875000238418579

@@ -6,8 +6,9 @@ with open('configs/model_params.yaml', 'r') as f:
     MODEL_PARAMS = yaml.safe_load(f)
 DATASETS = [
     # "Cattan2019_PHMD", "Rodrigues2017", 
-    "Nakanishi2015", "Kalunga2016", 
-    "BNCI2014_001", "BNCI2014_002", "BNCI2014_004"
+    # "Nakanishi2015", "Kalunga2016", 
+    # "BNCI2014_001", 
+    "BNCI2014_002", "BNCI2014_004"
 ]
 VALIDATION = "loso"
 

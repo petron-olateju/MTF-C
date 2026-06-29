@@ -552,3 +552,180 @@
     7: 0.5972222089767456
     8: 0.9444444179534912
     9: 0.9375
+'2026-06-29T06:16:41.932481':
+  model: mtf_c
+  details:
+  - Deactivate spectrum reconstruction
+  - make transformer depth=1 across all branches
+  - use just one LOSO repeat
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 1
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.0
+    spa_dim: 16
+    spec_depth: 1
+    spectrum_attn_flag: false
+    sst_method: null
+    tem_depth: 1
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_001
+    chn: 22
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7870370348294576
+  std_acc: 0.13147658856579078
+  loss: 0.520773536629147
+  subjects_acc:
+    1: 0.8402777910232544
+    2: 0.6666666865348816
+    3: 0.9652777910232544
+    4: 0.7569444179534912
+    5: 0.6041666865348816
+    6: 0.7222222089767456
+    7: 0.6458333134651184
+    8: 0.9583333134651184
+    9: 0.9236111044883728
+'2026-06-29T06:22:24.812332':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.001) with channel attention pooling
+  - make transformer depth=1 across all branches
+  - use just one LOSO repeat
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 1
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 1
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 1
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_001
+    chn: 22
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7677469187312655
+  std_acc: 0.1322126434836821
+  loss: 0.6141072246763442
+  subjects_acc:
+    1: 0.8125
+    2: 0.6180555820465088
+    3: 0.8819444179534912
+    4: 0.7847222089767456
+    5: 0.6041666865348816
+    6: 0.7152777910232544
+    7: 0.6041666865348816
+    8: 0.9652777910232544
+    9: 0.9236111044883728
+'2026-06-29T06:32:44.749277':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.01) with channel attention pooling
+  - make transformer depth=1 across all branches
+  - use just one LOSO repeat
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 1
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.01
+    spa_dim: 16
+    spec_depth: 1
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 1
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_001
+    chn: 22
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7746913499302335
+  std_acc: 0.13993092648813885
+  loss: 0.596356623702579
+  subjects_acc:
+    1: 0.875
+    2: 0.6388888955116272
+    3: 0.9097222089767456
+    4: 0.7777777910232544
+    5: 0.5625
+    6: 0.6736111044883728
+    7: 0.6458333134651184
+    8: 0.9444444179534912
+    9: 0.9444444179534912
