@@ -5,9 +5,9 @@ from tqdm import tqdm
 with open('configs/model_params.yaml', 'r') as f:
     MODEL_PARAMS = yaml.safe_load(f)
 DATASETS = [
-    # "Cattan2019_PHMD", "Rodrigues2017", 
-    "Nakanishi2015", "Kalunga2016", 
-    "BNCI2014_001", "BNCI2014_002", "BNCI2014_004"
+    "Cattan2019_PHMD", "Rodrigues2017", 
+    # "Nakanishi2015", "Kalunga2016", 
+    # "BNCI2014_001", "BNCI2014_002", "BNCI2014_004"
 ]
 LAMBDAS = [0.001, 0.01]
 

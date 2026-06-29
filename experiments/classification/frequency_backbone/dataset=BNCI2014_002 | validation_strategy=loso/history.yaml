@@ -794,3 +794,58 @@
     12: 0.706250011920929
     13: 0.5562499761581421
     14: 0.581250011920929
+'2026-06-29T09:06:35.564470':
+  model: db_conformer
+  details:
+  - db_conformer baseline
+  - make transformer depth=1 across all branches
+  - use just one LOSO repeat
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 1
+    emb_size: 40
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    spa_dim: 16
+    tem_depth: 1
+    data_name: BNCI2014_002
+    chn: 15
+    time_sample_num: 1536
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.7535714251654488
+  std_acc: 0.1332692173194281
+  loss: 0.7095721928136689
+  subjects_acc:
+    1: 0.5874999761581421
+    2: 0.84375
+    3: 0.9437500238418579
+    4: 0.793749988079071
+    5: 0.762499988079071
+    6: 0.800000011920929
+    7: 0.949999988079071
+    8: 0.637499988079071
+    9: 0.9437500238418579
+    10: 0.699999988079071
+    11: 0.793749988079071
+    12: 0.668749988079071
+    13: 0.5625
+    14: 0.5625
