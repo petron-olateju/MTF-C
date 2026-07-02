@@ -6,8 +6,8 @@ with open('configs/model_params.yaml', 'r') as f:
     MODEL_PARAMS = yaml.safe_load(f)
 DATASETS = [
     "Cattan2019_PHMD", "Rodrigues2017", 
-    # "Nakanishi2015", "Kalunga2016", 
-    # "BNCI2014_001", "BNCI2014_002", "BNCI2014_004"
+    "Nakanishi2015", "Kalunga2016", 
+    "BNCI2014_001", "BNCI2014_002", "BNCI2014_004"
 ]
 LAMBDAS = [0.001, 0.01]
 
@@ -18,7 +18,7 @@ for dataset in tqdm(DATASETS, total=len(DATASETS)):
     MODEL_PARAMS['mtf_c']['reconstruction_lambda'] = 0.0
     with open('configs/model_params.yaml', 'w') as f:
         yaml.dump(MODEL_PARAMS, f)
-    EXPERIMENT_DETAILS = "Deactivate spectrum reconstruction  make transformer depth=1 across all branches  use just one LOSO repeat"
+    EXPERIMENT_DETAILS = "Deactivate spectrum reconstruction  make transformer depth=2 across all branches  use just one LOSO repeat"
     subprocess.run(
         [
             "python",
@@ -38,7 +38,7 @@ for dataset in tqdm(DATASETS, total=len(DATASETS)):
         with open('configs/model_params.yaml', 'w') as f:
             yaml.dump(MODEL_PARAMS, f)
 
-        EXPERIMENT_DETAILS = f"frequency spectrum reconstruction (lambda={lambda_}) with channel attention pooling  make transformer depth=1 across all branches  use just one LOSO repeat"
+        EXPERIMENT_DETAILS = f"frequency spectrum reconstruction (lambda={lambda_}) with channel attention pooling  make transformer depth=2 across all branches  use just one LOSO repeat"
 
         subprocess.run(
             [
