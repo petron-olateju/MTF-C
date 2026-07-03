@@ -18,6 +18,9 @@ for dataset in tqdm(DATASETS, total=len(DATASETS)):
         for temporal_attn in [True, False]:
             MODEL_PARAMS['mtf_c']['temporal_attn_flag'] = temporal_attn
 
+            if (spectrum_attn is False) and (temporal_attn is False):
+                continue
+
             with open('configs/model_params.yaml', 'w') as f:
                 yaml.dump(MODEL_PARAMS, f)
 
