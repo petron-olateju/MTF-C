@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
+import yaml
 
 
 DATASET_LABELS = {
@@ -18,49 +19,15 @@ DATASET_LABELS = {
 _DEFAULT_SWEEP_LAMBDAS = [0.001, 0.01, 0.1, 0.3, 0.5, 0.7, 1.0]
 
 
-def _parse_entry(entry_text):
-    result = {}
-
-    m = re.search(r'^  model:\s*(.+)', entry_text, re.MULTILINE)
-    if m:
-        result['model'] = m.group(1).strip()
-
-    m = re.search(r'^\s+n_repeats:\s*(\d+)', entry_text, re.MULTILINE)
-    if m:
-        result['n_repeats'] = int(m.group(1))
-
-    m = re.search(r'^  mean_acc:\s*([\d.eE+\-]+)', entry_text, re.MULTILINE)
-    if m:
-        result['mean_acc'] = float(m.group(1))
-
-    m = re.search(r'^  std_acc:\s*([\d.eE+\-]+)', entry_text, re.MULTILINE)
-    if m:
-        result['std_acc'] = float(m.group(1))
-
-    m = re.search(r'^\s+sst_method:\s*(.+)', entry_text, re.MULTILINE)
-    if m:
-        val = m.group(1).strip()
-        result['sst_method'] = None if val == 'null' else val
-
-    m = re.search(r'^\s+reconstruction_lambda:\s*([\d.eE+\-]+)', entry_text, re.MULTILINE)
-    if m:
-        result['reconstruction_lambda'] = float(m.group(1))
-
-    return result
-
-
 def _load_history(path):
-    text = path.read_text()
-    timestamp_pat = r"^'(\d{4}-\d{2}-\d{2}T[\d:.]+)':"
-    splits = re.split(timestamp_pat, text, flags=re.MULTILINE)
+    with open(path, 'r') as f:
+        data = yaml.safe_load(f)
 
     entries = []
-    for i in range(1, len(splits), 2):
-        ts = splits[i]
-        body = splits[i + 1] if i + 1 < len(splits) else ''
-        entry = _parse_entry(body)
-        entry['timestamp'] = ts
-        entries.append(entry)
+    if isinstance(data, dict):
+        for ts, entry in data.items():
+            entry['timestamp'] = ts
+            entries.append(entry)
 
     return entries
 
@@ -70,11 +37,21 @@ def _extract_dataset_name(dirname):
     return m.group(1).strip() if m else dirname
 
 
+def _params_match(entry_params, filter_params):
+    if filter_params is None:
+        return True
+    for key, value in filter_params.items():
+        if key in entry_params and entry_params[key] != value:
+            return False
+    return True
+
+
 def plot_lambda_sweep(root_dir='experiments/classification/frequency_backbone',
                        save_path='plots/classification/frequency_backbone',
                        filename='lambda_sweep',
                        figsize=(10, 6.5),
-                       n_repeats=5,
+                       training_params=None,
+                       model_params=None,
                        sweep_lambdas=None):
     """Plot LOSO accuracy delta (%) vs db_conformer across a reconstruction-lambda sweep.
 
@@ -88,8 +65,12 @@ def plot_lambda_sweep(root_dir='experiments/classification/frequency_backbone',
         Base name for output files (saved as {filename}.png and pdf/{filename}.pdf).
     figsize : tuple
         Figure dimensions (width, height) in inches.
-    n_repeats : int
-        Only consider entries with this n_repeats value (default 5).
+    training_params : dict or None
+        Only consider entries whose ``taining_params`` match all specified key-value
+        pairs. Keys not present in the entry are ignored (default None = no filter).
+    model_params : dict or None
+        Only consider entries whose ``model_params`` match all specified key-value
+        pairs. Keys not present in the entry are ignored (default None = no filter).
     sweep_lambdas : list of float or None
         Lambda values to include in the sweep. If None, uses
         [0.001, 0.01, 0.1, 0.3, 0.5, 0.7, 1.0].
@@ -113,7 +94,7 @@ def plot_lambda_sweep(root_dir='experiments/classification/frequency_backbone',
         sweep_lambdas = list(_DEFAULT_SWEEP_LAMBDAS)
     x_tick_labels = ['0\n(off)'] + [str(lam) for lam in sweep_lambdas]
 
-    # ---- data loading (unchanged logic) ----
+    # ---- data loading ----
     root = Path(root_dir)
     datasets = {}
     for d in sorted(root.iterdir()):
@@ -124,7 +105,11 @@ def plot_lambda_sweep(root_dir='experiments/classification/frequency_backbone',
         if not yaml_path.exists():
             continue
 
-        entries = [e for e in _load_history(yaml_path) if e.get('n_repeats') == n_repeats]
+        entries = [
+            e for e in _load_history(yaml_path)
+            if _params_match(e.get('taining_params', {}), training_params)
+            and _params_match(e.get('model_params', {}), model_params)
+        ]
 
         db_conf_acc = None
         null_baseline_acc = None
@@ -135,8 +120,9 @@ def plot_lambda_sweep(root_dir='experiments/classification/frequency_backbone',
             if model == 'db_conformer':
                 db_conf_acc = e.get('mean_acc')
             elif model == 'mtf_c':
-                sst = e.get('sst_method')
-                lam = e.get('reconstruction_lambda')
+                model_params_dict = e.get('model_params', {})
+                sst = model_params_dict.get('sst_method')
+                lam = model_params_dict.get('reconstruction_lambda')
                 if sst is None and lam == 0.0:
                     null_baseline_acc = e.get('mean_acc')
                 elif sst == 'frequency_backbone':
@@ -238,6 +224,425 @@ def plot_lambda_sweep(root_dir='experiments/classification/frequency_backbone',
             os.makedirs(save_path, exist_ok=True)
             os.makedirs(os.path.join(save_path, 'pdf'), exist_ok=True)
             
+            fig.savefig(os.path.join(save_path, f'{filename}.png'),
+                        dpi=300, bbox_inches='tight')
+            fig.savefig(os.path.join(save_path, 'pdf', f'{filename}.pdf'),
+                        bbox_inches='tight')
+
+    return fig, ax
+
+
+def plot_comparison_bars(
+    config_pairs,
+    root_dir='experiments/classification/frequency_backbone',
+    save_path='plots/classification/frequency_backbone',
+    filename='comparison_bar',
+    figsize=(12, 6),
+    metric='mean_acc',
+    error_metric='std_acc',
+):
+    """Grouped bar plot comparing accuracy across multiple (training_params, model_params) pairs.
+
+    Parameters
+    ----------
+    config_pairs : dict of str -> tuple
+        Maps a config label to ``(training_params, model_params, model)`` where
+        ``model`` is optional (e.g. ``'db_conformer'`` or ``'mtf_c'``).
+    root_dir : str or Path
+        Directory containing dataset subdirectories.
+    save_path : str or None
+        Directory to save output files. Set to None to disable saving.
+    filename : str
+        Base name for output files (saved as {filename}.png and pdf/{filename}.pdf).
+    figsize : tuple
+        Figure dimensions (width, height) in inches.
+    metric : str
+        Key to extract from each entry (default ``'mean_acc'``).
+    error_metric : str or None
+        Key for error-bar values (default ``'std_acc'``). Set to None to omit.
+    """
+    style = {
+        'font.family': 'serif',
+        'font.serif': ['Times New Roman', 'DejaVu Serif', 'cmr10'],
+        'mathtext.fontset': 'cm',
+        'axes.edgecolor': '#333333',
+        'axes.linewidth': 1.0,
+        'axes.labelcolor': '#222222',
+        'xtick.color': '#222222',
+        'ytick.color': '#222222',
+        'savefig.dpi': 300,
+        'figure.dpi': 120,
+    }
+
+    root = Path(root_dir)
+    config_labels = list(config_pairs.keys())
+    n_configs = len(config_labels)
+
+    # Parse each config item → (training_params, model_params, model_filter)
+    config_filters = []
+    for label in config_labels:
+        item = config_pairs[label]
+        if isinstance(item, dict):
+            tp = item.get('training_params')
+            mp = item.get('model_params')
+            mf = item.get('model')
+        elif isinstance(item, (list, tuple)):
+            tp = item[0] if len(item) > 0 else None
+            mp = item[1] if len(item) > 1 else None
+            mf = item[2] if len(item) > 2 else None
+        else:
+            tp = mp = mf = None
+        config_filters.append((tp, mp, mf))
+
+    # Accumulate results: results[label][dataset_name] = (value, error)
+    results = {label: {} for label in config_labels}
+
+    for d in sorted(root.iterdir()):
+        if not d.is_dir():
+            continue
+        dataset_name = _extract_dataset_name(d.name)
+        yaml_path = d / 'history.yaml'
+        if not yaml_path.exists():
+            continue
+
+        entries = _load_history(yaml_path)
+
+        for label, (tp, mp, mf) in zip(config_labels, config_filters):
+            matched = [
+                e for e in entries
+                if _params_match(e.get('taining_params', {}), tp)
+                and _params_match(e.get('model_params', {}), mp)
+                and (mf is None or e.get('model') == mf)
+            ]
+            if not matched:
+                continue
+            if len(matched) > 1:
+                import warnings
+                warnings.warn(
+                    f"Multiple entries match config '{label}' in {dataset_name}; "
+                    f"using the first one."
+                )
+            entry = matched[0]
+            val = entry.get(metric)
+            err = entry.get(error_metric) if error_metric else None
+            if val is not None:
+                results[label][dataset_name] = (val, err)
+
+    # Collect all datasets that have data for at least one config
+    all_datasets = sorted({
+        dset
+        for label in config_labels
+        for dset in results[label]
+    })
+    if not all_datasets:
+        raise ValueError("No data found for any dataset / config pair.")
+
+    # ---- plotting ----
+    with plt.rc_context(style):
+        fig, ax = plt.subplots(figsize=figsize)
+
+        palette = ['#0173B2', '#DE8F05', '#029E73', '#D55E00',
+                   '#CC78BC', '#CA9161', '#949494', '#56B4E9']
+
+        n_groups = len(all_datasets)
+        bar_width = 0.7 / n_configs
+        x = np.arange(n_groups)
+
+        for i, label in enumerate(config_labels):
+            offsets = x + (i - (n_configs - 1) / 2) * bar_width
+            vals = []
+            errs = []
+            for dset in all_datasets:
+                v_e = results[label].get(dset)
+                vals.append(v_e[0] if v_e else 0)
+                errs.append(v_e[1] if v_e and v_e[1] is not None else 0)
+
+            color = palette[i % len(palette)]
+            bars = ax.bar(
+                offsets, vals, bar_width,
+                label=label,
+                color=color,
+                edgecolor='white',
+                linewidth=0.6,
+                alpha=0.92,
+                zorder=3,
+                yerr=errs if error_metric else None,
+                capsize=3,
+                error_kw={'linewidth': 1.2, 'ecolor': '#333333'},
+            )
+
+        # Labels and cosmetics
+        dataset_labels = [
+            DATASET_LABELS.get(d, d) for d in all_datasets
+        ]
+        ax.set_xticks(x)
+        ax.set_xticklabels(dataset_labels, fontsize=11, rotation=15, ha='right')
+
+        metric_display = metric.replace('_', ' ').title()
+        ax.set_ylabel(metric_display, fontsize=13, labelpad=8)
+        ax.set_title('Comparison Across Configurations', fontsize=14,
+                     fontweight='bold', pad=14)
+
+        ax.grid(True, which='major', axis='y', alpha=0.3, linewidth=0.7, zorder=0)
+        ax.grid(False, axis='x')
+        ax.set_axisbelow(True)
+
+        for spine in ('top', 'right'):
+            ax.spines[spine].set_visible(False)
+        for spine in ('left', 'bottom'):
+            ax.spines[spine].set_linewidth(1.0)
+            ax.spines[spine].set_color('#333333')
+
+        ax.tick_params(axis='both', which='major', labelsize=10.5, length=4)
+
+        legend = ax.legend(fontsize=9.5, loc='upper left',
+                           bbox_to_anchor=(1.02, 1.0),
+                           frameon=True, framealpha=0.95, edgecolor='#cccccc',
+                           borderpad=0.8, labelspacing=0.6)
+        legend.get_frame().set_linewidth(0.8)
+
+        fig.tight_layout()
+
+        if save_path:
+            os.makedirs(save_path, exist_ok=True)
+            os.makedirs(os.path.join(save_path, 'pdf'), exist_ok=True)
+            fig.savefig(os.path.join(save_path, f'{filename}.png'),
+                        dpi=300, bbox_inches='tight')
+            fig.savefig(os.path.join(save_path, 'pdf', f'{filename}.pdf'),
+                        bbox_inches='tight')
+
+    return fig, ax
+
+
+def _parse_config_item(item):
+    if isinstance(item, dict) and 'training_params' in item:
+        return (item.get('training_params'), item.get('model_params'), item.get('model'))
+    if isinstance(item, (list, tuple)):
+        tp = item[0] if len(item) > 0 else None
+        mp = item[1] if len(item) > 1 else None
+        mf = item[2] if len(item) > 2 else None
+        return (tp, mp, mf)
+    return (None, None, None)
+
+
+def _find_entry(entries, tp, mp, mf):
+    matched = [
+        e for e in entries
+        if _params_match(e.get('taining_params', {}), tp)
+        and _params_match(e.get('model_params', {}), mp)
+        and (mf is None or e.get('model') == mf)
+    ]
+    if not matched:
+        return None, None
+    if len(matched) > 1:
+        import warnings
+        warnings.warn(
+            f"Multiple entries match config in {entries[0].get('dataset', 'unknown')}; "
+            f"using the first one."
+        )
+    entry = matched[0]
+    return entry.get('mean_acc'), entry.get('std_acc')
+
+
+def plot_paired_delta(
+    config_pairs,
+    reference_key='baseline',
+    root_dir='experiments/classification/frequency_backbone',
+    save_path='plots/classification/frequency_backbone',
+    filename='paired_delta',
+    figsize=(12, 6),
+    metric='mean_acc',
+    line=False,
+    hline=None,
+):
+    """Line plot of relative accuracy delta between paired configurations.
+
+    Each entry in ``config_pairs`` is a dict with exactly two sub-configs
+    (one identified by ``reference_key``, the other by an arbitrary second key).
+    For every dataset the relative delta
+    ``(acc_comparison - acc_reference) / acc_reference * 100``
+    is computed and plotted as a connected line across datasets.
+
+    Parameters
+    ----------
+    config_pairs : dict of str -> dict
+        Maps a display label to a two-key dict of sub-configs. Example::
+
+            {
+                'Recon 0.5 vs baseline': {
+                    'baseline': (training_params, model_params, 'mtf_c'),
+                    'experiment': (training_params, model_params, 'mtf_c'),
+                },
+            }
+
+        Each sub-config can be:
+
+        - a tuple ``(training_params, model_params, model)``
+        - a dict with keys ``'training_params'``, ``'model_params'``, ``'model'``
+
+        ``model`` is optional (``None`` matches any model).
+    reference_key : str
+        Key name inside each entry that identifies the reference (denominator).
+    root_dir : str or Path
+        Directory containing dataset subdirectories.
+    save_path : str or None
+        Directory to save output files. Set to None to disable saving.
+    filename : str
+        Base name for output files (saved as {filename}.png and pdf/{filename}.pdf).
+    figsize : tuple
+        Figure dimensions (width, height) in inches.
+    metric : str
+        Metric key to extract from each entry (default ``'mean_acc'``).
+    """
+    style = {
+        'font.family': 'serif',
+        'font.serif': ['Times New Roman', 'DejaVu Serif', 'cmr10'],
+        'mathtext.fontset': 'cm',
+        'axes.edgecolor': '#333333',
+        'axes.linewidth': 1.0,
+        'axes.labelcolor': '#222222',
+        'xtick.color': '#222222',
+        'ytick.color': '#222222',
+        'savefig.dpi': 300,
+        'figure.dpi': 120,
+    }
+
+    root = Path(root_dir)
+    labels = list(config_pairs.keys())
+    n_labels = len(labels)
+
+    # Parse each label → (denominator_subconfig, numerator_subconfig)
+    parsed = []
+    for label in labels:
+        entry = config_pairs[label]
+        if not isinstance(entry, dict):
+            raise TypeError(
+                f"Each config_pairs entry must be a dict; got {type(entry).__name__} "
+                f"for label '{label}'."
+            )
+        keys = list(entry.keys())
+        if reference_key not in keys:
+            raise KeyError(
+                f"reference_key='{reference_key}' not found in config_pairs['{label}']. "
+                f"Available keys: {keys}"
+            )
+        if len(keys) != 2:
+            raise ValueError(
+                f"config_pairs['{label}'] has {len(keys)} keys; expected exactly 2 "
+                f"(one reference, one comparison). Got: {keys}"
+            )
+        ref_key = reference_key
+        num_key = [k for k in keys if k != ref_key][0]
+        parsed.append((
+            _parse_config_item(entry[ref_key]),
+            _parse_config_item(entry[num_key]),
+        ))
+
+    # Accumulate deltas: deltas[label][dataset_name] = delta_value
+    deltas = {label: {} for label in labels}
+
+    for d in sorted(root.iterdir()):
+        if not d.is_dir():
+            continue
+        dataset_name = _extract_dataset_name(d.name)
+        yaml_path = d / 'history.yaml'
+        if not yaml_path.exists():
+            continue
+
+        entries = _load_history(yaml_path)
+
+        for label, ((ref_tp, ref_mp, ref_mf), (num_tp, num_mp, num_mf)) in zip(labels, parsed):
+            ref_val, _ = _find_entry(entries, ref_tp, ref_mp, ref_mf)
+            num_val, _ = _find_entry(entries, num_tp, num_mp, num_mf)
+            if ref_val is not None and num_val is not None and ref_val != 0:
+                delta = (num_val - ref_val) / ref_val * 100
+                deltas[label][dataset_name] = delta
+
+    all_datasets = sorted({
+        dset
+        for label in labels
+        for dset in deltas[label]
+    })
+    if not all_datasets:
+        raise ValueError("No data found for any dataset / config pair.")
+
+    # ---- plotting ----
+    with plt.rc_context(style):
+        fig, ax = plt.subplots(figsize=figsize)
+
+        palette = ['#0173B2', '#DE8F05', '#029E73', '#D55E00',
+                   '#CC78BC', '#CA9161', '#949494', '#56B4E9']
+        markers = ['o', 's', '^', 'D', 'v', 'P', 'X', '*']
+
+        x = np.arange(len(all_datasets))
+
+        for i, label in enumerate(labels):
+            vals = [deltas[label].get(dset, 0) for dset in all_datasets]
+            color = palette[i % len(palette)]
+            marker = markers[i % len(markers)]
+
+            ax.plot(
+                x, vals,
+                label=label,
+                color=color,
+                marker=marker,
+                markersize=8,
+                markeredgecolor=color,
+                markeredgewidth=1.5,
+                markerfacecolor=color,
+                linestyle='--' if line else 'None',
+                linewidth=1.0 if line else 0,
+                alpha=0.5 if line else None,
+                zorder=3,
+            )
+
+        # Zero line
+        ax.axhline(y=0, color='#444444', linestyle='--', linewidth=1.3,
+                   alpha=0.8, zorder=2)
+
+        # Additional horizontal reference lines
+        if hline:
+            for y_val, color in hline:
+                ax.axhline(y=y_val, color=color, linestyle='--', linewidth=1.0,
+                           alpha=0.7, zorder=2)
+
+        # Labels and cosmetics
+        dataset_labels = [
+            DATASET_LABELS.get(d, d) for d in all_datasets
+        ]
+        ax.set_xticks(x)
+        ax.set_xticklabels(dataset_labels, fontsize=11, rotation=90, ha='center')
+
+        ax.set_ylabel(
+            f'{metric.replace("_", " ").title()} Relative Delta (%)',
+            fontsize=13, labelpad=8,
+        )
+        ax.set_title('Paired Comparison – Relative Delta (%)', fontsize=14,
+                     fontweight='bold', pad=14)
+
+        ax.grid(True, which='major', axis='y', alpha=0.3, linewidth=0.7, zorder=0)
+        ax.grid(False, axis='x')
+        ax.set_axisbelow(True)
+
+        for spine in ('top', 'right'):
+            ax.spines[spine].set_visible(False)
+        for spine in ('left', 'bottom'):
+            ax.spines[spine].set_linewidth(1.0)
+            ax.spines[spine].set_color('#333333')
+
+        ax.tick_params(axis='both', which='major', labelsize=10.5, length=4)
+
+        legend = ax.legend(fontsize=9.5, loc='upper left',
+                           bbox_to_anchor=(1.02, 1.0),
+                           frameon=True, framealpha=0.95, edgecolor='#cccccc',
+                           borderpad=0.8, labelspacing=0.6)
+        legend.get_frame().set_linewidth(0.8)
+
+        fig.tight_layout()
+
+        if save_path:
+            os.makedirs(save_path, exist_ok=True)
+            os.makedirs(os.path.join(save_path, 'pdf'), exist_ok=True)
             fig.savefig(os.path.join(save_path, f'{filename}.png'),
                         dpi=300, bbox_inches='tight')
             fig.savefig(os.path.join(save_path, 'pdf', f'{filename}.pdf'),
