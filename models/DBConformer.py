@@ -450,3 +450,15 @@ class DBConformer(nn.Module):
                     )  # → (B, 2*D)
             _, out = self.classifier(x_fused)  # out: (B, n_classes)
         return None, x_fused, out
+    
+    def get_branch_embeddings(self, x):
+        D = self.D
+        _, x_fused, out = self.forward(x)
+
+        x_t = x_fused[:, :D]
+        x_c = x_fused[:, D:]
+
+        return {
+            'temporal': x_t,
+            'channel': x_c
+        }

@@ -591,6 +591,30 @@ class MTFC(nn.Module):
             return spectrum, x_fused, out
         else:
             return x_fused, out
+        
+    def get_branch_embeddings(self, x):
+        D = self.D
+
+        if self.sst_method is not None:
+            spectrum, x_fused, out = self.forward(x)
+            x_s = x_fused[:, :D]
+            x_t = x_fused[:, D:2*D]
+            x_c = x_fused[:, 2*D:]
+
+            return {
+                'spectrum': x_s,
+                'temporal': x_t,
+                'channel': x_c
+            }
+        else:
+            x_fused, out = self.forward(x)
+            x_t = x_fused[:, :D]
+            x_c = x_fused[:, D:]
+
+            return {
+                'temporal': x_t,
+                'channel': x_c
+            }
 
     def _apply_positional_encoding(
         self, x_embed_temporal, x_embed_channel, x_embed_spectrum
