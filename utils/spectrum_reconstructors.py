@@ -98,18 +98,40 @@ class SharedProjectionLayer(nn.Module):
         """
         return self.projection(x)
 
+class EstimatorLayer(nn.Module):
+    """Two-layer MLP that maps D-dimensional embeddings to a scalar.
+
+    Args:
+        emb_size: Input embedding dimension.
+
+    Input shape:
+        x: (..., D)
+
+    Output shape:
+        (..., 1)
+    """
+
+    def __init__(self, emb_size):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(emb_size, emb_size),
+            nn.ELU(),
+            nn.Linear(emb_size, 1),
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+
 # =============================================================================
 # Spectrogram Reconstructors
 # =============================================================================
 class R_SpatioTemporal_AdditionPerBank(nn.Module):
     def __init__(self, n_banks, num_channels, num_patches, emb_size):
+        super().__init__()
         self.n_banks = n_banks
-        self.addition = nn.ModuleList([SpatioTemporalAddition(num_channels, num_patches)] for n in range(n_banks))
-        self.estimator = nn.Sequential(
-            nn.Linear(emb_size, emb_size),
-            nn.ELU(),
-            nn.Linear(emb_size, 1),
-        )
+        self.addition = nn.ModuleList([SpatioTemporalAddition(num_channels, num_patches) for n in range(n_banks)])
+        self.estimator = EstimatorLayer(emb_size)
 
     def forward(self, x_temporal, x_spatial):
         z = []
@@ -122,18 +144,15 @@ class R_SpatioTemporal_AdditionPerBank(nn.Module):
     
 class R_SpatioTemporalProjection_AdditionPerBank(nn.Module):
     def __init__(self, n_banks, num_channels, num_patches, emb_size):
+        super().__init__()
         self.n_banks = n_banks
         self.shared_projetion = SharedProjectionLayer(emb_size)
         self.addition = R_SpatioTemporal_AdditionPerBank(n_banks, num_channels, num_patches, emb_size)
-        self.estimator = nn.Sequential(
-            nn.Linear(emb_size, emb_size),
-            nn.ELU(),
-            nn.Linear(emb_size, 1),
-        )
+        self.estimator = EstimatorLayer(emb_size)
 
     def forward(self, x_temporal, x_spatial):
         z_t = self.shared_projetion(x_temporal)
-        z_c = self.shared_projetionx(x_spatial)
+        z_c = self.shared_projetion(x_spatial)
         z = self.addition(z_t, z_c)
         z = self.estimator(z)
         return z
@@ -162,12 +181,8 @@ class R_SpatioTemporal_ProjectionAdditionPerBank(nn.Module):
         super().__init__()
         self.n_banks = n_banks
         self.shared_projection = nn.ModuleList([SharedProjectionLayer(emb_size) for n in range(n_banks)])
-        self.addition = nn.ModuleList([SpatioTemporalAddition(num_channels, num_patches)] for n in range(n_banks))
-        self.estimator = nn.Sequential(
-            nn.Linear(emb_size, emb_size),
-            nn.ELU(),
-            nn.Linear(emb_size, 1),
-        )
+        self.addition = nn.ModuleList([SpatioTemporalAddition(num_channels, num_patches) for n in range(n_banks)])
+        self.estimator = EstimatorLayer(emb_size)
 
     def forward(self, x_temporal, x_spatial):
         """Project and combine embeddings.
@@ -195,11 +210,7 @@ class R_SpectrumSpatioTemporal_Addition(nn.Module):
     def __init__(self, num_freqs, num_channels, num_patches, emb_size):
         super().__init__()
         self.addition = SpectrumSpatioTemporalAddition(num_freqs, num_channels, num_patches)
-        self.estimator = nn.Sequential(
-            nn.Linear(emb_size, emb_size),
-            nn.ELU(),
-            nn.Linear(emb_size, 1),
-        )
+        self.estimator = EstimatorLayer(emb_size)
 
     def forward(self, x_spectrum, x_temporal, x_spatial):
         z = self.addition(x_spectrum, x_temporal, x_spatial)
