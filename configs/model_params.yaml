@@ -18,7 +18,7 @@ mtf_c:
   patch_emb_size: 40
   patch_size: 100
   posemb_flag: true
-  reconstruction_lambda: 0.01
+  reconstruction_lambda: 0.001
   spa_dim: 16
   spec_depth: 2
   spectrum_attn_flag: false
