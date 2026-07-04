@@ -72,8 +72,10 @@ def across_subjects_evaluation(
 
     subjects_acc = {}
     subjects_reconstruction = {}
+    subjects_sst_error = {}
     sub_acc = []
     sub_reconstruction = []
+    sub_sst_error = []
     sub_loss = []
 
     if model_name  in ['mtf_c', 'mtf_r_c']:
@@ -147,6 +149,7 @@ def across_subjects_evaluation(
             folds_acc = []
             folds_reconstruction = []
             folds_loss = []
+            folds_sst_error = []
 
             for fold in range(n_folds):
                 dm.update_subject(subject=subject, seed=experiment_seed+repeat, fold=fold)
@@ -179,16 +182,23 @@ def across_subjects_evaluation(
                 folds_loss.append(val_metrics["val_loss"])
                 if "val_reconstruction" in val_metrics:
                     folds_reconstruction.append(val_metrics["val_reconstruction"])
+                if "val_sst_error" in val_metrics:
+                    folds_sst_error.append(val_metrics["val_sst_error"])
                 
             folds_acc = np.mean(folds_acc)
             folds_loss = np.mean(folds_loss)
             sub_acc.append(folds_acc)
             sub_loss.append(folds_loss)
+            if len(folds_sst_error) > 0:
+                folds_sst_error = np.mean(folds_sst_error)
+                sub_sst_error.append(folds_sst_error)
             if len(folds_reconstruction) > 0:
                 folds_reconstruction = np.mean(folds_reconstruction)
                 sub_reconstruction.append(folds_reconstruction)
 
         subjects_acc[subject] = np.mean(sub_acc[-n_repeats:]).item()
+        if len(sub_sst_error) > 0:
+            subjects_sst_error[subject] = np.mean(sub_sst_error[-n_repeats:]).item()
         if len(sub_reconstruction) > 0:
             subjects_reconstruction[subject] = np.mean(sub_reconstruction[-n_repeats:]).item()
 
@@ -201,7 +211,21 @@ def across_subjects_evaluation(
     acc_std = np.std(sub_acc).item()
     loss = np.mean(sub_loss).item()
     
-    if len(sub_reconstruction) > 0:
+    if len(subjects_sst_error) > 0:
+        sst_error_mean = np.mean(sub_sst_error)
+        sst_error_std = np.mean(sub_sst_error)
+
+        return {
+            "model_params": model_params,
+            "mean_acc": acc_mean,
+            "std_acc": acc_std,
+            "mean_sst_error": sst_error_mean,
+            "std_sst_error": sst_error_std,
+            "loss": loss,
+            "subjects_acc": subjects_acc,
+            "subjects_sst_error": subjects_sst_error
+        }
+    elif len(sub_reconstruction) > 0:
         reconstruction_mean = np.mean(sub_reconstruction).item()
         reconstruction_std = np.std(sub_reconstruction).item()
 

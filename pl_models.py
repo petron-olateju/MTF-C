@@ -225,7 +225,7 @@ class db_r_conformer(db_conformer):
         self.train_sst_error.update(sst_hat, sst)
 
         self.log("train_loss", loss, prog_bar=True)
-        self.log("sst_error", self.train_sst_error, prog_bar=True)
+        self.log("train_sst_error", self.train_sst_error, prog_bar=True)
         self.log("train_acc", self.train_acc, prog_bar=True)
 
         return loss
@@ -240,7 +240,7 @@ class db_r_conformer(db_conformer):
             self.val_sst_error.update(sst_hat, sst)
 
             self.log("val_loss", loss, prog_bar=True)
-            self.log("sst_error", self.val_sst_error, prog_bar=True)
+            self.log("val_sst_error", self.val_sst_error, prog_bar=True)
             self.log("val_acc", self.val_acc, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
@@ -253,7 +253,7 @@ class db_r_conformer(db_conformer):
             self.test_sst_error.update(sst_hat, sst)
 
             self.log("test_loss", loss, prog_bar=True)
-            self.log("sst_error", self.test_sst_error, prog_bar=True)
+            self.log("test_sst_error", self.test_sst_error, prog_bar=True)
             self.log("test_acc", self.test_acc, prog_bar=True)
 
     def configure_optimizers(self):
@@ -496,7 +496,7 @@ class mtf_r_c(mtf_c):
         self.train_sst_error.update(sst_hat, sst)
 
         self.log("train_loss", loss, prog_bar=True)
-        self.log("sst_error", self.train_sst_error, prog_bar=True)
+        self.log("train_sst_error", self.train_sst_error, prog_bar=True)
         self.log("train_acc", self.train_acc, prog_bar=True)
 
         return loss
@@ -511,7 +511,7 @@ class mtf_r_c(mtf_c):
             self.val_sst_error.update(sst_hat, sst)
 
             self.log("val_loss", loss, prog_bar=True)
-            self.log("sst_error", self.val_sst_error, prog_bar=True)
+            self.log("val_sst_error", self.val_sst_error, prog_bar=True)
             self.log("val_acc", self.val_acc, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
@@ -524,7 +524,7 @@ class mtf_r_c(mtf_c):
             self.test_sst_error.update(sst_hat, sst)
 
             self.log("test_loss", loss, prog_bar=True)
-            self.log("sst_error", self.test_sst_error, prog_bar=True)
+            self.log("test_sst_error", self.test_sst_error, prog_bar=True)
             self.log("test_acc", self.test_acc, prog_bar=True)
 
     def configure_optimizers(self):
