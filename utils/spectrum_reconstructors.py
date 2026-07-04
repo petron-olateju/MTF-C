@@ -51,9 +51,9 @@ class SpatioTemporalAddition(nn.Module):
     
 class SpectrumSpatioTemporalAddition(SpatioTemporalAddition):
     
-    def __init__(self, num_freqs, num_channels, num_patches):
+    def __init__(self, n_banks, num_channels, num_patches):
         super().__init__(num_channels, num_patches)
-        self.F = num_freqs
+        self.F = n_banks
 
     def forward(self, x_spectrum, x_temporal, x_spatial):
         zs = x_spectrum.unsqueeze(1).unsqueeze(3).expand(-1, self.C, -1, self.P, -1)
@@ -129,11 +129,12 @@ class EstimatorLayer(nn.Module):
 class R_SpatioTemporal_AdditionPerBank(nn.Module):
     def __init__(self, n_banks, num_channels, num_patches, emb_size):
         super().__init__()
+        print(f"SST  Target Size: {(num_channels, n_banks, num_patches)}")
         self.n_banks = n_banks
         self.addition = nn.ModuleList([SpatioTemporalAddition(num_channels, num_patches) for n in range(n_banks)])
         self.estimator = EstimatorLayer(emb_size)
 
-    def forward(self, x_temporal, x_spatial):
+    def forward(self, x_spectrum, x_temporal, x_spatial):
         z = []
         for n in range(self.n_banks):
             z_f = self.addition[n](x_temporal, x_spatial)
@@ -145,12 +146,13 @@ class R_SpatioTemporal_AdditionPerBank(nn.Module):
 class R_SpatioTemporalProjection_AdditionPerBank(nn.Module):
     def __init__(self, n_banks, num_channels, num_patches, emb_size):
         super().__init__()
+        print(f"SST  Target Size: {(num_channels, n_banks, num_patches)}")
         self.n_banks = n_banks
         self.shared_projetion = SharedProjectionLayer(emb_size)
         self.addition = R_SpatioTemporal_AdditionPerBank(n_banks, num_channels, num_patches, emb_size)
         self.estimator = EstimatorLayer(emb_size)
 
-    def forward(self, x_temporal, x_spatial):
+    def forward(self, x_spectrum, x_temporal, x_spatial):
         z_t = self.shared_projetion(x_temporal)
         z_c = self.shared_projetion(x_spatial)
         z = self.addition(z_t, z_c)
@@ -179,12 +181,13 @@ class R_SpatioTemporal_ProjectionAdditionPerBank(nn.Module):
 
     def __init__(self, n_banks, num_channels, num_patches, emb_size):
         super().__init__()
+        print(f"SST  Target Size: {(num_channels, n_banks, num_patches)}")
         self.n_banks = n_banks
         self.shared_projection = nn.ModuleList([SharedProjectionLayer(emb_size) for n in range(n_banks)])
         self.addition = nn.ModuleList([SpatioTemporalAddition(num_channels, num_patches) for n in range(n_banks)])
         self.estimator = EstimatorLayer(emb_size)
 
-    def forward(self, x_temporal, x_spatial):
+    def forward(self, x_spectrum, x_temporal, x_spatial):
         """Project and combine embeddings.
 
         Args:
@@ -207,9 +210,10 @@ class R_SpatioTemporal_ProjectionAdditionPerBank(nn.Module):
         return z
     
 class R_SpectrumSpatioTemporal_Addition(nn.Module):
-    def __init__(self, num_freqs, num_channels, num_patches, emb_size):
+    def __init__(self, n_banks, num_channels, num_patches, emb_size):
         super().__init__()
-        self.addition = SpectrumSpatioTemporalAddition(num_freqs, num_channels, num_patches)
+        print(f"SST  Target Size: {(num_channels, n_banks, num_patches)}")
+        self.addition = SpectrumSpatioTemporalAddition(n_banks, num_channels, num_patches)
         self.estimator = EstimatorLayer(emb_size)
 
     def forward(self, x_spectrum, x_temporal, x_spatial):
@@ -218,10 +222,11 @@ class R_SpectrumSpatioTemporal_Addition(nn.Module):
         return z
     
 class R_SpectrumSpatioTemporal_ProjectionAddition(nn.Module):
-    def __init__(self, num_freqs, num_channels, num_patches, emb_size):
+    def __init__(self, n_banks, num_channels, num_patches, emb_size):
         super().__init__()
+        print(f"SST  Target Size: {(num_channels, n_banks, num_patches)}")
         self.shared_projection = SharedProjectionLayer(emb_size)
-        self.addition_estimator = R_SpectrumSpatioTemporal_Addition(num_freqs, num_channels, num_patches, emb_size)
+        self.addition_estimator = R_SpectrumSpatioTemporal_Addition(n_banks, num_channels, num_patches, emb_size)
 
     def forward(self, x_spectrum, x_temporal, x_spatial):
         z_s = self.shared_projection(x_spectrum)

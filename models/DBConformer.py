@@ -399,7 +399,7 @@ class DBConformer(nn.Module):
                     nn.Linear(emb_size, 1),  # D → 1 (score per channel)
                 )
 
-    def forward(self, x):  # x: (B, 1, C, T)
+    def get_branch_embeddings(self, x):
         x = x.squeeze(1)  # → (B, C, T)
         x_embed = self.embedding(x)  # → (B, P, D)
         x_embed_spatial = self.channel_embedding(x)  # (B, C, D)
@@ -415,6 +415,16 @@ class DBConformer(nn.Module):
         x_temporal = self.temporal_transformer(x_embed)  # (B, P, D)
         # Spatial Transformer (attention over channels interpreted as tokens)
         x_spatial = self.spatial_transformer(x_embed_spatial)  # (B, C, D)
+
+        return {
+            'temporal': x_temporal,
+            'channel': x_spatial
+        }
+
+    def forward(self, x):  # x: (B, 1, C, T)
+        branch_emb = self.get_branch_embeddings(x)
+        x_temporal = branch_emb['temporal']
+        x_spatial = branch_emb['channel']
 
         if self.branch == "temporal":
             x_fused = x_temporal.mean(dim=1)
@@ -449,16 +459,4 @@ class DBConformer(nn.Module):
                         [x_temporal.mean(dim=1), x_spatial.mean(dim=1)], dim=-1
                     )  # → (B, 2*D)
             _, out = self.classifier(x_fused)  # out: (B, n_classes)
-        return None, x_fused, out
-    
-    def get_branch_embeddings(self, x):
-        D = self.D
-        _, x_fused, out = self.forward(x)
-
-        x_t = x_fused[:, :D]
-        x_c = x_fused[:, D:]
-
-        return {
-            'temporal': x_t,
-            'channel': x_c
-        }
+        return branch_emb, None, x_fused, out

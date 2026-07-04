@@ -526,20 +526,7 @@ class MTFC(nn.Module):
             classifier_input_dim = self.D * 2
         self.classifier = ClassificationHead(classifier_input_dim, self.n_classes)
 
-    def forward(self, x):
-        """Forward pass of MTFC model.
-
-        Args:
-            x: Input EEG signals (B, 1, C, T).
-
-        Returns:
-            If stft_reconstruction=True:
-                (loomed_stft, x_embed, out)
-            Otherwise:
-                (None, x_embed, out)
-        """
-        stft = None
-
+    def get_branch_embeddings(self, x):
         if self.sst_method is not None:
             x_embed_spectrum = self.spectrum_embedding(x.squeeze(1))
         else:
@@ -554,8 +541,35 @@ class MTFC(nn.Module):
 
         if self.sst_method is not None:
             x_s = self.transformers['s'](x_embed_spectrum)
+        else:
+            x_s = None
         x_t = self.transformers['t'](x_embed_temporal)
         x_c = self.transformers['c'](x_embed_channel)
+
+        return {
+            'spectrum': x_s,
+            'temporal': x_t,
+            'channel': x_c
+        }, x_embed_spectrum
+
+    def forward(self, x):
+        """Forward pass of MTFC model.
+
+        Args:
+            x: Input EEG signals (B, 1, C, T).
+
+        Returns:
+            If stft_reconstruction=True:
+                (loomed_stft, x_embed, out)
+            Otherwise:
+                (None, x_embed, out)
+        """
+        stft = None
+
+        branch_embd, x_embed_spectrum = self.get_branch_embeddings(x)
+        x_s = branch_embd['spectrum']
+        x_t = branch_embd['temporal']
+        x_c = branch_embd['channel']
 
         if self.chn_attn_flag:
             chn_attn_scores = self.channel_attention_pool(x_c)
@@ -588,33 +602,9 @@ class MTFC(nn.Module):
 
         if self.sst_method is not None:
             spectrum = self.spectrum_embedding_to_spectrum(x_embed_spectrum).squeeze(-1)
-            return spectrum, x_fused, out
+            return branch_embd, spectrum, x_fused, out
         else:
-            return x_fused, out
-        
-    def get_branch_embeddings(self, x):
-        D = self.D
-
-        if self.sst_method is not None:
-            spectrum, x_fused, out = self.forward(x)
-            x_s = x_fused[:, :D]
-            x_t = x_fused[:, D:2*D]
-            x_c = x_fused[:, 2*D:]
-
-            return {
-                'spectrum': x_s,
-                'temporal': x_t,
-                'channel': x_c
-            }
-        else:
-            x_fused, out = self.forward(x)
-            x_t = x_fused[:, :D]
-            x_c = x_fused[:, D:]
-
-            return {
-                'temporal': x_t,
-                'channel': x_c
-            }
+            return branch_embd, x_fused, out
 
     def _apply_positional_encoding(
         self, x_embed_temporal, x_embed_channel, x_embed_spectrum

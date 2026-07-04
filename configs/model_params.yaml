@@ -1,29 +1,46 @@
-db_conformer:
+db_conformer: &db_conformer
   branch: all
   chn_attn_flag: true
   chn_depth: 2
-  emb_size: 40
-  gate_flag: false
-  patch_size: 100
-  posemb_flag: true
-  spa_dim: 16
   tem_depth: 2
-mtf_c:
-  chn_attn_flag: true
-  chn_depth: 2
-  filter_banks: 11
-  filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
-  freq_downsample: 1
+  emb_size: 40
+  patch_size: 100
+  spa_dim: 16
+
+  posemb_flag: true
   gate_flag: false
+
+  sst_method: stft
+  sst_decoder: null
+  filter_banks: 11
+  freq_downsample: 1
+
+  pretrain: true
+db_r_conformer: *db_conformer
+
+mtf_c: &mtf_c
+  spectrum_attn_flag: false
+  chn_attn_flag: true
+  temporal_attn_flag: false
+  spec_depth: 2
+  chn_depth: 2
+  tem_depth: 2
   patch_emb_size: 40
   patch_size: 100
-  posemb_flag: true
-  reconstruction_lambda: 0.001
   spa_dim: 16
-  spec_depth: 2
-  spectrum_attn_flag: false
-  sst_method: frequency_backbone
-  tem_depth: 2
-  temporal_attn_flag: false
+
+  posemb_flag: true
+  gate_flag: false
+  
+  reconstruction_lambda: 0.001
+  filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
   temporal_kernel: 43
   wsize_divisor: 2
+
+  sst_method: frequency_backbone
+  sst_decoder: null
+  filter_banks: 11
+  freq_downsample: 1
+
+  pretrain: true
+mtf_r_c: *mtf_c
