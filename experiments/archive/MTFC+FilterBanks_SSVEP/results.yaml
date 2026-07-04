@@ -1,0 +1,93 @@
+mtf_c:
+  '2026-03-26T10:03:09.965282':
+    config:
+      val_size: 0.0
+      n_iter: 100
+      eval_inter: 5
+      folds: 5
+      n_repeats: 1
+      lr: 0.001
+      batch_size: 32
+    results:
+      Kalunga2016:
+        accuracy:
+          mean: 0.7840080246329308
+          std: 0.128411079395043
+        kappa:
+          mean: 0.5680160492658616
+          std: 0.256822158790086
+        stft_reconstruction_loss: null
+      Nakanishi2015:
+        accuracy:
+          mean: 0.7753855378854843
+          std: 0.15261176741928026
+        kappa:
+          mean: 0.5507710757709684
+          std: 0.3052235348385605
+        stft_reconstruction_loss: null
+      Wang2021Combined:
+        accuracy:
+          mean: 0.6669027455921831
+          std: 0.22092796134851866
+        kappa:
+          mean: 0.3338054911843661
+          std: 0.4418559226970373
+        stft_reconstruction_loss: null
+  '2026-03-26T21:46:58.290059':
+    experiment_description: MTFC + FilterBanks (No STFT reconstruction, f_t_s branch
+      method) base performance on SSVEP datasets, frequency spectrum reconstruction
+      included
+    config:
+      training:
+        val_size: 0.0
+        n_iter: 100
+        eval_inter: 5
+        folds: 5
+        n_repeats: 1
+        lr: 0.001
+        batch_size: 32
+      model:
+        patch_size: 100
+        filter_banks: 100
+        freq_downsample: 1
+        wsize_divisor: 2
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+        branch: f_t_s
+        chn_attn_flag: false
+        fts_attn_flag: false
+        sst_method: filter_banks
+        stft_reconstruction: frequency
+        ct_shared_projection: false
+        sst_shared_projection: false
+        patch_emb_size: 40
+        n_heads_patch: 4
+        sst_emb_size: 40
+        tem_depth: 1
+        chn_depth: 1
+    results:
+      Kalunga2016:
+        accuracy:
+          mean: 0.8007079904278119
+          std: 0.10581979144720999
+        kappa:
+          mean: 0.6014159808556239
+          std: 0.21163958289441992
+        stft_reconstruction_loss: 0.05798910375063618
+      Nakanishi2015:
+        accuracy:
+          mean: 0.7923688516730353
+          std: 0.15064543676460518
+        kappa:
+          mean: 0.5847377033460708
+          std: 0.30129087352921036
+        stft_reconstruction_loss: 0.05162133695114227
+      Wang2021Combined:
+        accuracy:
+          mean: 0.6801492836968651
+          std: 0.22483508209492675
+        kappa:
+          mean: 0.36029856739373045
+          std: 0.44967016418985356
+        stft_reconstruction_loss: 0.04705317314585734

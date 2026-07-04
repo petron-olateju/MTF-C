@@ -1,0 +1,32 @@
+mtf_c:
+  BNCI2014_004:
+    subject_8:
+    - timestamp: '2026-03-10T15:48:46.258039'
+      model: mtf_c
+      hyperparameters:
+        patch_size: 120
+        filter_banks: 7
+        wsize_divisor: 2
+        sst_method: stf_attention_temporal_values
+        stft_reconstruction: true
+        patch_emb_size: 20
+        n_heads_patch: 5
+        sst_emb_size: 40
+        branch: all
+        chn_attn_flag: false
+        fts_attn_flag: true
+        tem_depth: 1
+        chn_depth: 1
+        spa_dim: 16
+        gate_flag: false
+        posemb_flag: true
+      dataset: BNCI2014_004
+      subject: 8
+      metrics:
+        accuracy:
+          mean: 0.68875
+          std: 0.00829156197588847
+        kappa:
+          mean: 0.37750000000000006
+          std: 0.37750000000000006
+        stft_reconstruction_loss: 0.22883697926998137

@@ -212,8 +212,8 @@ def across_subjects_evaluation(
     loss = np.mean(sub_loss).item()
     
     if len(subjects_sst_error) > 0:
-        sst_error_mean = np.mean(sub_sst_error)
-        sst_error_std = np.mean(sub_sst_error)
+        sst_error_mean = np.mean(sub_sst_error).item()
+        sst_error_std = np.mean(sub_sst_error).item()
 
         return {
             "model_params": model_params,

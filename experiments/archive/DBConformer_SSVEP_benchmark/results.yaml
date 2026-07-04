@@ -1,0 +1,37 @@
+db_conformer:
+  Kalunga2016:
+  - timestamp: '2026-03-26T08:22:29.856400'
+    model: db_conformer
+    dataset: Kalunga2016
+    metrics:
+      accuracy:
+        mean: 0.8079991882046064
+        std: 0.1033775405014723
+      kappa:
+        mean: 0.6159983764092128
+        std: 0.2067550810029446
+      stft_reconstruction_loss: null
+  Nakanishi2015:
+  - timestamp: '2026-03-26T08:24:16.219370'
+    model: db_conformer
+    dataset: Nakanishi2015
+    metrics:
+      accuracy:
+        mean: 0.810076917069299
+        std: 0.1491969898154375
+      kappa:
+        mean: 0.6201538341385978
+        std: 0.298393979630875
+      stft_reconstruction_loss: null
+  Wang2021Combined:
+  - timestamp: '2026-03-26T08:53:54.298906'
+    model: db_conformer
+    dataset: Wang2021Combined
+    metrics:
+      accuracy:
+        mean: 0.694624663735258
+        std: 0.22845004822185255
+      kappa:
+        mean: 0.3892493274705164
+        std: 0.45690009644370516
+      stft_reconstruction_loss: null
