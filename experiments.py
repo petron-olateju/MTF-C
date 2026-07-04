@@ -31,7 +31,7 @@ def get_model(model_name, dataset_name, dataset_info, lr, subject):
     MODEL_PARAMS["class_num"] = dataset_info["n_classes"]
     MODEL_PARAMS["lr"] = lr
     MODEL_PARAMS["fs"] = dataset_info['fs']
-    MODEL_PARAMS["pretrain_dir"] = os.path.join(CKPT, f'|subject:{subject}.ckpt')
+    MODEL_PARAMS["pretrain_dir"] = f'{CKPT}|subject:{subject}.ckpt'
 
     return NAME_MODEL_MAP[model_name](MODEL_PARAMS), MODEL_PARAMS
 
