@@ -1006,3 +1006,186 @@
     7: 0.7416666746139526
     8: 0.625
     9: 0.6666666865348816
+'2026-07-04T02:47:00.004364':
+  model: mtf_c
+  details:
+  - Frequency spectrum reconstruction, lambda=0.001
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - spectrum_attn_pooling=True
+  - temporal_attn_pooling=True
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: true
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: true
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_004
+    chn: 3
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.6847222248713175
+  std_acc: 0.1044163711372353
+  loss: 0.7111726436350081
+  subjects_acc:
+    1: 0.9083333611488342
+    2: 0.6833333373069763
+    3: 0.6416666507720947
+    4: 0.5833333134651184
+    5: 0.5333333611488342
+    6: 0.7749999761581421
+    7: 0.7333333492279053
+    8: 0.637499988079071
+    9: 0.6666666865348816
+'2026-07-04T03:04:36.109170':
+  model: mtf_c
+  details:
+  - Frequency spectrum reconstruction, lambda=0.001
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - spectrum_attn_pooling=True
+  - temporal_attn_pooling=False
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: true
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_004
+    chn: 3
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7023148205545213
+  std_acc: 0.09620721844183909
+  loss: 0.6428899301422967
+  subjects_acc:
+    1: 0.8999999761581421
+    2: 0.6583333611488342
+    3: 0.6583333611488342
+    4: 0.7833333611488342
+    5: 0.550000011920929
+    6: 0.7583333253860474
+    7: 0.7250000238418579
+    8: 0.637499988079071
+    9: 0.6499999761581421
+'2026-07-04T03:20:53.542450':
+  model: mtf_c
+  details:
+  - Frequency spectrum reconstruction, lambda=0.001
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - spectrum_attn_pooling=False
+  - temporal_attn_pooling=True
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: true
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_004
+    chn: 3
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+  mean_acc: 0.7004629572232565
+  std_acc: 0.0881139063831687
+  loss: 0.6681858499844869
+  subjects_acc:
+    1: 0.8999999761581421
+    2: 0.675000011920929
+    3: 0.6499999761581421
+    4: 0.7333333492279053
+    5: 0.574999988079071
+    6: 0.75
+    7: 0.7333333492279053
+    8: 0.637499988079071
+    9: 0.6499999761581421

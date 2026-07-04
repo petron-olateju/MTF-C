@@ -1007,3 +1007,195 @@
     10: 1.0
     11: 0.6000000238418579
     12: 0.6000000238418579
+'2026-07-03T20:50:38.760959':
+  model: mtf_c
+  details:
+  - Frequency spectrum reconstruction, lambda=0.001
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - spectrum_attn_pooling=True
+  - temporal_attn_pooling=True
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: true
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: true
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.6500000059604645
+  std_acc: 0.13844372817841288
+  loss: 0.8087494025627772
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.6000000238418579
+    3: 0.6000000238418579
+    4: 0.800000011920929
+    5: 0.5
+    6: 0.5
+    7: 0.800000011920929
+    8: 0.5
+    9: 0.699999988079071
+    10: 0.8999999761581421
+    11: 0.6000000238418579
+    12: 0.5
+'2026-07-03T20:56:25.291951':
+  model: mtf_c
+  details:
+  - Frequency spectrum reconstruction, lambda=0.001
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - spectrum_attn_pooling=True
+  - temporal_attn_pooling=False
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: true
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.6750000019868215
+  std_acc: 0.11636866062884285
+  loss: 0.7974412043889364
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.6000000238418579
+    3: 0.6000000238418579
+    4: 0.800000011920929
+    5: 0.5
+    6: 0.699999988079071
+    7: 0.699999988079071
+    8: 0.5
+    9: 0.699999988079071
+    10: 0.8999999761581421
+    11: 0.6000000238418579
+    12: 0.699999988079071
+'2026-07-03T21:01:06.750474':
+  model: mtf_c
+  details:
+  - Frequency spectrum reconstruction, lambda=0.001
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - spectrum_attn_pooling=False
+  - temporal_attn_pooling=True
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: true
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.6583333363135656
+  std_acc: 0.13819269690242086
+  loss: 0.7828999112049738
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.699999988079071
+    3: 0.6000000238418579
+    4: 0.800000011920929
+    5: 0.5
+    6: 0.5
+    7: 0.699999988079071
+    8: 0.5
+    9: 0.800000011920929
+    10: 0.8999999761581421
+    11: 0.5
+    12: 0.6000000238418579
