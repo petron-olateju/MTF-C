@@ -859,3 +859,483 @@
     18: 1.0
     19: 0.7142857313156128
     20: 0.7142857313156128
+'2026-07-02T10:35:38.635027':
+  model: db_conformer
+  details:
+  - db_conformer baseline
+  - make transformer depth=2 across all branches
+  - use just one LOSO repeat
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    spa_dim: 16
+    tem_depth: 2
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.8534878931547466
+  std_acc: 0.1784510125955934
+  loss: 0.636510293734701
+  subjects_acc:
+    1: 0.625
+    2: 0.5555555820465088
+    3: 0.7142857313156128
+    4: 1.0
+    5: 0.75
+    6: 1.0
+    8: 1.0
+    9: 0.7142857313156128
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 0.7142857313156128
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 0.5714285969734192
+    20: 0.5714285969734192
+'2026-07-02T12:03:44.046474':
+  model: mtf_c
+  details:
+  - Deactivate spectrum reconstruction
+  - make transformer depth=2 across all branches
+  - use just one LOSO repeat
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.0
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: null
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.8401211437426115
+  std_acc: 0.18100462034111184
+  loss: 0.571092873419586
+  subjects_acc:
+    1: 0.5
+    2: 0.5555555820465088
+    3: 0.7142857313156128
+    4: 1.0
+    5: 0.875
+    6: 0.8888888955116272
+    8: 1.0
+    9: 0.5714285969734192
+    10: 1.0
+    11: 0.8571428656578064
+    12: 1.0
+    13: 1.0
+    14: 0.7142857313156128
+    15: 1.0
+    16: 1.0
+    17: 0.5714285969734192
+    18: 1.0
+    19: 1.0
+    20: 0.7142857313156128
+'2026-07-02T12:08:16.932865':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.001) with channel attention pooling
+  - make transformer depth=2 across all branches
+  - use just one LOSO repeat
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.9418337533348485
+  std_acc: 0.1286957304211087
+  loss: 0.5653856835867229
+  subjects_acc:
+    1: 0.625
+    2: 0.5555555820465088
+    3: 0.8571428656578064
+    4: 1.0
+    5: 1.0
+    6: 1.0
+    8: 1.0
+    9: 0.8571428656578064
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 1.0
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 1.0
+    20: 1.0
+'2026-07-02T12:16:30.665198':
+  model: mtf_c
+  details:
+  - frequency spectrum reconstruction (lambda=0.01) with channel attention pooling
+  - make transformer depth=2 across all branches
+  - use just one LOSO repeat
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.01
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.8575605750083923
+  std_acc: 0.1549727224076049
+  loss: 0.7366461361709394
+  subjects_acc:
+    1: 0.75
+    2: 0.5555555820465088
+    3: 0.8571428656578064
+    4: 0.7142857313156128
+    5: 0.75
+    6: 0.6666666865348816
+    8: 1.0
+    9: 0.8571428656578064
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 0.8571428656578064
+    14: 0.7142857313156128
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 1.0
+    20: 0.5714285969734192
+'2026-07-03T21:05:47.289482':
+  model: mtf_c
+  details:
+  - Frequency spectrum reconstruction, lambda=0.001
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - spectrum_attn_pooling=True
+  - temporal_attn_pooling=True
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: true
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: true
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.9343149567905226
+  std_acc: 0.129249727683765
+  loss: 0.6625586010907826
+  subjects_acc:
+    1: 0.625
+    2: 0.5555555820465088
+    3: 0.8571428656578064
+    4: 1.0
+    5: 1.0
+    6: 1.0
+    8: 1.0
+    9: 0.8571428656578064
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 1.0
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 0.8571428656578064
+    20: 1.0
+'2026-07-03T21:17:08.253169':
+  model: mtf_c
+  details:
+  - Frequency spectrum reconstruction, lambda=0.001
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - spectrum_attn_pooling=True
+  - temporal_attn_pooling=False
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: true
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.9343149567905226
+  std_acc: 0.129249727683765
+  loss: 0.5973708272764557
+  subjects_acc:
+    1: 0.625
+    2: 0.5555555820465088
+    3: 0.8571428656578064
+    4: 1.0
+    5: 1.0
+    6: 1.0
+    8: 1.0
+    9: 0.8571428656578064
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 1.0
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 0.8571428656578064
+    20: 1.0
+'2026-07-03T21:26:14.293403':
+  model: mtf_c
+  details:
+  - Frequency spectrum reconstruction, lambda=0.001
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - spectrum_attn_pooling=False
+  - temporal_attn_pooling=True
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: true
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+  mean_acc: 0.9277360094221014
+  std_acc: 0.15395693903469546
+  loss: 0.6089182558812594
+  subjects_acc:
+    1: 0.5
+    2: 0.5555555820465088
+    3: 0.8571428656578064
+    4: 1.0
+    5: 1.0
+    6: 1.0
+    8: 1.0
+    9: 0.7142857313156128
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 1.0
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 1.0
+    20: 1.0
