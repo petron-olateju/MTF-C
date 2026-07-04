@@ -155,8 +155,7 @@ class R_SpatioTemporalProjection_AdditionPerBank(nn.Module):
     def forward(self, x_spectrum, x_temporal, x_spatial):
         z_t = self.shared_projetion(x_temporal)
         z_c = self.shared_projetion(x_spatial)
-        z = self.addition(z_t, z_c)
-        z = self.estimator(z)
+        z = self.addition(x_spectrum, z_t, z_c)
         return z
     
 class R_SpatioTemporal_ProjectionAdditionPerBank(nn.Module):
@@ -206,7 +205,7 @@ class R_SpatioTemporal_ProjectionAdditionPerBank(nn.Module):
             z.append(z_ct_f.unsqueeze(dim=2))
         
         z = torch.concat(z, dim=2)
-        z = self.estimator(z)
+        z = self.estimator(z).squeeze(-1)
         return z
     
 class R_SpectrumSpatioTemporal_Addition(nn.Module):
@@ -218,7 +217,7 @@ class R_SpectrumSpatioTemporal_Addition(nn.Module):
 
     def forward(self, x_spectrum, x_temporal, x_spatial):
         z = self.addition(x_spectrum, x_temporal, x_spatial)
-        z = self.estimator(z)
+        z = self.estimator(z).squeeze(-1)
         return z
     
 class R_SpectrumSpatioTemporal_ProjectionAddition(nn.Module):
@@ -233,7 +232,7 @@ class R_SpectrumSpatioTemporal_ProjectionAddition(nn.Module):
         z_t = self.shared_projection(x_temporal)
         z_c = self.shared_projection(x_spatial)
 
-        z = self.addition_estimator(z_s, z_t, z_c)
+        z = self.addition_estimator(z_s, z_t, z_c).squeeze(-1)
         return z
         
 

@@ -171,7 +171,7 @@ class db_r_conformer(db_conformer):
                 emb_size=MODEL_ARGS['emb_size']
             )
         else:
-            raise ValueError(f"decoder for db_conformer can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition']}")
+            raise ValueError(f"decoder for db_conformer cannot be {self.sst_decoder_name}, can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition']}")
 
         self.train_sst_error = MeanSquaredError()
         self.val_sst_error = MeanSquaredError()
@@ -454,7 +454,7 @@ class mtf_r_c(mtf_c):
         elif self.decoder.name in ['sst_addition', 'sst_projection+addition']:
             sst_hat = self.decoder(x_spectrum, x_temporal, x_channel)
         else:
-            raise ValueError(f"decoder for mtf_c can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition']}")
+            raise ValueError(f"decoder for mtf_c cannot be {self.sst_decoder_name}, can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition']}")
 
         return sst_hat
 

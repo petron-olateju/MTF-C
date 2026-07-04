@@ -10,3 +10,4 @@ n_epochs: 100
 preprocessing_args:
  - 'bandpass'
  - 'EA'
+ - 'scale_sst'

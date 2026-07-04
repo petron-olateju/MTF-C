@@ -121,8 +121,13 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
                 freq_downsample=self.freq_downsample,
                 fs=fs
             )
-            X_sst = torch.tensor(X_sst, dtype=torch.float32)
 
+            if 'SCALE_SST' in [ppo.upper() for ppo in self.preprocessing_args]:
+                min_ = X_sst.min(axis=(1, 2, 3), keepdims=True)
+                max_ = X_sst.max(axis=(1, 2,3), keepdims=True)
+                X_sst = (X_sst - min_) / (max_ - min_ + 1e-8)
+
+        X_sst = torch.tensor(X_sst, dtype=torch.float32)
         print(f"SST Data Shape: {X_sst.size()}")
         return X_sst
 
