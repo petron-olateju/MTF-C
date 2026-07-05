@@ -1,0 +1,670 @@
+'2026-07-05T05:04:27.581618':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_addition
+    sst_method: stft
+    tem_depth: 2
+    data_name: BNCI2014_002
+    chn: 15
+    time_sample_num: 1536
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=BNCI2014_002
+      | validation_strategy=loso/2026-07-02T11:02:01.099679|model:db_conformer|subject:14.ckpt
+  mean_acc: 0.7665178605488369
+  std_acc: 0.129335678130235
+  mean_sst_error: 219.0294902782355
+  std_sst_error: 785.2524064278527
+  loss: 219.0294902920723
+  subjects_acc:
+    1: 0.625
+    2: 0.8500000238418579
+    3: 0.9624999761581421
+    4: 0.831250011920929
+    5: 0.768750011920929
+    6: 0.824999988079071
+    7: 0.949999988079071
+    8: 0.643750011920929
+    9: 0.9437500238418579
+    10: 0.71875
+    11: 0.78125
+    12: 0.668749988079071
+    13: 0.5687500238418579
+    14: 0.59375
+  subjects_sst_error:
+    1: 0.1407954841852188
+    2: 0.23580986261367798
+    3: 0.4321005046367645
+    4: 0.27286696434020996
+    5: 0.2746814489364624
+    6: 0.16996555030345917
+    7: 0.4102883040904999
+    8: 3050.27783203125
+    9: 0.5766425728797913
+    10: 0.21345864236354828
+    11: 0.299402117729187
+    12: 0.6361254453659058
+    13: 0.7815878987312317
+    14: 11.691307067871094
+'2026-07-05T05:25:09.402572':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_002
+    chn: 15
+    time_sample_num: 1536
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=BNCI2014_002
+      | validation_strategy=loso/2026-07-02T14:20:39.300169|model:mtf_c|subject:14.ckpt
+  mean_acc: 0.7660714302744184
+  std_acc: 0.12829832390396842
+  mean_sst_error: 229.16402323544025
+  std_sst_error: 821.7520534716982
+  loss: 229.16404075814145
+  subjects_acc:
+    1: 0.643750011920929
+    2: 0.856249988079071
+    3: 0.9437500238418579
+    4: 0.8125
+    5: 0.7749999761581421
+    6: 0.8125
+    7: 0.9437500238418579
+    8: 0.6499999761581421
+    9: 0.956250011920929
+    10: 0.71875
+    11: 0.8062499761581421
+    12: 0.6625000238418579
+    13: 0.5625
+    14: 0.581250011920929
+  subjects_sst_error:
+    1: 0.1382998675107956
+    2: 0.2348463088274002
+    3: 0.43078866600990295
+    4: 0.2688358724117279
+    5: 0.2743123471736908
+    6: 0.16641010344028473
+    7: 0.40793612599372864
+    8: 3192.013916015625
+    9: 0.5724428296089172
+    10: 0.21196042001247406
+    11: 0.2960413992404938
+    12: 0.6291121244430542
+    13: 0.7628791332244873
+    14: 11.888544082641602
+'2026-07-05T05:51:17.206250':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_projection+addition
+    sst_method: stft
+    tem_depth: 2
+    data_name: BNCI2014_002
+    chn: 15
+    time_sample_num: 1536
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=BNCI2014_002
+      | validation_strategy=loso/2026-07-02T11:02:01.099679|model:db_conformer|subject:14.ckpt
+  mean_acc: 0.7665178605488369
+  std_acc: 0.129335678130235
+  mean_sst_error: 213.50235170471882
+  std_sst_error: 766.477916668796
+  loss: 213.502351705251
+  subjects_acc:
+    1: 0.625
+    2: 0.8500000238418579
+    3: 0.9624999761581421
+    4: 0.831250011920929
+    5: 0.768750011920929
+    6: 0.824999988079071
+    7: 0.949999988079071
+    8: 0.643750011920929
+    9: 0.9437500238418579
+    10: 0.71875
+    11: 0.78125
+    12: 0.668749988079071
+    13: 0.5687500238418579
+    14: 0.59375
+  subjects_sst_error:
+    1: 0.053021613508462906
+    2: 0.0576506182551384
+    3: 0.07563508301973343
+    4: 0.0693294107913971
+    5: 0.05074357986450195
+    6: 0.041888248175382614
+    7: 0.09375307708978653
+    8: 2977.060302734375
+    9: 0.18930743634700775
+    10: 0.03987937793135643
+    11: 0.06369753181934357
+    12: 0.253403902053833
+    13: 0.26703372597694397
+    14: 10.717277526855469
+'2026-07-05T06:22:53.106705':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_projection+addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_002
+    chn: 15
+    time_sample_num: 1536
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=BNCI2014_002
+      | validation_strategy=loso/2026-07-02T14:20:39.300169|model:mtf_c|subject:14.ckpt
+  mean_acc: 0.7660714302744184
+  std_acc: 0.12829832390396842
+  mean_sst_error: 209.83562293249582
+  std_sst_error: 753.0852571067403
+  loss: 209.83560549467802
+  subjects_acc:
+    1: 0.643750011920929
+    2: 0.856249988079071
+    3: 0.9437500238418579
+    4: 0.8125
+    5: 0.7749999761581421
+    6: 0.8125
+    7: 0.9437500238418579
+    8: 0.6499999761581421
+    9: 0.956250011920929
+    10: 0.71875
+    11: 0.8062499761581421
+    12: 0.6625000238418579
+    13: 0.5625
+    14: 0.581250011920929
+  subjects_sst_error:
+    1: 0.056705210357904434
+    2: 0.07732578366994858
+    3: 0.08348957449197769
+    4: 0.06879987567663193
+    5: 0.055643513798713684
+    6: 0.04762829467654228
+    7: 0.1014404371380806
+    8: 2925.103271484375
+    9: 0.19486868381500244
+    10: 0.04836956411600113
+    11: 0.0585067979991436
+    12: 0.23229607939720154
+    13: 0.24967415630817413
+    14: 11.320701599121094
+'2026-07-05T07:00:08.822875':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_projection_addition
+    sst_method: stft
+    tem_depth: 2
+    data_name: BNCI2014_002
+    chn: 15
+    time_sample_num: 1536
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=BNCI2014_002
+      | validation_strategy=loso/2026-07-02T11:02:01.099679|model:db_conformer|subject:14.ckpt
+  mean_acc: 0.7665178605488369
+  std_acc: 0.129335678130235
+  mean_sst_error: 233.36726963626487
+  std_sst_error: 836.8643362152375
+  loss: 233.36726956920964
+  subjects_acc:
+    1: 0.625
+    2: 0.8500000238418579
+    3: 0.9624999761581421
+    4: 0.831250011920929
+    5: 0.768750011920929
+    6: 0.824999988079071
+    7: 0.949999988079071
+    8: 0.643750011920929
+    9: 0.9437500238418579
+    10: 0.71875
+    11: 0.78125
+    12: 0.668749988079071
+    13: 0.5687500238418579
+    14: 0.59375
+  subjects_sst_error:
+    1: 0.13241112232208252
+    2: 0.22166606783866882
+    3: 0.4235568046569824
+    4: 0.26707613468170166
+    5: 0.26844629645347595
+    6: 0.1614535003900528
+    7: 0.40145325660705566
+    8: 3250.704833984375
+    9: 0.5577585101127625
+    10: 0.20555704832077026
+    11: 0.290587842464447
+    12: 0.6193382740020752
+    13: 0.7677544355392456
+    14: 12.119881629943848
+'2026-07-05T07:22:46.141292':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_projection_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_002
+    chn: 15
+    time_sample_num: 1536
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=BNCI2014_002
+      | validation_strategy=loso/2026-07-02T14:20:39.300169|model:mtf_c|subject:14.ckpt
+  mean_acc: 0.7660714302744184
+  std_acc: 0.12829832390396842
+  mean_sst_error: 235.20995518032993
+  std_sst_error: 843.4092641710503
+  loss: 235.2099726263966
+  subjects_acc:
+    1: 0.643750011920929
+    2: 0.856249988079071
+    3: 0.9437500238418579
+    4: 0.8125
+    5: 0.7749999761581421
+    6: 0.8125
+    7: 0.9437500238418579
+    8: 0.6499999761581421
+    9: 0.956250011920929
+    10: 0.71875
+    11: 0.8062499761581421
+    12: 0.6625000238418579
+    13: 0.5625
+    14: 0.581250011920929
+  subjects_sst_error:
+    1: 0.13389723002910614
+    2: 0.22207646071910858
+    3: 0.42454269528388977
+    4: 0.2657241225242615
+    5: 0.26934537291526794
+    6: 0.16170506179332733
+    7: 0.4040064811706543
+    8: 3276.14453125
+    9: 0.556117832660675
+    10: 0.20555362105369568
+    11: 0.2891238331794739
+    12: 0.6176075339317322
+    13: 0.7644309997558594
+    14: 12.48071002960205
+'2026-07-05T07:51:12.234643':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_002
+    chn: 15
+    time_sample_num: 1536
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=BNCI2014_002
+      | validation_strategy=loso/2026-07-02T14:20:39.300169|model:mtf_c|subject:14.ckpt
+  mean_acc: 0.7660714302744184
+  std_acc: 0.12829832390396842
+  mean_sst_error: 255.37220647665006
+  std_sst_error: 916.58869985162
+  loss: 255.37224142146962
+  subjects_acc:
+    1: 0.643750011920929
+    2: 0.856249988079071
+    3: 0.9437500238418579
+    4: 0.8125
+    5: 0.7749999761581421
+    6: 0.8125
+    7: 0.9437500238418579
+    8: 0.6499999761581421
+    9: 0.956250011920929
+    10: 0.71875
+    11: 0.8062499761581421
+    12: 0.6625000238418579
+    13: 0.5625
+    14: 0.581250011920929
+  subjects_sst_error:
+    1: 0.07830321788787842
+    2: 0.11369933933019638
+    3: 0.20089346170425415
+    4: 0.13667404651641846
+    5: 0.13277122378349304
+    6: 0.09666641801595688
+    7: 0.1837286353111267
+    8: 3560.158935546875
+    9: 0.30949273705482483
+    10: 0.09479077905416489
+    11: 0.11447827517986298
+    12: 0.3364216089248657
+    13: 0.4033311903476715
+    14: 12.850704193115234
+'2026-07-05T08:16:54.709915':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_projection+addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: BNCI2014_002
+    chn: 15
+    time_sample_num: 1536
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=BNCI2014_002
+      | validation_strategy=loso/2026-07-02T14:20:39.300169|model:mtf_c|subject:14.ckpt
+  mean_acc: 0.7660714302744184
+  std_acc: 0.12829832390396842
+  mean_sst_error: 237.95274812781386
+  std_sst_error: 854.0278471533245
+  loss: 237.95274813526444
+  subjects_acc:
+    1: 0.643750011920929
+    2: 0.856249988079071
+    3: 0.9437500238418579
+    4: 0.8125
+    5: 0.7749999761581421
+    6: 0.8125
+    7: 0.9437500238418579
+    8: 0.6499999761581421
+    9: 0.956250011920929
+    10: 0.71875
+    11: 0.8062499761581421
+    12: 0.6625000238418579
+    13: 0.5625
+    14: 0.581250011920929
+  subjects_sst_error:
+    1: 0.0631578266620636
+    2: 0.07645563781261444
+    3: 0.1517038196325302
+    4: 0.10336310416460037
+    5: 0.09852935373783112
+    6: 0.06956059485673904
+    7: 0.14987002313137054
+    8: 3317.173095703125
+    9: 0.2678692638874054
+    10: 0.06660249829292297
+    11: 0.08370969444513321
+    12: 0.2932601869106293
+    13: 0.35941436886787415
+    14: 12.381881713867188

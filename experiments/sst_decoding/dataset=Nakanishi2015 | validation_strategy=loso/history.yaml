@@ -1,0 +1,590 @@
+'2026-07-05T01:04:44.015509':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_addition
+    sst_method: stft
+    tem_depth: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Nakanishi2015
+      | validation_strategy=loso/2026-07-02T10:40:07.926887|model:db_conformer|subject:9.ckpt
+  mean_acc: 0.8117283880710602
+  std_acc: 0.1884607455218977
+  mean_sst_error: 0.3429844313197666
+  std_sst_error: 0.3168411423218404
+  loss: 0.3429844147629208
+  subjects_acc:
+    1: 0.605555534362793
+    2: 0.4000000059604645
+    3: 0.7166666388511658
+    4: 0.9611111283302307
+    5: 0.8833333253860474
+    6: 0.9388889074325562
+    7: 0.9444444179534912
+    8: 1.0
+    9: 0.855555534362793
+  subjects_sst_error:
+    1: 0.24038702249526978
+    2: 0.18491995334625244
+    3: 0.28299885988235474
+    4: 0.19937554001808167
+    5: 1.2265836000442505
+    6: 0.35109031200408936
+    7: 0.22818206250667572
+    8: 0.20782433450222015
+    9: 0.16549819707870483
+'2026-07-05T01:12:11.210282':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Nakanishi2015
+      | validation_strategy=loso/2026-07-02T12:32:48.394517|model:mtf_c|subject:9.ckpt
+  mean_acc: 0.8080246878994836
+  std_acc: 0.18737796711631527
+  mean_sst_error: 0.37514566216203904
+  std_sst_error: 0.3223148232615236
+  loss: 0.37514566712909275
+  subjects_acc:
+    1: 0.6277777552604675
+    2: 0.3722222149372101
+    3: 0.7777777910232544
+    4: 0.9944444298744202
+    5: 0.8333333134651184
+    6: 0.9111111164093018
+    7: 0.8722222447395325
+    8: 1.0
+    9: 0.8833333253860474
+  subjects_sst_error:
+    1: 0.2662857174873352
+    2: 0.21607594192028046
+    3: 0.3014604151248932
+    4: 0.23835979402065277
+    5: 1.2742516994476318
+    6: 0.3878730237483978
+    7: 0.2659984230995178
+    8: 0.23090240359306335
+    9: 0.19510354101657867
+'2026-07-05T01:22:24.911092':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_projection+addition
+    sst_method: stft
+    tem_depth: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Nakanishi2015
+      | validation_strategy=loso/2026-07-02T10:40:07.926887|model:db_conformer|subject:9.ckpt
+  mean_acc: 0.8117283880710602
+  std_acc: 0.1884607455218977
+  mean_sst_error: 0.11782889109518793
+  std_sst_error: 0.1291269745710097
+  loss: 0.11782888861166106
+  subjects_acc:
+    1: 0.605555534362793
+    2: 0.4000000059604645
+    3: 0.7166666388511658
+    4: 0.9611111283302307
+    5: 0.8833333253860474
+    6: 0.9388889074325562
+    7: 0.9444444179534912
+    8: 1.0
+    9: 0.855555534362793
+  subjects_sst_error:
+    1: 0.060062941163778305
+    2: 0.05727827548980713
+    3: 0.09250804781913757
+    4: 0.07764929533004761
+    5: 0.4804903566837311
+    6: 0.0759231448173523
+    7: 0.06552182883024216
+    8: 0.10009390860795975
+    9: 0.05093222111463547
+'2026-07-05T01:35:07.676520':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_projection+addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Nakanishi2015
+      | validation_strategy=loso/2026-07-02T12:32:48.394517|model:mtf_c|subject:9.ckpt
+  mean_acc: 0.8080246878994836
+  std_acc: 0.18737796711631527
+  mean_sst_error: 0.12205259584718281
+  std_sst_error: 0.16315343550596192
+  loss: 0.12205259626110394
+  subjects_acc:
+    1: 0.6277777552604675
+    2: 0.3722222149372101
+    3: 0.7777777910232544
+    4: 0.9944444298744202
+    5: 0.8333333134651184
+    6: 0.9111111164093018
+    7: 0.8722222447395325
+    8: 1.0
+    9: 0.8833333253860474
+  subjects_sst_error:
+    1: 0.051132794469594955
+    2: 0.0481460839509964
+    3: 0.0862598791718483
+    4: 0.08147014677524567
+    5: 0.5811020135879517
+    6: 0.06842072308063507
+    7: 0.0703711286187172
+    8: 0.07918526977300644
+    9: 0.03238532319664955
+'2026-07-05T01:50:51.318536':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_projection_addition
+    sst_method: stft
+    tem_depth: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Nakanishi2015
+      | validation_strategy=loso/2026-07-02T10:40:07.926887|model:db_conformer|subject:9.ckpt
+  mean_acc: 0.8117283880710602
+  std_acc: 0.1884607455218977
+  mean_sst_error: 0.33154793745941585
+  std_sst_error: 0.3205940656321059
+  loss: 0.33154793580373126
+  subjects_acc:
+    1: 0.605555534362793
+    2: 0.4000000059604645
+    3: 0.7166666388511658
+    4: 0.9611111283302307
+    5: 0.8833333253860474
+    6: 0.9388889074325562
+    7: 0.9444444179534912
+    8: 1.0
+    9: 0.855555534362793
+  subjects_sst_error:
+    1: 0.23905865848064423
+    2: 0.17148415744304657
+    3: 0.25897371768951416
+    4: 0.1829129308462143
+    5: 1.226009488105774
+    6: 0.339861661195755
+    7: 0.2204536646604538
+    8: 0.1881168633699417
+    9: 0.15706029534339905
+'2026-07-05T01:59:36.004208':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_projection_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Nakanishi2015
+      | validation_strategy=loso/2026-07-02T12:32:48.394517|model:mtf_c|subject:9.ckpt
+  mean_acc: 0.8080246878994836
+  std_acc: 0.18737796711631527
+  mean_sst_error: 0.33963268498579663
+  std_sst_error: 0.3392820954499595
+  loss: 0.33963267008463544
+  subjects_acc:
+    1: 0.6277777552604675
+    2: 0.3722222149372101
+    3: 0.7777777910232544
+    4: 0.9944444298744202
+    5: 0.8333333134651184
+    6: 0.9111111164093018
+    7: 0.8722222447395325
+    8: 1.0
+    9: 0.8833333253860474
+  subjects_sst_error:
+    1: 0.24294409155845642
+    2: 0.1706981062889099
+    3: 0.2594202756881714
+    4: 0.18248511850833893
+    5: 1.2864946126937866
+    6: 0.34751227498054504
+    7: 0.22422727942466736
+    8: 0.18725864589214325
+    9: 0.15565375983715057
+'2026-07-05T02:10:43.728687':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Nakanishi2015
+      | validation_strategy=loso/2026-07-02T12:32:48.394517|model:mtf_c|subject:9.ckpt
+  mean_acc: 0.8080246878994836
+  std_acc: 0.18737796711631527
+  mean_sst_error: 0.3824397424856822
+  std_sst_error: 0.29605035298028964
+  loss: 0.3824397226174672
+  subjects_acc:
+    1: 0.6277777552604675
+    2: 0.3722222149372101
+    3: 0.7777777910232544
+    4: 0.9944444298744202
+    5: 0.8333333134651184
+    6: 0.9111111164093018
+    7: 0.8722222447395325
+    8: 1.0
+    9: 0.8833333253860474
+  subjects_sst_error:
+    1: 0.2550099492073059
+    2: 0.23053991794586182
+    3: 0.31683221459388733
+    4: 0.26627135276794434
+    5: 1.2124894857406616
+    6: 0.36991214752197266
+    7: 0.26211509108543396
+    8: 0.27473074197769165
+    9: 0.25405678153038025
+'2026-07-05T02:20:45.625668':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_projection+addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Nakanishi2015
+      | validation_strategy=loso/2026-07-02T12:32:48.394517|model:mtf_c|subject:9.ckpt
+  mean_acc: 0.8080246878994836
+  std_acc: 0.18737796711631527
+  mean_sst_error: 0.245607804093096
+  std_sst_error: 0.29284036854490864
+  loss: 0.2456077891919348
+  subjects_acc:
+    1: 0.6277777552604675
+    2: 0.3722222149372101
+    3: 0.7777777910232544
+    4: 0.9944444298744202
+    5: 0.8333333134651184
+    6: 0.9111111164093018
+    7: 0.8722222447395325
+    8: 1.0
+    9: 0.8833333253860474
+  subjects_sst_error:
+    1: 0.14746296405792236
+    2: 0.12312830239534378
+    3: 0.18600811064243317
+    4: 0.11892756819725037
+    5: 1.0684571266174316
+    6: 0.21115298569202423
+    7: 0.13497033715248108
+    8: 0.1238979771733284
+    9: 0.0964648649096489
