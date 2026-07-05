@@ -240,6 +240,7 @@ def plot_comparison_bars(
     figsize=(12, 6),
     metric='mean_acc',
     error_metric='std_acc',
+    datasets=None,
 ):
     """Grouped bar plot comparing accuracy across multiple (training_params, model_params) pairs.
 
@@ -260,6 +261,8 @@ def plot_comparison_bars(
         Key to extract from each entry (default ``'mean_acc'``).
     error_metric : str or None
         Key for error-bar values (default ``'std_acc'``). Set to None to omit.
+    datasets : list of str or None
+        List of dataset names to include. If None (default), all datasets are included.
     """
     style = {
         'font.family': 'serif',
@@ -301,6 +304,8 @@ def plot_comparison_bars(
         if not d.is_dir():
             continue
         dataset_name = _extract_dataset_name(d.name)
+        if datasets is not None and dataset_name not in datasets:
+            continue
         yaml_path = d / 'history.yaml'
         if not yaml_path.exists():
             continue
@@ -334,6 +339,8 @@ def plot_comparison_bars(
         for label in config_labels
         for dset in results[label]
     })
+    if datasets is not None:
+        all_datasets = sorted(set(all_datasets) & set(datasets))
     if not all_datasets:
         raise ValueError("No data found for any dataset / config pair.")
 
@@ -454,6 +461,8 @@ def plot_paired_delta(
     metric='mean_acc',
     line=False,
     hline=None,
+    datasets=None,
+    percent=True,
 ):
     """Line plot of relative accuracy delta between paired configurations.
 
@@ -493,6 +502,11 @@ def plot_paired_delta(
         Figure dimensions (width, height) in inches.
     metric : str
         Metric key to extract from each entry (default ``'mean_acc'``).
+    datasets : list of str or None
+        List of dataset names to include. If None (default), all datasets are included.
+    percent : bool
+        If True (default), y-axis values are relative deltas expressed as a percentage
+        ``(num - ref) / ref * 100``. If False, raw differences ``num - ref`` are shown.
     """
     style = {
         'font.family': 'serif',
@@ -545,6 +559,8 @@ def plot_paired_delta(
         if not d.is_dir():
             continue
         dataset_name = _extract_dataset_name(d.name)
+        if datasets is not None and dataset_name not in datasets:
+            continue
         yaml_path = d / 'history.yaml'
         if not yaml_path.exists():
             continue
@@ -555,7 +571,7 @@ def plot_paired_delta(
             ref_val, _ = _find_entry(entries, ref_tp, ref_mp, ref_mf)
             num_val, _ = _find_entry(entries, num_tp, num_mp, num_mf)
             if ref_val is not None and num_val is not None and ref_val != 0:
-                delta = (num_val - ref_val) / ref_val * 100
+                delta = ((num_val - ref_val) / ref_val * 100) if percent else (num_val - ref_val)
                 deltas[label][dataset_name] = delta
 
     all_datasets = sorted({
@@ -563,6 +579,8 @@ def plot_paired_delta(
         for label in labels
         for dset in deltas[label]
     })
+    if datasets is not None:
+        all_datasets = sorted(set(all_datasets) & set(datasets))
     if not all_datasets:
         raise ValueError("No data found for any dataset / config pair.")
 
@@ -613,12 +631,13 @@ def plot_paired_delta(
         ax.set_xticks(x)
         ax.set_xticklabels(dataset_labels, fontsize=11, rotation=90, ha='center')
 
+        suffix = ' (%)' if percent else ''
         ax.set_ylabel(
-            f'{metric.replace("_", " ").title()} Relative Delta (%)',
+            f'{metric.replace("_", " ").title()} Relative Delta{suffix}',
             fontsize=13, labelpad=8,
         )
-        ax.set_title('Paired Comparison – Relative Delta (%)', fontsize=14,
-                     fontweight='bold', pad=14)
+        ax.set_title(f'Paired Comparison – Relative Delta{suffix}', fontsize=14,
+                      fontweight='bold', pad=14)
 
         ax.grid(True, which='major', axis='y', alpha=0.3, linewidth=0.7, zorder=0)
         ax.grid(False, axis='x')
