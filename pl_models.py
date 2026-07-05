@@ -11,6 +11,7 @@ from torchmetrics.regression import (
     MeanSquaredError,
     NormalizedRootMeanSquaredError
 )
+from torchmetrics.functional import normalized_root_mean_squared_error
 from utils.data_loader import DATASET_TASK_MAP
 
 from utils.spectrum_reconstructors import (
@@ -211,7 +212,7 @@ class db_r_conformer(db_conformer):
         else:
             x, y = batch
 
-        reconstruction_loss = F.mse_loss(sst_hat, sst)
+        reconstruction_loss = normalized_root_mean_squared_error(sst_hat, sst, normalization="l2")
         if self.pretrain is not False:
             loss = reconstruction_loss
         else:
@@ -482,7 +483,7 @@ class mtf_r_c(mtf_c):
         else:
             x, y = batch
 
-        reconstruction_loss = F.mse_loss(sst_hat, sst)
+        reconstruction_loss = normalized_root_mean_squared_error(sst_hat, sst, normalization="l2")
         if self.pretrain is not False:
             loss = reconstruction_loss
         else:
