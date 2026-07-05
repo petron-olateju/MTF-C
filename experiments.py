@@ -1,3 +1,4 @@
+import os
 import yaml
 from argparse import Namespace
 
@@ -18,9 +19,11 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 
 
 # Helper Functions
-def get_model(model_name, dataset_name, dataset_info, lr):
+def get_model(model_name, dataset_name, dataset_info, lr, subject):
     with open("configs/model_params.yaml", "r") as f:
         MODEL_PARAMS = yaml.safe_load(f)[model_name]
+    with open("configs/pretrained_ckpt.yaml", "r") as f:
+        CKPT = yaml.safe_load(f)[model_name][dataset_name]
 
     MODEL_PARAMS["data_name"] = dataset_name
     MODEL_PARAMS["chn"] = dataset_info["n_ch"]
@@ -28,6 +31,7 @@ def get_model(model_name, dataset_name, dataset_info, lr):
     MODEL_PARAMS["class_num"] = dataset_info["n_classes"]
     MODEL_PARAMS["lr"] = lr
     MODEL_PARAMS["fs"] = dataset_info['fs']
+    MODEL_PARAMS["pretrain_dir"] = f'{CKPT}|subject:{subject}.ckpt'
 
     return NAME_MODEL_MAP[model_name](MODEL_PARAMS), MODEL_PARAMS
 
@@ -68,17 +72,21 @@ def across_subjects_evaluation(
 
     subjects_acc = {}
     subjects_reconstruction = {}
+    subjects_sst_error = {}
     sub_acc = []
     sub_reconstruction = []
+    sub_sst_error = []
     sub_loss = []
 
-    if model_name == 'mtf_c':
+    if model_name  in ['mtf_c', 'mtf_r_c']:
         model_params = get_model_params('mtf_c')
-        spectrum = model_params['sst_method']
-        n_filter_banks = model_params['filter_banks']
-    elif model_name == 'db_conformer':
-        spectrum = None
-        n_filter_banks = 0
+    elif model_name in ['db_conformer', 'db_r_conformer']:
+        model_params = get_model_params('db_conformer')
+    spectrum = model_params['sst_method']
+    sst_decoder = model_params['sst_decoder']
+    n_filter_banks = model_params['filter_banks']
+    patch_size = model_params['patch_size']
+    freq_downsample = model_params['freq_downsample']
 
     if validation_strategy == 'cv':
         dm = StratifiedKFoldDataModule(
@@ -90,8 +98,11 @@ def across_subjects_evaluation(
             preprocessing_args=preprocessing_args,
             t0=t0,
             t1=t1,
-            spectrum = spectrum,
-            n_filter_banks = n_filter_banks
+            spectrum=spectrum,
+            n_filter_banks=n_filter_banks,
+            sst_decoder=sst_decoder,
+            patch_size=patch_size,
+            freq_downsample=freq_downsample
         )
     elif validation_strategy == 'train_test':
         dm = TrainValTest_Split_Loader(
@@ -104,8 +115,11 @@ def across_subjects_evaluation(
             preprocessing_args=preprocessing_args,
             t0=t0,
             t1=t1,
-            spectrum = spectrum,
-            n_filter_banks = n_filter_banks
+            spectrum=spectrum,
+            n_filter_banks=n_filter_banks,
+            sst_decoder=sst_decoder,
+            patch_size=patch_size,
+            freq_downsample=freq_downsample
         )
     elif validation_strategy == 'loso':
         dm = LOSO_Loader(
@@ -117,7 +131,10 @@ def across_subjects_evaluation(
             t0=t0,
             t1=t1,
             spectrum=spectrum,
-            n_filter_banks=n_filter_banks
+            n_filter_banks=n_filter_banks,
+            sst_decoder=sst_decoder,
+            patch_size=patch_size,
+            freq_downsample=freq_downsample
         )
     dm.preload_data()
     
@@ -132,6 +149,7 @@ def across_subjects_evaluation(
             folds_acc = []
             folds_reconstruction = []
             folds_loss = []
+            folds_sst_error = []
 
             for fold in range(n_folds):
                 dm.update_subject(subject=subject, seed=experiment_seed+repeat, fold=fold)
@@ -140,7 +158,8 @@ def across_subjects_evaluation(
                     model_name=model_name,
                     dataset_name=dataset_name,
                     dataset_info=dm.info,
-                    lr=lr
+                    lr=lr,
+                    subject=subject
                 )
                 checkpoint_callback = ModelCheckpoint(
                     monitor="val_acc",
@@ -163,16 +182,23 @@ def across_subjects_evaluation(
                 folds_loss.append(val_metrics["val_loss"])
                 if "val_reconstruction" in val_metrics:
                     folds_reconstruction.append(val_metrics["val_reconstruction"])
+                if "val_sst_error" in val_metrics:
+                    folds_sst_error.append(val_metrics["val_sst_error"])
                 
             folds_acc = np.mean(folds_acc)
             folds_loss = np.mean(folds_loss)
             sub_acc.append(folds_acc)
             sub_loss.append(folds_loss)
+            if len(folds_sst_error) > 0:
+                folds_sst_error = np.mean(folds_sst_error)
+                sub_sst_error.append(folds_sst_error)
             if len(folds_reconstruction) > 0:
                 folds_reconstruction = np.mean(folds_reconstruction)
                 sub_reconstruction.append(folds_reconstruction)
 
         subjects_acc[subject] = np.mean(sub_acc[-n_repeats:]).item()
+        if len(sub_sst_error) > 0:
+            subjects_sst_error[subject] = np.mean(sub_sst_error[-n_repeats:]).item()
         if len(sub_reconstruction) > 0:
             subjects_reconstruction[subject] = np.mean(sub_reconstruction[-n_repeats:]).item()
 
@@ -185,7 +211,21 @@ def across_subjects_evaluation(
     acc_std = np.std(sub_acc).item()
     loss = np.mean(sub_loss).item()
     
-    if len(sub_reconstruction) > 0:
+    if len(subjects_sst_error) > 0:
+        sst_error_mean = np.mean(sub_sst_error).item()
+        sst_error_std = np.std(sub_sst_error).item()
+
+        return {
+            "model_params": model_params,
+            "mean_acc": acc_mean,
+            "std_acc": acc_std,
+            "mean_sst_error": sst_error_mean,
+            "std_sst_error": sst_error_std,
+            "loss": loss,
+            "subjects_acc": subjects_acc,
+            "subjects_sst_error": subjects_sst_error
+        }
+    elif len(sub_reconstruction) > 0:
         reconstruction_mean = np.mean(sub_reconstruction).item()
         reconstruction_std = np.std(sub_reconstruction).item()
 

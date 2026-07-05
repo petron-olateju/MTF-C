@@ -1,6 +1,6 @@
 import numpy as np
 import mne
-from utils.preprocessing import compute_band_powers, compute_channels_band_powers
+from utils.preprocessing import compute_band_powers, compute_channels_band_powers, compute_downsampled_stft
 
 import pytorch_lightning as pl
 from utils.data_loader import get_data_subjects, get_data_loader
@@ -11,6 +11,8 @@ from sklearn.model_selection import StratifiedKFold
 
 import torch
 from torch.utils.data import random_split, TensorDataset, DataLoader
+
+mne.set_log_level('ERROR')
 
 # Helper Functions
 def get_data_subjects(dataset_name):
@@ -37,7 +39,10 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         t0=0.5,
         t1=3.5,
         spectrum=None,
-        n_filter_banks = 0
+        sst_decoder=None,
+        n_filter_banks = 0,
+        patch_size = 100,
+        freq_downsample=1,
     ):
         super().__init__()
 
@@ -62,7 +67,10 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         self.t1 = t1
 
         self.spectrum = spectrum
+        self.sst_decoder = sst_decoder
         self.n_filter_banks = n_filter_banks
+        self.patch_size = patch_size
+        self.freq_downsample = freq_downsample
 
     def preload_data(self):
         self.subjects_data = {}
@@ -102,6 +110,26 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         
         print(f"Spectrum Data Shape: {X_spectrum.size()}")
         return X_spectrum
+    
+    def compute_sst(self, X, n_times, fs):
+        if self.spectrum.upper() in ['STFT', 'FREQUENCY_BACKBONE']:
+            X_sst = compute_downsampled_stft(
+                X.cpu().numpy(),
+                n_filter_banks=self.n_filter_banks,
+                patch_size=self.patch_size,
+                n_times=n_times,
+                freq_downsample=self.freq_downsample,
+                fs=fs
+            )
+
+            if 'SCALE_SST' in [ppo.upper() for ppo in self.preprocessing_args]:
+                min_ = X_sst.min(axis=(1, 2, 3), keepdims=True)
+                max_ = X_sst.max(axis=(1, 2,3), keepdims=True)
+                X_sst = (X_sst - min_) / (max_ - min_ + 1e-8)
+
+        X_sst = torch.tensor(X_sst, dtype=torch.float32)
+        print(f"SST Data Shape: {X_sst.size()}")
+        return X_sst
 
     def setup_data(self, seed=0, fold=None):
         if hasattr(self, "train_dataset"):
@@ -123,7 +151,11 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
             y_test = torch.tensor(y_test, dtype=torch.long)
             if self.spectrum is not None:
                 X_test_spectrum = self.compute_spectrum(X_test.cpu().detach().numpy())
-                self.test_dataset = TensorDataset(X_test_spectrum, X_test, y_test)
+                if self.sst_decoder is None:
+                    self.test_dataset = TensorDataset(X_test_spectrum, X_test, y_test)
+                else:
+                    X_test_sst = self.compute_sst(X_test.cpu(), self.info['n_times'], self.info['fs'])
+                    self.test_dataset = TensorDataset(X_test_sst, X_test_spectrum, X_test, y_test)
             else:
                 self.test_dataset = TensorDataset(X_test, y_test)
         else:
@@ -137,11 +169,25 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
         y_train = torch.tensor(y_train, dtype=torch.long)
         X_val = torch.tensor(X_val, dtype=torch.float32)
         y_val = torch.tensor(y_val, dtype=torch.long)
-        if self.spectrum is not None:
-            X_train_spectrum = self.compute_spectrum(X_train.cpu().detach().numpy())
-            X_val_spectrum = self.compute_spectrum(X_val.cpu().detach().numpy())
-            self.train_dataset = TensorDataset(X_train_spectrum, X_train, y_train)
-            self.val_dataset = TensorDataset(X_val_spectrum, X_val, y_val)
+
+        if (self.spectrum is not None) and (self.spectrum.upper() == 'FREQUENCY_BACKBONE'):
+            X_train_spectrum = self.compute_spectrum(torch.tensor(X_train))
+            X_val_spectrum = self.compute_spectrum(torch.tensor(X_val))
+
+            if self.sst_decoder is None:
+                self.train_dataset = TensorDataset(X_train_spectrum, X_train, y_train)
+                self.val_dataset = TensorDataset(X_val_spectrum, X_val, y_val)
+            else:
+                X_train_sst = self.compute_sst(X_train.cpu(), self.info['n_times'], self.info['fs'])
+                X_val_sst = self.compute_sst(X_val.cpu(), self.info['n_times'], self.info['fs'])
+                self.train_dataset = TensorDataset(X_train_sst, X_train_spectrum, X_train, y_train)
+                self.val_dataset = TensorDataset(X_val_sst, X_val_spectrum, X_val, y_val)
+
+        elif self.sst_decoder is not None:
+            X_train_sst = self.compute_sst(X_train.cpu(), self.info['n_times'], self.info['fs'])
+            X_val_sst = self.compute_sst(X_val.cpu(), self.info['n_times'], self.info['fs'])
+            self.train_dataset = TensorDataset(X_train_sst, X_train, y_train)
+            self.val_dataset = TensorDataset(X_val_sst, X_val, y_val)
         else:
             self.train_dataset = TensorDataset(X_train, y_train)
             self.val_dataset = TensorDataset(X_val, y_val)
@@ -186,7 +232,10 @@ class StratifiedKFoldDataModule(TrainValTest_Split_Loader):
         t0=0.5,
         t1=3.5,
         spectrum=None,
-        n_filter_banks=0
+        sst_decoder=None,
+        n_filter_banks = 0,
+        patch_size = 100,
+        freq_downsample=1,
     ):
         self.fold_index = fold_index
 
@@ -200,7 +249,10 @@ class StratifiedKFoldDataModule(TrainValTest_Split_Loader):
             t0=t0,
             t1=t1,
             spectrum=spectrum,
-            n_filter_banks=n_filter_banks
+            sst_decoder=sst_decoder,
+            n_filter_banks=n_filter_banks,
+            patch_size=patch_size,
+            freq_downsample=freq_downsample
         )
 
     def setup_data(self, seed=None, fold=0):
@@ -228,12 +280,24 @@ class StratifiedKFoldDataModule(TrainValTest_Split_Loader):
         X_val = torch.tensor(X_val, dtype=torch.float32)
         y_val = torch.tensor(y_val, dtype=torch.long)
 
-        if self.spectrum is not None:
+        if (self.spectrum is not None) and (self.spectrum.upper() == 'FREQUENCY_BACKBONE'):
             X_train_spectrum = self.compute_spectrum(torch.tensor(X_train))
             X_val_spectrum = self.compute_spectrum(torch.tensor(X_val))
 
-            self.train_dataset = TensorDataset(X_train_spectrum, X_train, y_train)
-            self.val_dataset = TensorDataset(X_val_spectrum, X_val, y_val)
+            if self.sst_decoder is None:
+                self.train_dataset = TensorDataset(X_train_spectrum, X_train, y_train)
+                self.val_dataset = TensorDataset(X_val_spectrum, X_val, y_val)
+            else:
+                X_train_sst = self.compute_sst(X_train.cpu(), self.info['n_times'], self.info['fs'])
+                X_val_sst = self.compute_sst(X_val.cpu(), self.info['n_times'], self.info['fs'])
+                self.train_dataset = TensorDataset(X_train_sst, X_train_spectrum, X_train, y_train)
+                self.val_dataset = TensorDataset(X_val_sst, X_val_spectrum, X_val, y_val)
+
+        elif self.sst_decoder is not None:
+            X_train_sst = self.compute_sst(X_train.cpu(), self.info['n_times'], self.info['fs'])
+            X_val_sst = self.compute_sst(X_val.cpu(), self.info['n_times'], self.info['fs'])
+            self.train_dataset = TensorDataset(X_train_sst, X_train, y_train)
+            self.val_dataset = TensorDataset(X_val_sst, X_val, y_val)
         else:
             self.train_dataset = TensorDataset(X_train, y_train)
             self.val_dataset = TensorDataset(X_val, y_val)
@@ -250,7 +314,10 @@ class LOSO_Loader(TrainValTest_Split_Loader):
         t0=0.5,
         t1=3.5,
         spectrum=None,
-        n_filter_banks=0
+        sst_decoder=None,
+        n_filter_banks = 0,
+        patch_size = 100,
+        freq_downsample=1,
     ):
 
         super().__init__(
@@ -262,7 +329,10 @@ class LOSO_Loader(TrainValTest_Split_Loader):
             t0=t0,
             t1=t1,
             spectrum=spectrum,
-            n_filter_banks=n_filter_banks
+            sst_decoder=sst_decoder,
+            n_filter_banks=n_filter_banks,
+            patch_size=patch_size,
+            freq_downsample=freq_downsample
         )
 
     def setup_data(self, seed=None, fold=None):
@@ -294,12 +364,24 @@ class LOSO_Loader(TrainValTest_Split_Loader):
         X_val = torch.tensor(X_val, dtype=torch.float32)
         y_val = torch.tensor(y_val, dtype=torch.long)
 
-        if self.spectrum is not None:
+        if (self.spectrum is not None) and (self.spectrum.upper() == 'FREQUENCY_BACKBONE'):
             X_train_spectrum = self.compute_spectrum(torch.tensor(X_train))
             X_val_spectrum = self.compute_spectrum(torch.tensor(X_val))
 
-            self.train_dataset = TensorDataset(X_train_spectrum, X_train, y_train)
-            self.val_dataset = TensorDataset(X_val_spectrum, X_val, y_val)
+            if self.sst_decoder is None:
+                self.train_dataset = TensorDataset(X_train_spectrum, X_train, y_train)
+                self.val_dataset = TensorDataset(X_val_spectrum, X_val, y_val)
+            else:
+                X_train_sst = self.compute_sst(X_train.cpu(), self.info['n_times'], self.info['fs'])
+                X_val_sst = self.compute_sst(X_val.cpu(), self.info['n_times'], self.info['fs'])
+                self.train_dataset = TensorDataset(X_train_sst, X_train_spectrum, X_train, y_train)
+                self.val_dataset = TensorDataset(X_val_sst, X_val_spectrum, X_val, y_val)
+
+        elif self.sst_decoder is not None:
+            X_train_sst = self.compute_sst(X_train.cpu(), self.info['n_times'], self.info['fs'])
+            X_val_sst = self.compute_sst(X_val.cpu(), self.info['n_times'], self.info['fs'])
+            self.train_dataset = TensorDataset(X_train_sst, X_train, y_train)
+            self.val_dataset = TensorDataset(X_val_sst, X_val, y_val)
         else:
             self.train_dataset = TensorDataset(X_train, y_train)
             self.val_dataset = TensorDataset(X_val, y_val)

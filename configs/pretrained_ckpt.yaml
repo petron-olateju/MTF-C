@@ -1,0 +1,32 @@
+db_conformer: &db_conformer
+  BNCI2014_001: experiments/classification/frequency_backbone/dataset=BNCI2014_001
+    | validation_strategy=loso/2026-07-02T10:54:40.235204|model:db_conformer
+  BNCI2014_002: experiments/classification/frequency_backbone/dataset=BNCI2014_002
+    | validation_strategy=loso/2026-07-02T11:02:01.099679|model:db_conformer
+  BNCI2014_004: experiments/classification/frequency_backbone/dataset=BNCI2014_004
+    | validation_strategy=loso/2026-07-02T11:21:51.304266|model:db_conformer
+  Cattan2019_PHMD: experiments/classification/frequency_backbone/dataset=Cattan2019_PHMD
+    | validation_strategy=loso/2026-07-02T10:33:10.011556|model:db_conformer
+  Kalunga2016: experiments/classification/frequency_backbone/dataset=Kalunga2016 |
+    validation_strategy=loso/2026-07-02T10:48:25.956318|model:db_conformer
+  Nakanishi2015: experiments/classification/frequency_backbone/dataset=Nakanishi2015
+    | validation_strategy=loso/2026-07-02T10:40:07.926887|model:db_conformer
+  Rodrigues2017: experiments/classification/frequency_backbone/dataset=Rodrigues2017
+    | validation_strategy=loso/2026-07-02T10:35:38.635027|model:db_conformer
+mtf_c: &mtf_c
+  BNCI2014_001: experiments/classification/frequency_backbone/dataset=BNCI2014_001
+    | validation_strategy=loso/2026-07-02T13:36:25.384631|model:mtf_c
+  BNCI2014_002: experiments/classification/frequency_backbone/dataset=BNCI2014_002
+    | validation_strategy=loso/2026-07-02T14:20:39.300169|model:mtf_c
+  BNCI2014_004: experiments/classification/frequency_backbone/dataset=BNCI2014_004
+    | validation_strategy=loso/2026-07-02T15:36:10.341303|model:mtf_c
+  Cattan2019_PHMD: experiments/classification/frequency_backbone/dataset=Cattan2019_PHMD
+    | validation_strategy=loso/2026-07-02T11:55:15.010957|model:mtf_c
+  Kalunga2016: experiments/classification/frequency_backbone/dataset=Kalunga2016 |
+    validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c
+  Nakanishi2015: experiments/classification/frequency_backbone/dataset=Nakanishi2015
+    | validation_strategy=loso/2026-07-02T12:32:48.394517|model:mtf_c
+  Rodrigues2017: experiments/classification/frequency_backbone/dataset=Rodrigues2017
+    | validation_strategy=loso/2026-07-02T12:08:16.932865|model:mtf_c
+db_r_conformer: *db_conformer
+mtf_r_c: *mtf_c

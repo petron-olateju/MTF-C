@@ -2,10 +2,12 @@ import numpy as np
 from scipy.linalg import fractional_matrix_power
 from scipy.signal import butter, sosfiltfilt
 
+import mne
 from mne.decoding import Scaler
 
 from sklearn.model_selection import train_test_split
 
+mne.set_log_level('ERROR')
 
 def compute_band_powers(x, n_filter_banks, fs):
     """
@@ -83,6 +85,46 @@ def compute_channels_band_powers(x, n_filter_banks, fs):
 
     band_powers = np.stack(band_powers, axis=-1)  # (B, C, F)
     return np.log1p(band_powers)  # (B, C, F) log-normalised
+
+
+def compute_downsampled_stft(x, n_filter_banks, patch_size, n_times, freq_downsample, fs):
+    F_cfg = n_filter_banks
+    P_cfg = patch_size
+    wsize = int((F_cfg - 1) * 2)
+    assert wsize % 2 == 0
+    tstep = wsize // 2
+
+    # STFT per sample -> shape (n_samples, n_channels, n_freqs, n_steps)
+    # n_freqs == wsize//2 + 1 == F_cfg
+    stft = np.abs(np.array([
+        mne.time_frequency.stft(x_sample, wsize, tstep)
+        for x_sample in x
+    ]))
+
+    # ---- Frequency axis: keep bins 1..min(F_cfg, 30), then average down ----
+    n_freqs_avail = stft.shape[-2]
+    hi = min(F_cfg, 30)
+    stft = stft[..., 0:hi + 1, :]  # drop DC bin, clip to 30 bins max
+
+    if freq_downsample and freq_downsample > 1:
+        n_freqs = stft.shape[-2]
+        n_freqs_trim = (n_freqs // freq_downsample) * freq_downsample
+        stft = stft[..., :n_freqs_trim, :]
+        new_shape = stft.shape[:-2] + (n_freqs_trim // freq_downsample, freq_downsample, stft.shape[-1])
+        stft = stft.reshape(new_shape).mean(axis=-2)
+
+    # ---- Time axis: average-pool n_steps -> target_T ----
+    target_T = (n_times - 1) // P_cfg
+    n_steps = stft.shape[-1]
+    edges = np.linspace(0, n_steps, target_T + 1).astype(int)
+    edges[1:] = np.maximum(edges[1:], edges[:-1] + 1)  # guarantee non-empty bins
+
+    pooled = np.stack(
+        [stft[..., edges[i]:edges[i + 1]].mean(axis=-1) for i in range(target_T)],
+        axis=-1,
+    )
+
+    return pooled
 
 
 def EA(x):
