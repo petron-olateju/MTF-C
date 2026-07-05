@@ -7,7 +7,10 @@ import torch.nn.functional as F
 from models.DBConformer import DBConformer
 from models.MTFC import MTFC
 from torchmetrics.classification import Accuracy
-from torchmetrics.regression import MeanSquaredError
+from torchmetrics.regression import (
+    MeanSquaredError,
+    NormalizedRootMeanSquaredError
+)
 from utils.data_loader import DATASET_TASK_MAP
 
 from utils.spectrum_reconstructors import (
@@ -173,9 +176,9 @@ class db_r_conformer(db_conformer):
         else:
             raise ValueError(f"decoder for db_conformer cannot be {self.sst_decoder_name}, can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition']}")
 
-        self.train_sst_error = MeanSquaredError()
-        self.val_sst_error = MeanSquaredError()
-        self.test_sst_error = MeanSquaredError()
+        self.train_sst_error = NormalizedRootMeanSquaredError(normalization="l2")
+        self.val_sst_error = NormalizedRootMeanSquaredError(normalization="l2")
+        self.test_sst_error = NormalizedRootMeanSquaredError(normalization="l2")
 
     def forward(self, x):
         branch_embeddings, _, x_fused, _ = self.encoder(x)
@@ -439,9 +442,9 @@ class mtf_r_c(mtf_c):
             emb_size=MODEL_ARGS['patch_emb_size']
         )
 
-        self.train_sst_error = MeanSquaredError()
-        self.val_sst_error = MeanSquaredError()
-        self.test_sst_error = MeanSquaredError()
+        self.train_sst_error = NormalizedRootMeanSquaredError(normalization="l2")
+        self.val_sst_error = NormalizedRootMeanSquaredError(normalization="l2")
+        self.test_sst_error = NormalizedRootMeanSquaredError(normalization="l2")
 
     def forward(self, x):
         branch_embeddings, spectrum_est, x_fused, logits = self.encoder(x)
