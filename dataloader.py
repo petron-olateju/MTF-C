@@ -126,6 +126,11 @@ class TrainValTest_Split_Loader(pl.LightningDataModule):
                 min_ = X_sst.min(axis=(1, 2, 3), keepdims=True)
                 max_ = X_sst.max(axis=(1, 2,3), keepdims=True)
                 X_sst = (X_sst - min_) / (max_ - min_ + 1e-8)
+                range_ = (max_ - min_).squeeze()   # shape (B,) — one number per trial
+
+                print(f"[{self.dataset_name}] pre-scale range: "
+                      f"mean={range_.mean():.4f}, std={range_.std():.4f}, "
+                      f"min={range_.min():.4f}, median={np.median(range_):.4f}")
 
         X_sst = torch.tensor(X_sst, dtype=torch.float32)
         print(f"SST Data Shape: {X_sst.size()}")

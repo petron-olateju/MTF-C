@@ -10,6 +10,7 @@ DATASETS = [
     "BNCI2014_001", "BNCI2014_002", "BNCI2014_004"
 ]
 VALIDATION = "loso"
+OUTPUT_DIR = "experiments/sst_decoding+sst_scaling"
 
 for dataset in tqdm(DATASETS, total=len(DATASETS)):
 
@@ -29,7 +30,7 @@ for dataset in tqdm(DATASETS, total=len(DATASETS)):
                     "--dataset_name", dataset,
                     "--model_name", "db_r_conformer",
                     "--experiment_details", EXPERIMENT_DETAILS,
-                "--output_dir", "experiments/sst_decoding"
+                "--output_dir", OUTPUT_DIR
                 ],
                 check=True,
             )
@@ -42,7 +43,7 @@ for dataset in tqdm(DATASETS, total=len(DATASETS)):
                     "--dataset_name", dataset,
                     "--model_name", "mtf_r_c",
                     "--experiment_details", EXPERIMENT_DETAILS,
-                "--output_dir", "experiments/sst_decoding"
+                "--output_dir", OUTPUT_DIR
                 ],
                 check=True,
             )
@@ -62,7 +63,7 @@ for dataset in tqdm(DATASETS, total=len(DATASETS)):
                     "--dataset_name", dataset,
                     "--model_name", "mtf_r_c",
                     "--experiment_details", EXPERIMENT_DETAILS,
-                "--output_dir", "experiments/sst_decoding"
+                "--output_dir", OUTPUT_DIR
                 ],
                 check=True,
             )
