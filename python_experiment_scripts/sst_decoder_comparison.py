@@ -10,7 +10,7 @@ DATASETS = [
     "BNCI2014_001", "BNCI2014_002", "BNCI2014_004"
 ]
 VALIDATION = "loso"
-OUTPUT_DIR = "experiments/sst_decoding+NMRSE_Loss"
+OUTPUT_DIR = "experiments/sst_decoding+NRMSE_Loss"
 
 for dataset in tqdm(DATASETS, total=len(DATASETS)):
 
