@@ -1,0 +1,638 @@
+'2026-07-05T22:55:07.053141':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_addition
+    sst_method: stft
+    tem_depth: 2
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Cattan2019_PHMD
+      | validation_strategy=loso/2026-07-02T10:33:10.011556|model:db_conformer|subject:12.ckpt
+  mean_acc: 0.6916666676600774
+  std_acc: 0.11873171962609042
+  mean_sst_error: 0.003786054226414611
+  std_sst_error: 0.0004462431334470637
+  loss: 0.0037860542652197182
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.699999988079071
+    3: 0.8999999761581421
+    4: 0.699999988079071
+    5: 0.5
+    6: 0.800000011920929
+    7: 0.699999988079071
+    8: 0.6000000238418579
+    9: 0.699999988079071
+    10: 0.800000011920929
+    11: 0.6000000238418579
+    12: 0.5
+  subjects_sst_error:
+    1: 0.004180882126092911
+    2: 0.004933748859912157
+    3: 0.0035508510190993547
+    4: 0.003652412910014391
+    5: 0.0032072460744529963
+    6: 0.003307199105620384
+    7: 0.00356592470780015
+    8: 0.004064755514264107
+    9: 0.003873965935781598
+    10: 0.003966151271015406
+    11: 0.0034788455814123154
+    12: 0.0036506676115095615
+'2026-07-05T22:58:40.755996':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Cattan2019_PHMD
+      | validation_strategy=loso/2026-07-02T11:55:15.010957|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.700000007947286
+  std_acc: 0.14142135483241508
+  mean_sst_error: 0.004227726235209654
+  std_sst_error: 0.0006921107234444586
+  loss: 0.004227726254612207
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.5
+    3: 0.800000011920929
+    4: 0.800000011920929
+    5: 0.6000000238418579
+    6: 0.800000011920929
+    7: 0.699999988079071
+    8: 0.5
+    9: 0.699999988079071
+    10: 1.0
+    11: 0.6000000238418579
+    12: 0.6000000238418579
+  subjects_sst_error:
+    1: 0.005424232687801123
+    2: 0.0047681815922260284
+    3: 0.0033929015044122934
+    4: 0.00335873756557703
+    5: 0.00373636232689023
+    6: 0.0032258881255984306
+    7: 0.004111502785235643
+    8: 0.0041259825229644775
+    9: 0.005281839519739151
+    10: 0.0043480577878654
+    11: 0.004639212507754564
+    12: 0.004319815896451473
+'2026-07-05T23:02:52.957766':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_projection+addition
+    sst_method: stft
+    tem_depth: 2
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Cattan2019_PHMD
+      | validation_strategy=loso/2026-07-02T10:33:10.011556|model:db_conformer|subject:12.ckpt
+  mean_acc: 0.6916666676600774
+  std_acc: 0.11873171962609042
+  mean_sst_error: 0.0037109965536122522
+  std_sst_error: 0.0001643273398269772
+  loss: 0.0037109964371969304
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.699999988079071
+    3: 0.8999999761581421
+    4: 0.699999988079071
+    5: 0.5
+    6: 0.800000011920929
+    7: 0.699999988079071
+    8: 0.6000000238418579
+    9: 0.699999988079071
+    10: 0.800000011920929
+    11: 0.6000000238418579
+    12: 0.5
+  subjects_sst_error:
+    1: 0.003956741653382778
+    2: 0.003935292828828096
+    3: 0.0035752204712480307
+    4: 0.003563659032806754
+    5: 0.0036318660713732243
+    6: 0.003379460424184799
+    7: 0.0036203826311975718
+    8: 0.0037293480709195137
+    9: 0.0039138998836278915
+    10: 0.003763031680136919
+    11: 0.003688210854306817
+    12: 0.003774845041334629
+'2026-07-05T23:06:35.993650':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_projection+addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Cattan2019_PHMD
+      | validation_strategy=loso/2026-07-02T11:55:15.010957|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.700000007947286
+  std_acc: 0.14142135483241508
+  mean_sst_error: 0.0035051884090838334
+  std_sst_error: 0.00010017599385329287
+  loss: 0.0035051884672914944
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.5
+    3: 0.800000011920929
+    4: 0.800000011920929
+    5: 0.6000000238418579
+    6: 0.800000011920929
+    7: 0.699999988079071
+    8: 0.5
+    9: 0.699999988079071
+    10: 1.0
+    11: 0.6000000238418579
+    12: 0.6000000238418579
+  subjects_sst_error:
+    1: 0.0036067429464310408
+    2: 0.0037163265515118837
+    3: 0.0034261709079146385
+    4: 0.0033989055082201958
+    5: 0.0033918675035238266
+    6: 0.0033506930340081453
+    7: 0.003453419078141451
+    8: 0.003545263083651662
+    9: 0.0035568461753427982
+    10: 0.0035370371770113707
+    11: 0.003517618402838707
+    12: 0.0035613705404102802
+'2026-07-05T23:10:52.677298':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_projection_addition
+    sst_method: stft
+    tem_depth: 2
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Cattan2019_PHMD
+      | validation_strategy=loso/2026-07-02T10:33:10.011556|model:db_conformer|subject:12.ckpt
+  mean_acc: 0.6916666676600774
+  std_acc: 0.11873171962609042
+  mean_sst_error: 0.00310003695388635
+  std_sst_error: 9.459772158431474e-05
+  loss: 0.0031000370314965644
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.699999988079071
+    3: 0.8999999761581421
+    4: 0.699999988079071
+    5: 0.5
+    6: 0.800000011920929
+    7: 0.699999988079071
+    8: 0.6000000238418579
+    9: 0.699999988079071
+    10: 0.800000011920929
+    11: 0.6000000238418579
+    12: 0.5
+  subjects_sst_error:
+    1: 0.0030688424594700336
+    2: 0.0031948157120496035
+    3: 0.003168327733874321
+    4: 0.003152484307065606
+    5: 0.002980482066050172
+    6: 0.0032595032826066017
+    7: 0.003081978065893054
+    8: 0.003100254572927952
+    9: 0.003043228527531028
+    10: 0.0032097322400659323
+    11: 0.002993764588609338
+    12: 0.0029470298904925585
+'2026-07-05T23:14:10.971153':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_projection_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Cattan2019_PHMD
+      | validation_strategy=loso/2026-07-02T11:55:15.010957|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.700000007947286
+  std_acc: 0.14142135483241508
+  mean_sst_error: 0.0028152745799161494
+  std_sst_error: 0.00017225118114767837
+  loss: 0.0028152746187212565
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.5
+    3: 0.800000011920929
+    4: 0.800000011920929
+    5: 0.6000000238418579
+    6: 0.800000011920929
+    7: 0.699999988079071
+    8: 0.5
+    9: 0.699999988079071
+    10: 1.0
+    11: 0.6000000238418579
+    12: 0.6000000238418579
+  subjects_sst_error:
+    1: 0.0027716360054910183
+    2: 0.0025621438398957253
+    3: 0.0029032668098807335
+    4: 0.002963575068861246
+    5: 0.0027699568308889866
+    6: 0.0032580415718257427
+    7: 0.0028652988839894533
+    8: 0.002762389834970236
+    9: 0.0027127268258482218
+    10: 0.002868518466129899
+    11: 0.0026339725591242313
+    12: 0.002711768262088299
+'2026-07-05T23:18:37.155076':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Cattan2019_PHMD
+      | validation_strategy=loso/2026-07-02T11:55:15.010957|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.700000007947286
+  std_acc: 0.14142135483241508
+  mean_sst_error: 0.003952108284768959
+  std_sst_error: 0.0006438140681503167
+  loss: 0.0039521083429766195
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.5
+    3: 0.800000011920929
+    4: 0.800000011920929
+    5: 0.6000000238418579
+    6: 0.800000011920929
+    7: 0.699999988079071
+    8: 0.5
+    9: 0.699999988079071
+    10: 1.0
+    11: 0.6000000238418579
+    12: 0.6000000238418579
+  subjects_sst_error:
+    1: 0.005208485759794712
+    2: 0.004348939284682274
+    3: 0.0033163658808916807
+    4: 0.003076244844123721
+    5: 0.003441867884248495
+    6: 0.0030822521075606346
+    7: 0.003931866958737373
+    8: 0.003789215348660946
+    9: 0.004889032803475857
+    10: 0.00393040431663394
+    11: 0.004295402206480503
+    12: 0.00411522202193737
+'2026-07-05T23:22:28.220500':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_projection+addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Cattan2019_PHMD
+      | validation_strategy=loso/2026-07-02T11:55:15.010957|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.700000007947286
+  std_acc: 0.14142135483241508
+  mean_sst_error: 0.0026465790579095483
+  std_sst_error: 0.00020669569962772645
+  loss: 0.0026465790385069945
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.5
+    3: 0.800000011920929
+    4: 0.800000011920929
+    5: 0.6000000238418579
+    6: 0.800000011920929
+    7: 0.699999988079071
+    8: 0.5
+    9: 0.699999988079071
+    10: 1.0
+    11: 0.6000000238418579
+    12: 0.6000000238418579
+  subjects_sst_error:
+    1: 0.002616051584482193
+    2: 0.0023808302357792854
+    3: 0.0027138618752360344
+    4: 0.00278813811019063
+    5: 0.002572165336459875
+    6: 0.0031950478442013264
+    7: 0.002686230232939124
+    8: 0.0025264702271670103
+    9: 0.002625689608976245
+    10: 0.0027529639191925526
+    11: 0.0023971260525286198
+    12: 0.0025043736677616835
