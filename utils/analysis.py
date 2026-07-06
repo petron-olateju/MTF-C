@@ -432,7 +432,25 @@ def _parse_config_item(item):
     return (None, None, None)
 
 
-def _find_entry(entries, tp, mp, mf):
+# def _find_entry(entries, tp, mp, mf):
+#     matched = [
+#         e for e in entries
+#         if _params_match(e.get('taining_params', {}), tp)
+#         and _params_match(e.get('model_params', {}), mp)
+#         and (mf is None or e.get('model') == mf)
+#     ]
+#     if not matched:
+#         return None, None
+#     if len(matched) > 1:
+#         import warnings
+#         warnings.warn(
+#             f"Multiple entries match config in {entries[0].get('dataset', 'unknown')}; "
+#             f"using the first one."
+#         )
+#     entry = matched[0]
+#     return entry.get('mean_acc'), entry.get('std_acc')
+
+def _find_entry(entries, tp, mp, mf, metric='mean_acc', error_metric='std_acc'):
     matched = [
         e for e in entries
         if _params_match(e.get('taining_params', {}), tp)
@@ -448,7 +466,7 @@ def _find_entry(entries, tp, mp, mf):
             f"using the first one."
         )
     entry = matched[0]
-    return entry.get('mean_acc'), entry.get('std_acc')
+    return entry.get(metric), entry.get(error_metric)
 
 
 def plot_paired_delta(
@@ -459,6 +477,7 @@ def plot_paired_delta(
     filename='paired_delta',
     figsize=(12, 6),
     metric='mean_acc',
+    error_metric='std_acc',
     line=False,
     hline=None,
     datasets=None,
@@ -568,8 +587,8 @@ def plot_paired_delta(
         entries = _load_history(yaml_path)
 
         for label, ((ref_tp, ref_mp, ref_mf), (num_tp, num_mp, num_mf)) in zip(labels, parsed):
-            ref_val, _ = _find_entry(entries, ref_tp, ref_mp, ref_mf)
-            num_val, _ = _find_entry(entries, num_tp, num_mp, num_mf)
+            ref_val, _ = _find_entry(entries, ref_tp, ref_mp, ref_mf, metric=metric, error_metric=error_metric)
+            num_val, _ = _find_entry(entries, num_tp, num_mp, num_mf, metric=metric, error_metric=error_metric)
             if ref_val is not None and num_val is not None and ref_val != 0:
                 delta = ((num_val - ref_val) / ref_val * 100) if percent else (num_val - ref_val)
                 deltas[label][dataset_name] = delta
