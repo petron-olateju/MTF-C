@@ -235,31 +235,17 @@ class R_SpectrumSpatioTemporal_ProjectionAddition(nn.Module):
         z = self.addition_estimator(z_s, z_t, z_c).squeeze(-1)
         return z
     
-class R_Gated_SpectrumSpatioTemporal_ProjectionAddition(R_SpectrumSpatioTemporal_ProjectionAddition):
+class R_Gated_SpectrumSpatioTemporal_ProjectionAddition(nn.Module):
     def __init__(self, n_banks, num_channels, num_patches, emb_size):
-        super().__init__(n_banks, num_channels, num_patches, emb_size)
-        self.gate = nn.Linear(emb_size*3, 3)
+        self.st_branch = R_SpatioTemporal_ProjectionAdditionPerBank(n_banks, num_channels, num_patches, emb_size)
+        self.sst_branch = R_SpectrumSpatioTemporal_ProjectionAddition(n_banks, num_channels, num_patches, emb_size)
+        self.alpha = nn.Linear(emb_size, 1)
 
     def forward(self, x_spectrum, x_temporal, x_spatial):
-        z_s = self.shared_projection(x_spectrum)
-        z_t = self.shared_projection(x_temporal)
-        z_c = self.shared_projection(x_spatial)
+        alpha = torch.sigmoid(x_spectrum)
+        z_st = self.st_branch(x_spectrum, x_temporal, x_spatial)
+        z_sst = self.sst_branch(x_spectrum, x_temporal, x_spatial)
 
-        g = torch.cat([
-            z_s.mean(dim=1),
-            z_t.mean(dim=1),
-            z_c.mean(dim=1)
-        ], dim=-1)
-        alpha = torch.sigmoid(self.gate(g))
-
-        alpha_s = alpha[:, 0].view(-1, 1, 1)
-        alpha_t = alpha[:, 1].view(-1, 1, 1)
-        alpha_c = alpha[:, 2].view(-1, 1, 1)
-
-        z_s = alpha_s * z_s
-        z_t = alpha_t * z_t
-        z_c = alpha_c * z_c
-
-        z = self.addition_estimator(z_s, z_t, z_c).squeeze(-1)
+        z = alpha*z_sst + (1-alpha)*z_st
         return z
 
