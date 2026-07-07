@@ -234,9 +234,35 @@ class R_SpectrumSpatioTemporal_ProjectionAddition(nn.Module):
 
         z = self.addition_estimator(z_s, z_t, z_c).squeeze(-1)
         return z
+
+class R_SpectrumSpatioTemporal_ProjectionAdditionPerBank(nn.Module):
+    def __init__(self, n_banks, num_channels, num_patches, emb_size):
+        super().__init__()
+        print(f"SST  Target Size: {(num_channels, n_banks, num_patches)}")
+        self.n_banks = n_banks
+        self.shared_projection = nn.ModuleList([SharedProjectionLayer(emb_size) for n in range(self.n_banks)])
+        self.addition = nn.ModuleList([SpectrumSpatioTemporalAddition(n_banks, num_channels, num_patches) for n in range(self.n_banks)])
+        self.estimator = EstimatorLayer(emb_size)
+
+    def forward(self, x_spectrum, x_temporal, x_spatial):
+        z = []
+
+        for n in range(self.n_banks):
+            z_s = self.shared_projection[n](x_spectrum)
+            z_t = self.shared_projection[n](x_temporal)
+            z_c = self.shared_projection[n](x_spatial)
+            
+            z_sst = self.addition[n](z_s, z_t, z_c)
+            z.append(z_sst.unsqueeze(dim=2))
+        
+        z = torch.concat(z, dim=2)
+        z = z.mean(dim=3)
+        z = self.estimator(z).squeeze(-1)
+        return z
+        
     
 class CrossAttentionSSTDecoder(nn.Module):
-    def __init__(self, n_banks, num_channels, num_patches, emb_size, n_heads=4, n_layers=1):
+    def __init__(self, n_banks, num_channels, num_patches, emb_size, n_heads=8, n_layers=2):
         super().__init__()
         self.F, self.C, self.P, self.D = n_banks, num_channels, num_patches, emb_size
 
