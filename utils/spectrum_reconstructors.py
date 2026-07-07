@@ -234,5 +234,20 @@ class R_SpectrumSpatioTemporal_ProjectionAddition(nn.Module):
 
         z = self.addition_estimator(z_s, z_t, z_c).squeeze(-1)
         return z
+    
+class R_Gated_SpectrumSpatioTemporal_ProjectionAddition(R_SpectrumSpatioTemporal_ProjectionAddition):
+    def __init__(self, n_banks, num_channels, num_patches, emb_size):
+        super().__init__(n_banks, num_channels, num_patches, emb_size)
+        self.gates = nn.ModuleDict({
+            'spectrum': nn.Sequential(nn.Linear(emb_size, emb_size), nn.Sigmoid()),
+            'temporal': nn.Sequential(nn.Linear(emb_size, emb_size), nn.Sigmoid()),
+            'spatial': nn.Sequential(nn.Linear(emb_size, emb_size), nn.Sigmoid()),
+        })
+
+    def forward(self, x_spectrum, x_temporal, x_spatial):
+        x_spectrum = x_spectrum * self.gates['spectrum'](x_spectrum)
+        x_temporal = x_temporal * self.gates['temporal'](x_temporal)
+        x_spatial = x_spatial * self.gates['spatial'](x_spatial)
         
+        return super().forward(x_spectrum, x_temporal, x_spatial)
 

@@ -48,7 +48,7 @@ for dataset in tqdm(DATASETS, total=len(DATASETS)):
                 check=True,
             )
         
-    for sst_decoder in ['sst_addition', 'sst_projection+addition']:
+    for sst_decoder in ['sst_addition', 'sst_projection+addition', 'gated_sst_projection+addition']:
         MODEL_PARAMS['mtf_c']['sst_decoder'] = sst_decoder
         with open('configs/model_params.yaml', 'w') as f:
             yaml.dump(MODEL_PARAMS, f)
