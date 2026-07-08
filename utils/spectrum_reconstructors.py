@@ -290,7 +290,7 @@ class R_SpetrumSpatioTemporal_Projection_BranchAddition(nn.Module):
         zs = torch.mean(torch.cat(zs, dim=2), dim=2)
         zs = zs.unsqueeze(1).unsqueeze(3)
 
-        g = torch.relu(self.spectrum_gate(x_spectrum))
+        g = torch.sigmoid(self.spectrum_gate(x_spectrum))
         g = g.unsqueeze(1).unsqueeze(3)
         zs = g * zs
 

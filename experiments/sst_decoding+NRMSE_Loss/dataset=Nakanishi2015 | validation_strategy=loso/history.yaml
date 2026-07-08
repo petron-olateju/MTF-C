@@ -1338,3 +1338,79 @@
     7: 0.0010683092987164855
     8: 0.001147448900155723
     9: 0.000828822492621839
+'2026-07-08T13:15:50.952211':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_multi_projection+branch_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    spectrum_attn_flag: false
+    chn_attn_flag: true
+    temporal_attn_flag: false
+    spec_depth: 2
+    chn_depth: 2
+    tem_depth: 2
+    patch_emb_size: 40
+    patch_size: 100
+    spa_dim: 16
+    posemb_flag: true
+    gate_flag: false
+    reconstruction_lambda: 0.001
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    temporal_kernel: 43
+    wsize_divisor: 2
+    sst_method: frequency_backbone
+    sst_decoder: sst_multi_projection+branch_addition
+    filter_banks: 11
+    freq_downsample: 1
+    pretrain: true
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Nakanishi2015
+      | validation_strategy=loso/2026-07-02T12:32:48.394517|model:mtf_c|subject:9.ckpt
+  mean_acc: 0.8080246878994836
+  std_acc: 0.18737796711631527
+  mean_sst_error: 0.0010713329538702965
+  std_sst_error: 0.00016215278564684463
+  loss: 0.0018533404735434386
+  subjects_acc:
+    1: 0.6277777552604675
+    2: 0.3722222149372101
+    3: 0.7777777910232544
+    4: 0.9944444298744202
+    5: 0.8333333134651184
+    6: 0.9111111164093018
+    7: 0.8722222447395325
+    8: 1.0
+    9: 0.8833333253860474
+  subjects_sst_error:
+    1: 0.0010269773192703724
+    2: 0.0011450523743405938
+    3: 0.0012156898155808449
+    4: 0.0010758476564660668
+    5: 0.0013959029456600547
+    6: 0.0008738049655221403
+    7: 0.001067970646545291
+    8: 0.0010163697879761457
+    9: 0.0008243810734711587

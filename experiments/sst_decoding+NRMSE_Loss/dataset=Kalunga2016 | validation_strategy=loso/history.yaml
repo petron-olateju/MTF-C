@@ -1446,3 +1446,85 @@
     10: 0.0021984102204442024
     11: 0.00511892419308424
     12: 0.001890342216938734
+'2026-07-08T13:29:40.491171':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_multi_projection+branch_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    spectrum_attn_flag: false
+    chn_attn_flag: true
+    temporal_attn_flag: false
+    spec_depth: 2
+    chn_depth: 2
+    tem_depth: 2
+    patch_emb_size: 40
+    patch_size: 100
+    spa_dim: 16
+    posemb_flag: true
+    gate_flag: false
+    reconstruction_lambda: 0.001
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    temporal_kernel: 43
+    wsize_divisor: 2
+    sst_method: frequency_backbone
+    sst_decoder: sst_multi_projection+branch_addition
+    filter_banks: 11
+    freq_downsample: 1
+    pretrain: true
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.7245659728844961
+  std_acc: 0.1085804972481357
+  mean_sst_error: 0.0029685497866012156
+  std_sst_error: 0.0007118089219759803
+  loss: 0.003247535632302364
+  subjects_acc:
+    1: 0.640625
+    2: 0.6875
+    3: 0.875
+    4: 0.890625
+    5: 0.640625
+    6: 0.546875
+    7: 0.8541666865348816
+    8: 0.765625
+    9: 0.640625
+    10: 0.609375
+    11: 0.75
+    12: 0.793749988079071
+  subjects_sst_error:
+    1: 0.0026323627680540085
+    2: 0.003347643418237567
+    3: 0.0029638526029884815
+    4: 0.0029273065738379955
+    5: 0.002983346814289689
+    6: 0.0034308601170778275
+    7: 0.0025969352573156357
+    8: 0.002740613417699933
+    9: 0.0027927726041525602
+    10: 0.0024187767412513494
+    11: 0.004930672235786915
+    12: 0.001857454888522625

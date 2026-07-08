@@ -3,10 +3,10 @@ import subprocess
 from tqdm import tqdm
 
 DATASETS = [
-    "BNCI2014_001"
-    # "Cattan2019_PHMD", "Rodrigues2017", 
-    # "Nakanishi2015", "Kalunga2016", 
-    # "BNCI2014_001", "BNCI2014_002", "BNCI2014_004"
+    # "BNCI2014_002"
+    "Cattan2019_PHMD", "Rodrigues2017", 
+    "Nakanishi2015", "Kalunga2016", 
+    "BNCI2014_001", "BNCI2014_004"
 ]
 VALIDATION = "loso"
 OUTPUT_DIR = "experiments/sst_decoding+NRMSE_Loss"
