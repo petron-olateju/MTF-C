@@ -1698,3 +1698,99 @@
     18: 0.003877306589856744
     19: 0.0038928224239498377
     20: 0.003925558645278215
+'2026-07-08T15:38:15.780011':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_multi_projection+branch_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_multi_projection+branch_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Rodrigues2017
+      | validation_strategy=loso/2026-07-02T12:08:16.932865|model:mtf_c|subject:20.ckpt
+  mean_acc: 0.9418337533348485
+  std_acc: 0.1286957304211087
+  mean_sst_error: 0.0029168066838266035
+  std_sst_error: 0.0002744604105307547
+  loss: 0.00291680664706387
+  subjects_acc:
+    1: 0.625
+    2: 0.5555555820465088
+    3: 0.8571428656578064
+    4: 1.0
+    5: 1.0
+    6: 1.0
+    8: 1.0
+    9: 0.8571428656578064
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 1.0
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 1.0
+    20: 1.0
+  subjects_sst_error:
+    1: 0.0035616708919405937
+    2: 0.002745331497862935
+    3: 0.0027412010822445154
+    4: 0.002574038691818714
+    5: 0.0027863061986863613
+    6: 0.002537000458687544
+    8: 0.0032594017684459686
+    9: 0.0033637695014476776
+    10: 0.0029776347801089287
+    11: 0.002813067054376006
+    12: 0.0029127970337867737
+    13: 0.002627275651320815
+    14: 0.0028096933383494616
+    15: 0.002941783517599106
+    16: 0.0027747638523578644
+    17: 0.0032272839453071356
+    18: 0.0028587491251528263
+    19: 0.0032049270812422037
+    20: 0.0027026315219700336
