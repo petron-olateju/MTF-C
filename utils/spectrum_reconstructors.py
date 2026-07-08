@@ -259,6 +259,45 @@ class R_SpectrumSpatioTemporal_ProjectionAdditionPerBank(nn.Module):
         z = z.mean(dim=3)
         z = self.estimator(z).squeeze(-1)
         return z
+    
+class R_SpetrumSpatioTemporal_Projection_BranchAddition(nn.Module):
+    def __init__(self, n_banks, num_channels, num_patches, emb_size):
+        super().__init__()
+        self.n_banks = self.F = n_banks
+        self.C, self.P, self.D = num_channels, num_patches, emb_size
+
+        self.shared_projection = nn.ModuleList([SharedProjectionLayer(emb_size) for n in range(self.n_banks)])
+        self.st_addition = nn.ModuleList([SpatioTemporalAddition(num_channels, num_patches) for n in range(n_banks)])
+
+        self.spectrum_gate = nn.Linear(emb_size, emb_size)
+
+        self.estimator = EstimatorLayer(emb_size)
+
+    def forward(self, x_spectrum, x_temporal, x_spatial):
+        zs = []
+        z = []
+
+        for n in range(self.n_banks):
+            z_s = self.shared_projection[n](x_spectrum)
+            zs.append(z_s.unsqueeze(dim=2))
+
+            z_t = self.shared_projection[n](x_temporal)
+            z_c = self.shared_projection[n](x_spatial)
+            z_ct_f = self.st_addition[n](z_t, z_c)
+            z.append(z_ct_f.unsqueeze(dim=2))
+
+        z = torch.cat(z, dim=2)
+        zs = torch.mean(torch.cat(zs, dim=2), dim=2)
+        zs = zs.unsqueeze(1).unsqueeze(3)
+
+        g = torch.relu(self.spectrum_gate(x_spectrum))
+        g = g.unsqueeze(1).unsqueeze(3)
+        zs = g * zs
+
+        z = z + zs
+        z = self.estimator(z).squeeze(-1)
+
+        return z
         
     
 class CrossAttentionSSTDecoder(nn.Module):

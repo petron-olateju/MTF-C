@@ -13,7 +13,7 @@ OUTPUT_DIR = "experiments/sst_decoding+NRMSE_Loss"
 
 for dataset in tqdm(DATASETS, total=len(DATASETS)):
 
-    EXPERIMENT_DETAILS = f"Transformer depth=2 across all branches  One LOSO repeat  channel_attn_pooling alone  sst_decoder=gated_sst_projection+addition"
+    EXPERIMENT_DETAILS = f"Transformer depth=2 across all branches  One LOSO repeat  channel_attn_pooling alone  sst_decoder=sst_multi_projection+branch_addition"
     
     subprocess.run(
             [

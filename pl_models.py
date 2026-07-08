@@ -21,6 +21,7 @@ from utils.spectrum_reconstructors import (
     R_SpectrumSpatioTemporal_Addition,
     R_SpectrumSpatioTemporal_ProjectionAddition,
     R_SpectrumSpatioTemporal_ProjectionAdditionPerBank,
+    R_SpetrumSpatioTemporal_Projection_BranchAddition,
     CrossAttentionSSTDecoder
 )
 
@@ -41,10 +42,12 @@ class SST_Decoder(nn.Module):
             self.model = R_SpectrumSpatioTemporal_ProjectionAddition(n_banks, num_channels, num_patches, emb_size)
         elif decoder == 'sst_multi_projection+addition':
             self.model = R_SpectrumSpatioTemporal_ProjectionAdditionPerBank(n_banks, num_channels, num_patches, emb_size)
+        elif decoder == 'sst_multi_projection+branch_addition':
+            self.model = R_SpetrumSpatioTemporal_Projection_BranchAddition(n_banks, num_channels, num_patches, emb_size)
         elif decoder == 'sst_cross_attention':
             self.model = CrossAttentionSSTDecoder(n_banks, num_channels, num_patches, emb_size)
         else:
-            raise ValueError(f"Argument decoder should be one of: [st_addition, st_projection+addition, st_projection_addition, sst_addition, sst_projection+addition, sst_cross_attention]")
+            raise ValueError(f"Argument decoder should be one of: [st_addition, st_projection+addition, st_projection_addition, sst_addition, sst_projection+addition, sst_multi_projection+branch_addition, sst_cross_attention]")
     
     def forward(self, x_spectrum, x_temporal, x_spatial):
         z = self.model(x_spectrum, x_temporal, x_spatial)
@@ -461,10 +464,10 @@ class mtf_r_c(mtf_c):
 
         if self.decoder.name in ['st_addition', 'st_projection+addition', 'st_projection_addition']:
             sst_hat = self.decoder(None, x_temporal, x_channel)
-        elif self.decoder.name in ['sst_addition', 'sst_projection+addition', 'sst_cross_attention']:
+        elif self.decoder.name in ['sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']:
             sst_hat = self.decoder(x_spectrum, x_temporal, x_channel)
         else:
-            raise ValueError(f"decoder for mtf_c cannot be {self.sst_decoder_name}, can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition']}")
+            raise ValueError(f"decoder for mtf_c cannot be {self.sst_decoder_name}, can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']}")
 
         return sst_hat
 
@@ -476,10 +479,10 @@ class mtf_r_c(mtf_c):
 
         if self.decoder.name in ['st_addition', 'st_projection+addition', 'st_projection_addition']:
             sst_hat = self.decoder(None, x_temporal, x_channel)
-        elif self.decoder.name in ['sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition']:
+        elif self.decoder.name in ['sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']:
             sst_hat = self.decoder(x_spectrum, x_temporal, x_channel)
         else:
-            raise ValueError(f"decoder for mtf_c can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition']}")
+            raise ValueError(f"decoder for mtf_c can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']}")
 
         if self.sst_decoder_name is not None:
             if (self.sst_method_name is not None) and (self.sst_method_name.upper() in ['FREQUENCY_BACKBONE']):

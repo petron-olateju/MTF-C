@@ -38,7 +38,7 @@ mtf_c: &mtf_c
   wsize_divisor: 2
 
   sst_method: frequency_backbone
-  sst_decoder: gated_sst_projection+addition
+  sst_decoder: sst_multi_projection+branch_addition
   filter_banks: 11
   freq_downsample: 1
 
