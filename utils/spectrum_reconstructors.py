@@ -269,11 +269,12 @@ class R_SpetrumSpatioTemporal_Projection_BranchAddition(nn.Module):
         self.shared_projection = nn.ModuleList([SharedProjectionLayer(emb_size) for n in range(self.n_banks)])
         self.st_addition = nn.ModuleList([SpatioTemporalAddition(num_channels, num_patches) for n in range(n_banks)])
 
-        self.spectrum_gate = nn.Linear(emb_size, emb_size)
+        self.spectrum_gate = nn.Linear(self.F * emb_size, self.F * emb_size)
 
         self.estimator = EstimatorLayer(emb_size)
 
     def forward(self, x_spectrum, x_temporal, x_spatial):
+        B, _, _ = x_spectrum.size()
         zs = []
         z = []
 
@@ -290,7 +291,8 @@ class R_SpetrumSpatioTemporal_Projection_BranchAddition(nn.Module):
         zs = torch.mean(torch.cat(zs, dim=2), dim=2)
         zs = zs.unsqueeze(1).unsqueeze(3)
 
-        g = torch.sigmoid(self.spectrum_gate(x_spectrum))
+        g = torch.sigmoid(self.spectrum_gate(x_spectrum.reshape(B, self.F*self.D)))
+        g = g.reshape(B, self.F, self.D)
         g = g.unsqueeze(1).unsqueeze(3)
         zs = g * zs
 
