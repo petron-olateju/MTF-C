@@ -73,10 +73,17 @@ def across_subjects_evaluation(
     subjects_acc = {}
     subjects_reconstruction = {}
     subjects_sst_error = {}
+    subjects_inter_class_sim = {}
+    subjects_intra_class_sim = {}
+
     sub_acc = []
     sub_reconstruction = []
     sub_sst_error = []
+    sub_inter_class_sim = []
+    sub_intra_class_sim = []
+
     sub_loss = []
+    sub_trace_error = []
 
     if model_name  in ['mtf_c', 'mtf_r_c', 'mtf_tr_c']:
         model_params = get_model_params('mtf_c')
@@ -150,6 +157,9 @@ def across_subjects_evaluation(
             folds_reconstruction = []
             folds_loss = []
             folds_sst_error = []
+            folds_inter_class_sim = []
+            folds_intra_class_sim = []
+            folds_trace_error = []
 
             for fold in range(n_folds):
                 dm.update_subject(subject=subject, seed=experiment_seed+repeat, fold=fold)
@@ -184,6 +194,10 @@ def across_subjects_evaluation(
                     folds_reconstruction.append(val_metrics["val_reconstruction"])
                 if "val_sst_error" in val_metrics:
                     folds_sst_error.append(val_metrics["val_sst_error"])
+                if "val_inter_class_sim" in val_metrics:
+                    folds_inter_class_sim.append(val_metrics["val_inter_class_sim"])
+                    folds_intra_class_sim.append(val_metrics["val_intra_class_sim"])
+                    folds_trace_error.append(val_metrics["val_trace_target_error"])
                 
             folds_acc = np.mean(folds_acc)
             folds_loss = np.mean(folds_loss)
@@ -195,12 +209,23 @@ def across_subjects_evaluation(
             if len(folds_reconstruction) > 0:
                 folds_reconstruction = np.mean(folds_reconstruction)
                 sub_reconstruction.append(folds_reconstruction)
+            if len(folds_inter_class_sim) > 0:
+                folds_inter_class_sim = np.mean(folds_inter_class_sim)
+                folds_intra_class_sim = np.mean(folds_intra_class_sim)
+                folds_trace_error = np.mean(folds_trace_error)
+
+                sub_inter_class_sim.append(folds_inter_class_sim)
+                sub_intra_class_sim.append(folds_intra_class_sim)
+                sub_trace_error.append(folds_trace_error)
 
         subjects_acc[subject] = np.mean(sub_acc[-n_repeats:]).item()
         if len(sub_sst_error) > 0:
             subjects_sst_error[subject] = np.mean(sub_sst_error[-n_repeats:]).item()
         if len(sub_reconstruction) > 0:
             subjects_reconstruction[subject] = np.mean(sub_reconstruction[-n_repeats:]).item()
+        if len(sub_inter_class_sim)> 0:
+            subjects_inter_class_sim[subject] = np.mean(sub_inter_class_sim).item()
+            subjects_intra_class_sim[subject] = np.mean(sub_intra_class_sim).item()
 
         print(
             f"Subject-{subject} Performance:",
@@ -210,39 +235,43 @@ def across_subjects_evaluation(
     acc_mean = np.mean(sub_acc).item()
     acc_std = np.std(sub_acc).item()
     loss = np.mean(sub_loss).item()
-    
-    if len(subjects_sst_error) > 0:
-        sst_error_mean = np.mean(sub_sst_error).item()
-        sst_error_std = np.std(sub_sst_error).item()
 
-        return {
-            "model_params": model_params,
-            "mean_acc": acc_mean,
-            "std_acc": acc_std,
-            "mean_sst_error": sst_error_mean,
-            "std_sst_error": sst_error_std,
-            "loss": loss,
-            "subjects_acc": subjects_acc,
-            "subjects_sst_error": subjects_sst_error
-        }
-    elif len(sub_reconstruction) > 0:
-        reconstruction_mean = np.mean(sub_reconstruction).item()
-        reconstruction_std = np.std(sub_reconstruction).item()
-
-        return {
-            "model_params": model_params,
-            "mean_acc": acc_mean,
-            "std_acc": acc_std,
-            "mean_spectrum_mse": reconstruction_mean,
-            "std_spectrum_mse": reconstruction_std,
-            "loss": loss,
-            "subjects_acc": subjects_acc,
-        }
-    
-    return {
+    experiment_result = {
         "model_params": model_params,
         "mean_acc": acc_mean,
         "std_acc": acc_std,
         "loss": loss,
         "subjects_acc": subjects_acc,
     }
+    
+    if len(subjects_sst_error) > 0:
+        sst_error_mean = np.mean(sub_sst_error).item()
+        sst_error_std = np.std(sub_sst_error).item()
+
+        experiment_result.update({
+            "mean_sst_error": sst_error_mean,
+            "std_sst_error": sst_error_std,
+            "subjects_sst_error": subjects_sst_error
+        })
+    elif len(sub_reconstruction) > 0:
+        reconstruction_mean = np.mean(sub_reconstruction).item()
+        reconstruction_std = np.std(sub_reconstruction).item()
+
+        experiment_result.update({
+            "mean_spectrum_mse": reconstruction_mean,
+            "std_spectrum_mse": reconstruction_std,
+        })
+    elif len(sub_inter_class_sim) > 0:
+        mean_inter_class_sim = np.mean(sub_inter_class_sim).item()
+        mean_intra_class_sim = np.mean(sub_intra_class_sim).item()
+        trace_error = np.mean(sub_trace_error).item()
+
+        experiment_result.update({
+            "trace_target_est_error": trace_error,
+            "mean_inter_class_sim": mean_inter_class_sim,
+            "mean_intra_class_sim": mean_intra_class_sim,
+            "inter_intra_sim_gap": abs(mean_inter_class_sim - mean_intra_class_sim),
+            "subjects_inter_class_sim": subjects_inter_class_sim,
+            "subjects_intra_class_sim": subjects_intra_class_sim
+        })
+    return experiment_result

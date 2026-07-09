@@ -14,6 +14,7 @@ from torchmetrics.regression import (
 )
 from torchmetrics.aggregation import MeanMetric
 from torchmetrics.functional import normalized_root_mean_squared_error
+from utils.metrics import InterIntraClass_Similarity
 from utils.data_loader import DATASET_TASK_MAP
 from utils.losses import SupConLoss
 from utils.spectrum_reconstructors import (
@@ -26,6 +27,9 @@ from utils.spectrum_reconstructors import (
     R_SpetrumSpatioTemporal_Projection_BranchAddition,
     CrossAttentionSSTDecoder
 )
+from utils.trace_predictors import (
+    Trace_SpetrumSpatioTemporal_Projection_BranchAddition,
+)
 
 
 class SST_Decoder(nn.Module):
@@ -33,6 +37,7 @@ class SST_Decoder(nn.Module):
     def __init__(self, decoder, n_banks, num_channels, num_patches, emb_size):
         super().__init__()
         self.name = decoder
+
         if decoder == 'st_addition':
             self.model = R_SpatioTemporal_AdditionPerBank(n_banks, num_channels, num_patches, emb_size)
         elif decoder == 'st_projection+addition':
@@ -54,6 +59,21 @@ class SST_Decoder(nn.Module):
     
     def forward(self, x_spectrum, x_temporal, x_spatial):
         z = self.model(x_spectrum, x_temporal, x_spatial)
+        return z
+
+class SST_Trace(nn.Module):
+
+    def __init__(self, trace, n_banks, num_channels, num_patches, emb_size):
+        super().__init__()
+        self.name = trace
+
+        if trace == 'sst_multi_projection+branch_addition':
+            self.predictor = Trace_SpetrumSpatioTemporal_Projection_BranchAddition( n_banks, num_channels, num_patches, emb_size)
+        else:
+            ValueError(f"Argument trace should be one of: [sst_multi_projection+branch_addition, ]")
+
+    def forward(self, x_spectrum, x_temporal, x_spatial):
+        z = self.predictor(x_spectrum, x_temporal, x_spatial)
         return z
 
 class db_conformer(pl.LightningModule):
@@ -559,6 +579,8 @@ class mtf_tr_c(mtf_r_c):
         super().__init__(MODEL_ARGS=MODEL_ARGS)
 
         self.trace_pretrain = MODEL_ARGS['trace_pretrain']
+        self.trace_target = MODEL_ARGS['trace_target']
+        self.trace_temperature = MODEL_ARGS['trace_temperature']
         if self.trace_pretrain is not False:
             self.pretrain_dir = MODEL_ARGS['pretrain_dir']
             self.encoder_decoder = mtf_r_c.load_from_checkpoint(self.pretrain_dir, MODEL_ARGS=MODEL_ARGS)
@@ -580,17 +602,27 @@ class mtf_tr_c(mtf_r_c):
         P_cfg = MODEL_ARGS['patch_size']
         n_patches = (n_times - 1) // P_cfg
 
-        self.trace = SST_Decoder(
-            decoder=self.sst_decoder_name,
+        self.trace = SST_Trace(
+            trace=self.sst_trace_name,
             n_banks=MODEL_ARGS['filter_banks'],
             num_channels=MODEL_ARGS['chn'],
             num_patches=n_patches,
             emb_size=MODEL_ARGS['patch_emb_size']
         )
+        self.spectrum_normalization = nn.BatchNorm1d(MODEL_ARGS['filter_banks'])
+        self.temporal_normalization = nn.BatchNorm1d(n_patches)
+        self.channel_normalization = nn.BatchNorm1d(MODEL_ARGS['chn'])
 
-        self.train_trace_error = MeanMetric()
-        self.val_trace_error = MeanMetric()
-        self.test_trace_error = MeanMetric()
+        self.train_inter_class_sim = MeanMetric()
+        self.val_inter_class_sim = MeanMetric()
+        self.test_inter_class_sim = MeanMetric()
+        self.train_intra_class_sim = MeanMetric()
+        self.val_intra_class_sim = MeanMetric()
+        self.test_intra_class_sim = MeanMetric()
+
+        self.train_decoder_trace_error = MeanSquaredError()
+        self.val_decoder_trace_error = MeanSquaredError()
+        self.test_decoder_trace_error = MeanSquaredError()
 
     def forward(self, x):
         branch_embeddings, spectrum_est, x_fused, logits = self.encoder_decoder.encoder(x)
@@ -599,25 +631,27 @@ class mtf_tr_c(mtf_r_c):
         x_channel = branch_embeddings['channel']
 
         if self.decoder.name in ['st_addition', 'st_projection+addition', 'st_projection_addition']:
-            _ = self.encoder_decoder.decoder(None, x_temporal, x_channel)
+            decoder_sst = self.encoder_decoder.decoder(None, x_temporal, x_channel)
         elif self.decoder.name in ['sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']:
-            _ = self.encoder_decoder.decoder(x_spectrum, x_temporal, x_channel)
+            decoder_sst = self.encoder_decoder.decoder(x_spectrum, x_temporal, x_channel)
         else:
             raise ValueError(f"decoder for mtf_c cannot be {self.sst_decoder_name}, can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']}")
 
+        x_spectrum = self.spectrum_normalization(x_spectrum)
+        x_temporal = self.temporal_normalization(x_temporal)
+        x_channel = self.channel_normalization(x_channel)
+
         if self.trace.name in ['st_addition', 'st_projection+addition', 'st_projection_addition']:
-            sst_hat = self.trace(None, x_temporal, x_channel)
+            trace_coords = self.trace(None, x_temporal, x_channel)
         elif self.trace.name in ['sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']:
-            sst_hat = self.trace(x_spectrum, x_temporal, x_channel)
+            trace_coords = self.trace(x_spectrum, x_temporal, x_channel)
         else:
             raise ValueError(f"trace network for mtf_c cannot be {self.sst_decoder_name}, can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']}")
+        
+        trace_coords = rearrange(trace_coords.unsqueeze(1), 'b n p d -> b n (p d)')
+        trace_coords = F.normalize(trace_coords, dim=-1)
 
-        sst_hat = rearrange(sst_hat, 'b c f p -> b p c f')
-        # sst_hat = sst_hat.mean(dim=-1)
-        sst_hat = rearrange(sst_hat.unsqueeze(1), 'b n p c f -> b n (p c f)')
-        sst_hat = F.normalize(sst_hat, dim=-1)
-
-        return sst_hat
+        return branch_embeddings, logits, decoder_sst, trace_coords
     
     def _common_step(self, batch, batch_idx):
         branch_embeddings, _, _, logits, encoder_decoder_loss, y = self.encoder_decoder._common_step(batch, batch_idx)
@@ -625,75 +659,125 @@ class mtf_tr_c(mtf_r_c):
         x_temporal = branch_embeddings['temporal']
         x_channel = branch_embeddings['channel']
 
+        if self.decoder.name in ['st_addition', 'st_projection+addition', 'st_projection_addition']:
+            decoder_sst = self.encoder_decoder.decoder(None, x_temporal, x_channel)
+        elif self.decoder.name in ['sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']:
+            decoder_sst = self.encoder_decoder.decoder(x_spectrum, x_temporal, x_channel)
+        else:
+            raise ValueError(f"decoder for mtf_c cannot be {self.sst_decoder_name}, can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']}")
+
+        x_spectrum = self.spectrum_normalization(x_spectrum)
+        x_temporal = self.temporal_normalization(x_temporal)
+        x_channel = self.channel_normalization(x_channel)
+
         if self.trace.name in ['st_addition', 'st_projection+addition', 'st_projection_addition']:
-            sst_hat = self.trace(None, x_temporal, x_channel)
+            trace_coords = self.trace(None, x_temporal, x_channel)
         elif self.trace.name in ['sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']:
-            sst_hat = self.trace(x_spectrum, x_temporal, x_channel)
+            trace_coords = self.trace(x_spectrum, x_temporal, x_channel)
         else:
             raise ValueError(f"trace network for mtf_c cannot be {self.sst_decoder_name}, can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']}")
         
-        sst_hat = rearrange(sst_hat, 'b c f p -> b p c f')
-        # sst_hat = sst_hat.mean(dim=-1)
-        sst_hat = rearrange(sst_hat.unsqueeze(1), 'b n p c f -> b n (p c f)')
-        sst_hat = F.normalize(sst_hat, dim=-1)
+        trace_coords = rearrange(trace_coords.unsqueeze(1), 'b n p d -> b n (p d)')
+        trace_coords = F.normalize(trace_coords, dim=-1)
 
-        trace_loss = SupConLoss()(sst_hat, y)
+        with torch.no_grad():
+            if self.trace_target.upper() == 'HARD_ARGMAX':
+                decoder_sst = rearrange(decoder_sst, 'b c f p -> b p c f')
+                B, P, C, _F = decoder_sst.shape
+                # Flatten the C×F plane
+                flat_idx = decoder_sst.reshape(B, P, -1).argmax(dim=-1)  # (B, P)
+                # Convert flat indices back to (channel, frequency)
+                channel_idx = (flat_idx // _F).float()
+                frequency_idx = (flat_idx % _F).float()
+                x_coords = channel_idx / (C - 1)
+                y_coords = frequency_idx / (_F - 1)
+            elif self.trace_target.upper() == 'SOFT_ARGMAX':
+                decoder_sst_r = rearrange(decoder_sst, 'b c f p -> b p c f')
+                B, P, C, _F = decoder_sst_r.shape
+                energy = decoder_sst_r.reshape(B, P, -1)
+                weights = F.softmax(energy, dim=-1).reshape(B, P, C, _F)
+                chan_weights = weights.sum(dim=-1)  # (B, P, C)
+                freq_weights = weights.sum(dim=-2)  # (B, P, F)
+                chan_idx = torch.arange(C, device=decoder_sst.device, dtype=decoder_sst.dtype)
+                freq_idx = torch.arange(_F, device=decoder_sst.device, dtype=decoder_sst.dtype)
+                x_coords = (chan_weights * chan_idx).sum(dim=-1) / (C - 1)
+                y_coords = (freq_weights * freq_idx).sum(dim=-1) / (_F - 1)
+            else:
+                raise ValueError(f'--trace_target should be one of [hard_argmax, soft_argmax] not {self.trace_target}')
+            
+            decoder_coords = torch.stack([x_coords, y_coords], dim=-1).detach()
+            decoder_coords = rearrange(decoder_coords, 'b p d -> b (p d)')
+        trace_coords_ = trace_coords.squeeze(dim=1)
+        trace_decoder_loss = F.mse_loss(trace_coords_, decoder_coords)
+
+        trace_loss = SupConLoss(
+            temperature=self.trace_temperature, 
+            base_temperature=self.trace_temperature
+        )(trace_coords, y)
         if self.trace_pretrain is not False:
-            loss = trace_loss
+            loss = trace_loss + trace_decoder_loss
         else:
-            loss = trace_loss + encoder_decoder_loss
+            loss = trace_loss + trace_decoder_loss + encoder_decoder_loss
 
-        return sst_hat, logits, loss, y
+        return trace_coords, decoder_coords, logits, loss, y
     
     def training_step(self, batch, batch_idx):
-        sst_hat, logits, loss, y = self._common_step(batch, batch_idx)
+        trace_coords, decoder_coords, logits, loss, y = self._common_step(batch, batch_idx)
 
         preds = logits.argmax(dim=1)
         self.train_acc.update(preds, y)
 
-        # trace_loss = SupConLoss()(rearrange(sst_hat, y))
-        self.train_trace_error(loss.detach())
+        inter_class_sim, intra_class_sim = InterIntraClass_Similarity()(trace_coords.squeeze(1), y)
+        self.train_inter_class_sim(inter_class_sim)
+        self.train_intra_class_sim(intra_class_sim)
+        self.train_decoder_trace_error.update(trace_coords.squeeze(1), decoder_coords)
 
         self.log("train_loss", loss, prog_bar=True)
-        self.log("train_sst_error", self.train_trace_error, prog_bar=True)
+        self.log("train_inter_class_sim", inter_class_sim, prog_bar=True)
+        self.log("train_intra_class_sim", intra_class_sim, prog_bar=True)
+        self.log("train_trace_target_error", self.train_decoder_trace_error, prog_bar=True)
         self.log("train_acc", self.train_acc, prog_bar=True)
 
         return loss
 
     def validation_step(self, batch, batch_idx):
         with torch.no_grad():
-            sst_hat, logits, loss, y = self._common_step(batch, batch_idx)
+            trace_coords, decoder_coords, logits, loss, y = self._common_step(batch, batch_idx)
 
             preds = logits.argmax(dim=1)
             self.val_acc.update(preds, y)
 
-            # trace_loss = SupConLoss()(rearrange(sst_hat, y))
-            self.val_trace_error(loss.detach())
+            inter_class_sim, intra_class_sim = InterIntraClass_Similarity()(trace_coords.squeeze(1), y)
+            self.val_inter_class_sim(inter_class_sim)
+            self.val_intra_class_sim(intra_class_sim)
+            self.val_decoder_trace_error.update(trace_coords.squeeze(1), decoder_coords)
 
             self.log("val_loss", loss, prog_bar=True)
-            self.log("val_sst_error", self.val_trace_error, prog_bar=True)
+            self.log("val_inter_class_sim", inter_class_sim, prog_bar=True)
+            self.log("val_intra_class_sim", intra_class_sim, prog_bar=True)
+            self.log("val_trace_target_error", self.val_decoder_trace_error, prog_bar=True)
             self.log("val_acc", self.val_acc, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
         with torch.no_grad():
-            sst_hat, logits, loss, y = self._common_step(batch, batch_idx)
+            trace_coords, decoder_coords, logits, loss, y = self._common_step(batch, batch_idx)
 
             preds = logits.argmax(dim=1)
             self.test_acc.update(preds, y)
 
-            # trace_loss = SupConLoss()(rearrange(sst_hat, y))
-            self.test_trace_error(loss.detach())
+            inter_class_sim, intra_class_sim = InterIntraClass_Similarity()(trace_coords.squeeze(1), y)
+            self.test_inter_class_sim(inter_class_sim)
+            self.test_intra_class_sim(intra_class_sim)
+            self.test_decoder_trace_error.update(trace_coords.squeeze(1), decoder_coords)
 
             self.log("test_loss", loss, prog_bar=True)
-            self.log("test_sst_error", self.test_trace_error, prog_bar=True)
+            self.log("test_inter_class_sim", inter_class_sim, prog_bar=True)
+            self.log("test_intra_class_sim", intra_class_sim, prog_bar=True)
+            self.log("test_trace_target_error", self.test_decoder_trace_error, prog_bar=True)
             self.log("test_acc", self.test_acc, prog_bar=True)
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.lr)
-    
-
-
-
+        return torch.optim.Adam(self.parameters(), lr=self.lr/2.0e2)
 
 NAME_MODEL_MAP = {
     "db_conformer": db_conformer,
