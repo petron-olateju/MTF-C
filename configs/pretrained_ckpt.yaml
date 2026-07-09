@@ -1,32 +1,19 @@
 db_conformer: &db_conformer
-  BNCI2014_001: experiments/classification/frequency_backbone/dataset=BNCI2014_001
-    | validation_strategy=loso/2026-07-02T10:54:40.235204|model:db_conformer
-  BNCI2014_002: experiments/classification/frequency_backbone/dataset=BNCI2014_002
-    | validation_strategy=loso/2026-07-02T11:02:01.099679|model:db_conformer
-  BNCI2014_004: experiments/classification/frequency_backbone/dataset=BNCI2014_004
-    | validation_strategy=loso/2026-07-02T11:21:51.304266|model:db_conformer
-  Cattan2019_PHMD: experiments/classification/frequency_backbone/dataset=Cattan2019_PHMD
-    | validation_strategy=loso/2026-07-02T10:33:10.011556|model:db_conformer
-  Kalunga2016: experiments/classification/frequency_backbone/dataset=Kalunga2016 |
-    validation_strategy=loso/2026-07-02T10:48:25.956318|model:db_conformer
-  Nakanishi2015: experiments/classification/frequency_backbone/dataset=Nakanishi2015
-    | validation_strategy=loso/2026-07-02T10:40:07.926887|model:db_conformer
-  Rodrigues2017: experiments/classification/frequency_backbone/dataset=Rodrigues2017
-    | validation_strategy=loso/2026-07-02T10:35:38.635027|model:db_conformer
+  BNCI2014_001: experiments/sst_decoding+NRMSE_Loss/dataset=BNCI2014_001 | validation_strategy=loso/2026-07-06T17:23:30.288433|model:db_r_conformer
+  BNCI2014_002: experiments/sst_decoding+NRMSE_Loss/dataset=BNCI2014_002 | validation_strategy=loso/2026-07-06T19:30:12.120612|model:db_r_conformer
+  BNCI2014_004: experiments/sst_decoding+NRMSE_Loss/dataset=BNCI2014_004 | validation_strategy=loso/2026-07-06T22:59:18.016744|model:db_r_conformer
+  Cattan2019_PHMD: experiments/sst_decoding+NRMSE_Loss/dataset=Cattan2019_PHMD | validation_strategy=loso/2026-07-06T12:54:23.109292|model:db_r_conformer
+  Kalunga2016: experiments/sst_decoding+NRMSE_Loss/dataset=Kalunga2016 | validation_strategy=loso/2026-07-06T16:05:02.877439|model:db_r_conformer
+  Nakanishi2015: experiments/sst_decoding+NRMSE_Loss/dataset=Nakanishi2015 | validation_strategy=loso/2026-07-06T14:34:33.290145|model:db_r_conformer
+  Rodrigues2017: experiments/sst_decoding+NRMSE_Loss/dataset=Rodrigues2017 | validation_strategy=loso/2026-07-06T13:31:45.484617|model:db_r_conformer
 mtf_c: &mtf_c
-  BNCI2014_001: experiments/classification/frequency_backbone/dataset=BNCI2014_001
-    | validation_strategy=loso/2026-07-02T13:36:25.384631|model:mtf_c
-  BNCI2014_002: experiments/classification/frequency_backbone/dataset=BNCI2014_002
-    | validation_strategy=loso/2026-07-02T14:20:39.300169|model:mtf_c
-  BNCI2014_004: experiments/classification/frequency_backbone/dataset=BNCI2014_004
-    | validation_strategy=loso/2026-07-02T15:36:10.341303|model:mtf_c
-  Cattan2019_PHMD: experiments/classification/frequency_backbone/dataset=Cattan2019_PHMD
-    | validation_strategy=loso/2026-07-02T11:55:15.010957|model:mtf_c
-  Kalunga2016: experiments/classification/frequency_backbone/dataset=Kalunga2016 |
-    validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c
-  Nakanishi2015: experiments/classification/frequency_backbone/dataset=Nakanishi2015
-    | validation_strategy=loso/2026-07-02T12:32:48.394517|model:mtf_c
-  Rodrigues2017: experiments/classification/frequency_backbone/dataset=Rodrigues2017
-    | validation_strategy=loso/2026-07-02T12:08:16.932865|model:mtf_c
+  BNCI2014_001: experiments/sst_decoding+NRMSE_Loss/dataset=BNCI2014_001 | validation_strategy=loso/2026-07-08T16:23:08.829287|model:mtf_r_c
+  BNCI2014_002: experiments/sst_decoding+NRMSE_Loss/dataset=BNCI2014_002 | validation_strategy=loso/2026-07-08T16:41:35.018621|model:mtf_r_c
+  BNCI2014_004: experiments/sst_decoding+NRMSE_Loss/dataset=BNCI2014_004 | validation_strategy=loso/2026-07-08T17:29:28.708787|model:mtf_r_c
+  Cattan2019_PHMD: experiments/sst_decoding+NRMSE_Loss/dataset=Cattan2019_PHMD | validation_strategy=loso/2026-07-08T15:33:07.689615|model:mtf_r_c
+  Kalunga2016: experiments/sst_decoding+NRMSE_Loss/dataset=Kalunga2016 | validation_strategy=loso/2026-07-08T16:07:43.188631|model:mtf_r_c
+  Nakanishi2015: experiments/sst_decoding+NRMSE_Loss/dataset=Nakanishi2015 | validation_strategy=loso/2026-07-08T15:47:39.005237|model:mtf_r_c
+  Rodrigues2017: experiments/sst_decoding+NRMSE_Loss/dataset=Rodrigues2017 | validation_strategy=loso/2026-07-08T15:38:15.780011|model:mtf_r_c
 db_r_conformer: *db_conformer
 mtf_r_c: *mtf_c
+mtf_tr_c: *mtf_c

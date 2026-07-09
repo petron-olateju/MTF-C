@@ -66,18 +66,21 @@ def _find_matching_entry(entries, tp, mp, mf):
 # Example: pick mtf_c baseline (no reconstruction):
 #   'mtf_c': (None, {'sst_method': None, 'reconstruction_lambda': 0.0}, 'mtf_c')
 training_params = {'n_repeats': 1}
-dbconformer_model_params = {'chn_depth': 2, 'chn_attn_flag': True}
+dbconformer_model_params = {
+    'chn_depth': 2, 'chn_attn_flag': True, 
+    'sst_method': 'stft', 'sst_decoder': 'st_projection+addition'
+}
 mtfc_model_params = {
     'chn_depth': 2, 'tem_depth': 2, 'spec_depth': 2, 
     'chn_attn_flag': True, 'spectrum_attn_flag': False, 'temporal_attn_flag': False,
-    'reconstruction_lambda':0.001
+    'reconstruction_lambda':0.001, 'sst_method': 'frequency_backbone', 'sst_decoder': 'sst_multi_projection+branch_addition'
     }
 MODEL_FILTERS = {
-    'db_conformer': (training_params, dbconformer_model_params, 'db_conformer'),
+    'db_conformer': (training_params, dbconformer_model_params, 'db_r_conformer'),
     'mtf_c': (
         training_params,
         mtfc_model_params,
-        'mtf_c',
+        'mtf_r_c',
     ),
 }
 
@@ -85,6 +88,7 @@ MODEL_FILTERS = {
 MODEL_ALIASES = {
     'db_r_conformer': 'db_conformer',
     'mtf_r_c': 'mtf_c',
+    'mtf_tr_c': 'mtf_r_c'
 }
 
 
