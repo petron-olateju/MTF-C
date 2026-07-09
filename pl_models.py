@@ -441,8 +441,6 @@ class mtf_r_c(mtf_c):
             self.encoder.eval()
             self.model = self.encoder.model
             print(f"Using Pre-Trained Encoder: {self.pretrain_dir}")
-        elif self.trace_pretrain is not False:
-            pass
         else:
             self.pretrain_dir = None
             self.encoder = mtf_c(MODEL_ARGS=MODEL_ARGS)
@@ -568,13 +566,15 @@ class mtf_tr_c(mtf_r_c):
             self.decoder = self.encoder_decoder.decoder
             self.encoder.freeze()
             self.encoder.eval()
-            self.decoder.freeze()
             self.decoder.eval()
+            self.decoder.eval()
+            for p in self.decoder.parameters():
+                p.requires_grad = False
             print(f"Using Pre-Trained Encoder: {self.pretrain_dir}")
         else:
             self.pretrain_dir = None
             self.encoder_decoder = mtf_r_c(MODEL_ARGS=MODEL_ARGS)
-        self.model = self.encoder_decoder.encoder.model
+        # self.model = self.encoder_decoder.encoder.model
 
         n_times = MODEL_ARGS['time_sample_num']
         P_cfg = MODEL_ARGS['patch_size']
@@ -613,8 +613,8 @@ class mtf_tr_c(mtf_r_c):
             raise ValueError(f"trace network for mtf_c cannot be {self.sst_decoder_name}, can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']}")
 
         sst_hat = rearrange(sst_hat, 'b c f p -> b p c f')
-        sst_hat = sst_hat.mean(dim=-1)
-        sst_hat = rearrange(sst_hat.unsqueeze(1), 'b n p c -> b n (p c)')
+        # sst_hat = sst_hat.mean(dim=-1)
+        sst_hat = rearrange(sst_hat.unsqueeze(1), 'b n p c f -> b n (p c f)')
         sst_hat = F.normalize(sst_hat, dim=-1)
 
         return sst_hat
@@ -633,12 +633,12 @@ class mtf_tr_c(mtf_r_c):
             raise ValueError(f"trace network for mtf_c cannot be {self.sst_decoder_name}, can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']}")
         
         sst_hat = rearrange(sst_hat, 'b c f p -> b p c f')
-        sst_hat = sst_hat.mean(dim=-1)
-        sst_hat = rearrange(sst_hat.unsqueeze(1), 'b n p c -> b n (p c)')
+        # sst_hat = sst_hat.mean(dim=-1)
+        sst_hat = rearrange(sst_hat.unsqueeze(1), 'b n p c f -> b n (p c f)')
         sst_hat = F.normalize(sst_hat, dim=-1)
 
         trace_loss = SupConLoss()(sst_hat, y)
-        if self.pretrain is not False:
+        if self.trace_pretrain is not False:
             loss = trace_loss
         else:
             loss = trace_loss + encoder_decoder_loss
@@ -651,11 +651,11 @@ class mtf_tr_c(mtf_r_c):
         preds = logits.argmax(dim=1)
         self.train_acc.update(preds, y)
 
-        trace_loss = SupConLoss()(rearrange(sst_hat, y))
-        self.train_trace_error(trace_loss.item())
+        # trace_loss = SupConLoss()(rearrange(sst_hat, y))
+        self.train_trace_error(loss.detach())
 
         self.log("train_loss", loss, prog_bar=True)
-        self.log("train_trace_error", self.train_trace_error, prog_bar=True)
+        self.log("train_sst_error", self.train_trace_error, prog_bar=True)
         self.log("train_acc", self.train_acc, prog_bar=True)
 
         return loss
@@ -667,11 +667,11 @@ class mtf_tr_c(mtf_r_c):
             preds = logits.argmax(dim=1)
             self.val_acc.update(preds, y)
 
-            trace_loss = SupConLoss()(rearrange(sst_hat, y))
-            self.val_trace_error(trace_loss.item())
+            # trace_loss = SupConLoss()(rearrange(sst_hat, y))
+            self.val_trace_error(loss.detach())
 
             self.log("val_loss", loss, prog_bar=True)
-            self.log("val_trace_error", self.val_trace_error, prog_bar=True)
+            self.log("val_sst_error", self.val_trace_error, prog_bar=True)
             self.log("val_acc", self.val_acc, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
@@ -681,11 +681,11 @@ class mtf_tr_c(mtf_r_c):
             preds = logits.argmax(dim=1)
             self.test_acc.update(preds, y)
 
-            trace_loss = SupConLoss()(rearrange(sst_hat, y))
-            self.test_trace_error(trace_loss.item())
+            # trace_loss = SupConLoss()(rearrange(sst_hat, y))
+            self.test_trace_error(loss.detach())
 
             self.log("test_loss", loss, prog_bar=True)
-            self.log("test_trace_error", self.test_trace_error, prog_bar=True)
+            self.log("test_sst_error", self.test_trace_error, prog_bar=True)
             self.log("test_acc", self.test_acc, prog_bar=True)
 
     def configure_optimizers(self):
