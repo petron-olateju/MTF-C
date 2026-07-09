@@ -560,8 +560,12 @@ class mtf_tr_c(mtf_r_c):
         if self.pretrain is not False:
             self.pretrain_dir = MODEL_ARGS['pretrain_dir']
             self.encoder_decoder = mtf_r_c.load_from_checkpoint(self.pretrain_dir, MODEL_ARGS=MODEL_ARGS)
-            self.encoder_decoder.freeze()
-            self.encoder_decoder.eval()
+            self.encoder = self.encoder_decoder.encoder
+            self.decoder = self.encoder_decoder.decoder
+            self.encoder.freeze()
+            self.encoder.eval()
+            self.decoder.freeze()
+            self.decoder.eval()
             print(f"Using Pre-Trained Encoder: {self.pretrain_dir}")
         else:
             self.pretrain_dir = None
@@ -591,9 +595,9 @@ class mtf_tr_c(mtf_r_c):
         x_channel = branch_embeddings['channel']
 
         if self.decoder.name in ['st_addition', 'st_projection+addition', 'st_projection_addition']:
-            _ = self.decoder(None, x_temporal, x_channel)
+            _ = self.encoder_decoder.decoder(None, x_temporal, x_channel)
         elif self.decoder.name in ['sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']:
-            _ = self.decoder(x_spectrum, x_temporal, x_channel)
+            _ = self.encoder_decoder.decoder(x_spectrum, x_temporal, x_channel)
         else:
             raise ValueError(f"decoder for mtf_c cannot be {self.sst_decoder_name}, can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']}")
 

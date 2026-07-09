@@ -78,7 +78,7 @@ def across_subjects_evaluation(
     sub_sst_error = []
     sub_loss = []
 
-    if model_name  in ['mtf_c', 'mtf_r_c']:
+    if model_name  in ['mtf_c', 'mtf_r_c', 'mtf_tr_c']:
         model_params = get_model_params('mtf_c')
     elif model_name in ['db_conformer', 'db_r_conformer']:
         model_params = get_model_params('db_conformer')
