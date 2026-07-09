@@ -433,16 +433,20 @@ class mtf_r_c(mtf_c):
         super().__init__(MODEL_ARGS=MODEL_ARGS)
 
         self.pretrain = MODEL_ARGS['pretrain']
+        self.trace_pretrain = MODEL_ARGS['trace_pretrain']
         if self.pretrain is not False:
             self.pretrain_dir = MODEL_ARGS['pretrain_dir']
             self.encoder = mtf_c.load_from_checkpoint(self.pretrain_dir, MODEL_ARGS=MODEL_ARGS)
             self.encoder.freeze()
             self.encoder.eval()
+            self.model = self.encoder.model
             print(f"Using Pre-Trained Encoder: {self.pretrain_dir}")
+        elif self.trace_pretrain is not False:
+            pass
         else:
             self.pretrain_dir = None
             self.encoder = mtf_c(MODEL_ARGS=MODEL_ARGS)
-        self.model = self.encoder.model
+            self.model = self.encoder.model
 
         n_times = MODEL_ARGS['time_sample_num']
         P_cfg = MODEL_ARGS['patch_size']
@@ -556,8 +560,8 @@ class mtf_tr_c(mtf_r_c):
         assert MODEL_ARGS['sst_trace'] is not None
         super().__init__(MODEL_ARGS=MODEL_ARGS)
 
-        self.pretrain = MODEL_ARGS['pretrain']
-        if self.pretrain is not False:
+        self.trace_pretrain = MODEL_ARGS['trace_pretrain']
+        if self.trace_pretrain is not False:
             self.pretrain_dir = MODEL_ARGS['pretrain_dir']
             self.encoder_decoder = mtf_r_c.load_from_checkpoint(self.pretrain_dir, MODEL_ARGS=MODEL_ARGS)
             self.encoder = self.encoder_decoder.encoder

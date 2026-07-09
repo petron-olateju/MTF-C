@@ -16,7 +16,8 @@ db_conformer: &db_conformer
   freq_downsample: 1
   sst_trace: null
 
-  pretrain: true
+  pretrain: false
+  trace_pretrain: true
 db_r_conformer: *db_conformer
 
 mtf_c: &mtf_c
@@ -44,6 +45,7 @@ mtf_c: &mtf_c
   freq_downsample: 1
   sst_trace: sst_multi_projection+branch_addition
 
-  pretrain: true
+  pretrain: false
+  trace_pretrain: true
 mtf_r_c: *mtf_c
 mtf_tr_c: *mtf_c
