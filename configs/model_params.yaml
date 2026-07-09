@@ -14,6 +14,7 @@ db_conformer: &db_conformer
   sst_decoder: null
   filter_banks: 11
   freq_downsample: 1
+  sst_trace: null
 
   pretrain: true
 db_r_conformer: *db_conformer
@@ -41,6 +42,8 @@ mtf_c: &mtf_c
   sst_decoder: sst_multi_projection+branch_addition
   filter_banks: 11
   freq_downsample: 1
+  sst_trace: sst_multi_projection+branch_addition
 
   pretrain: true
 mtf_r_c: *mtf_c
+mtf_tr_c: *mtf_c

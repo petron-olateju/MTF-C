@@ -3,6 +3,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from einops import rearrange
 
 from models.DBConformer import DBConformer
 from models.MTFC import MTFC
@@ -11,9 +12,10 @@ from torchmetrics.regression import (
     MeanSquaredError,
     NormalizedRootMeanSquaredError
 )
+from torchmetrics.aggregation import MeanMetric
 from torchmetrics.functional import normalized_root_mean_squared_error
 from utils.data_loader import DATASET_TASK_MAP
-
+from utils.losses import SupConLoss
 from utils.spectrum_reconstructors import (
     R_SpatioTemporal_AdditionPerBank, 
     R_SpatioTemporal_ProjectionAdditionPerBank,
@@ -24,6 +26,7 @@ from utils.spectrum_reconstructors import (
     R_SpetrumSpatioTemporal_Projection_BranchAddition,
     CrossAttentionSSTDecoder
 )
+
 
 class SST_Decoder(nn.Module):
 
@@ -281,6 +284,7 @@ class mtf_c(pl.LightningModule):
 
         self.sst_method_name = MODEL_ARGS['sst_method']
         self.sst_decoder_name = MODEL_ARGS['sst_decoder']
+        self.sst_trace_name = MODEL_ARGS['sst_trace']
 
         args = {
             k: MODEL_ARGS[k]
@@ -498,10 +502,10 @@ class mtf_r_c(mtf_c):
         else:
             loss = reconstruction_loss + encoder_loss
 
-        return sst, sst_hat, logits, loss, y
+        return branch_embeddings, sst, sst_hat, logits, loss, y
 
     def training_step(self, batch, batch_idx):
-        sst, sst_hat, logits, loss, y = self._common_step(batch, batch_idx)
+        _, sst, sst_hat, logits, loss, y = self._common_step(batch, batch_idx)
 
         preds = logits.argmax(dim=1)
         self.train_acc.update(preds, y)
@@ -516,7 +520,7 @@ class mtf_r_c(mtf_c):
 
     def validation_step(self, batch, batch_idx):
         with torch.no_grad():
-            sst, sst_hat, logits, loss, y = self._common_step(batch, batch_idx)
+            _, sst, sst_hat, logits, loss, y = self._common_step(batch, batch_idx)
 
             preds = logits.argmax(dim=1)
             self.val_acc.update(preds, y)
@@ -529,7 +533,7 @@ class mtf_r_c(mtf_c):
 
     def test_step(self, batch, batch_idx):
         with torch.no_grad():
-            sst, sst_hat, logits, loss, y = self._common_step(batch, batch_idx)
+            _, sst, sst_hat, logits, loss, y = self._common_step(batch, batch_idx)
 
             preds = logits.argmax(dim=1)
             self.test_acc.update(preds, y)
@@ -542,6 +546,144 @@ class mtf_r_c(mtf_c):
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
+    
+
+class mtf_tr_c(mtf_r_c):
+
+    def __init__(self, MODEL_ARGS):
+        assert MODEL_ARGS['sst_method'] is not None
+        assert MODEL_ARGS['sst_decoder'] is not None
+        assert MODEL_ARGS['sst_trace'] is not None
+        super().__init__(MODEL_ARGS=MODEL_ARGS)
+
+        self.pretrain = MODEL_ARGS['pretrain']
+        if self.pretrain is not False:
+            self.pretrain_dir = MODEL_ARGS['pretrain_dir']
+            self.encoder_decoder = mtf_r_c.load_from_checkpoint(self.pretrain_dir, MODEL_ARGS=MODEL_ARGS)
+            self.encoder_decoder.freeze()
+            self.encoder_decoder.eval()
+            print(f"Using Pre-Trained Encoder: {self.pretrain_dir}")
+        else:
+            self.pretrain_dir = None
+            self.encoder_decoder = mtf_r_c(MODEL_ARGS=MODEL_ARGS)
+        self.model = self.encoder_decoder.encoder.model
+
+        n_times = MODEL_ARGS['time_sample_num']
+        P_cfg = MODEL_ARGS['patch_size']
+        n_patches = (n_times - 1) // P_cfg
+
+        self.trace = SST_Decoder(
+            decoder=self.sst_decoder_name,
+            n_banks=MODEL_ARGS['filter_banks'],
+            num_channels=MODEL_ARGS['chn'],
+            num_patches=n_patches,
+            emb_size=MODEL_ARGS['patch_emb_size']
+        )
+
+        self.train_trace_error = MeanMetric()
+        self.val_trace_error = MeanMetric()
+        self.test_trace_error = MeanMetric()
+
+    def forward(self, x):
+        branch_embeddings, spectrum_est, x_fused, logits = self.encoder_decoder.encoder(x)
+        x_spectrum = branch_embeddings['spectrum']
+        x_temporal = branch_embeddings['temporal']
+        x_channel = branch_embeddings['channel']
+
+        if self.decoder.name in ['st_addition', 'st_projection+addition', 'st_projection_addition']:
+            _ = self.decoder(None, x_temporal, x_channel)
+        elif self.decoder.name in ['sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']:
+            _ = self.decoder(x_spectrum, x_temporal, x_channel)
+        else:
+            raise ValueError(f"decoder for mtf_c cannot be {self.sst_decoder_name}, can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']}")
+
+        if self.trace.name in ['st_addition', 'st_projection+addition', 'st_projection_addition']:
+            sst_hat = self.trace(None, x_temporal, x_channel)
+        elif self.trace.name in ['sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']:
+            sst_hat = self.trace(x_spectrum, x_temporal, x_channel)
+        else:
+            raise ValueError(f"trace network for mtf_c cannot be {self.sst_decoder_name}, can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']}")
+
+        sst_hat = rearrange(sst_hat, 'b c f p -> b p c f')
+        sst_hat = sst_hat.mean(dim=-1)
+        sst_hat = rearrange(sst_hat.unsqueeze(1), 'b n p c -> b n (p c)')
+        sst_hat = F.normalize(sst_hat, dim=-1)
+
+        return sst_hat
+    
+    def _common_step(self, batch, batch_idx):
+        branch_embeddings, _, _, logits, encoder_decoder_loss, y = self.encoder_decoder._common_step(batch, batch_idx)
+        x_spectrum = branch_embeddings['spectrum']
+        x_temporal = branch_embeddings['temporal']
+        x_channel = branch_embeddings['channel']
+
+        if self.trace.name in ['st_addition', 'st_projection+addition', 'st_projection_addition']:
+            sst_hat = self.trace(None, x_temporal, x_channel)
+        elif self.trace.name in ['sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']:
+            sst_hat = self.trace(x_spectrum, x_temporal, x_channel)
+        else:
+            raise ValueError(f"trace network for mtf_c cannot be {self.sst_decoder_name}, can only be one of :{['st_addition', 'st_projection+addition', 'st_projection_addition', 'sst_addition', 'sst_projection+addition', 'sst_cross_attention', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition']}")
+        
+        sst_hat = rearrange(sst_hat, 'b c f p -> b p c f')
+        sst_hat = sst_hat.mean(dim=-1)
+        sst_hat = rearrange(sst_hat.unsqueeze(1), 'b n p c -> b n (p c)')
+        sst_hat = F.normalize(sst_hat, dim=-1)
+
+        trace_loss = SupConLoss()(sst_hat, y)
+        if self.pretrain is not False:
+            loss = trace_loss
+        else:
+            loss = trace_loss + encoder_decoder_loss
+
+        return sst_hat, logits, loss, y
+    
+    def training_step(self, batch, batch_idx):
+        sst_hat, logits, loss, y = self._common_step(batch, batch_idx)
+
+        preds = logits.argmax(dim=1)
+        self.train_acc.update(preds, y)
+
+        trace_loss = SupConLoss()(rearrange(sst_hat, y))
+        self.train_trace_error(trace_loss.item())
+
+        self.log("train_loss", loss, prog_bar=True)
+        self.log("train_trace_error", self.train_trace_error, prog_bar=True)
+        self.log("train_acc", self.train_acc, prog_bar=True)
+
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        with torch.no_grad():
+            sst_hat, logits, loss, y = self._common_step(batch, batch_idx)
+
+            preds = logits.argmax(dim=1)
+            self.val_acc.update(preds, y)
+
+            trace_loss = SupConLoss()(rearrange(sst_hat, y))
+            self.val_trace_error(trace_loss.item())
+
+            self.log("val_loss", loss, prog_bar=True)
+            self.log("val_trace_error", self.val_trace_error, prog_bar=True)
+            self.log("val_acc", self.val_acc, prog_bar=True)
+
+    def test_step(self, batch, batch_idx):
+        with torch.no_grad():
+            sst_hat, logits, loss, y = self._common_step(batch, batch_idx)
+
+            preds = logits.argmax(dim=1)
+            self.test_acc.update(preds, y)
+
+            trace_loss = SupConLoss()(rearrange(sst_hat, y))
+            self.test_trace_error(trace_loss.item())
+
+            self.log("test_loss", loss, prog_bar=True)
+            self.log("test_trace_error", self.test_trace_error, prog_bar=True)
+            self.log("test_acc", self.test_acc, prog_bar=True)
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=self.lr)
+    
+
 
 
 
@@ -549,5 +691,6 @@ NAME_MODEL_MAP = {
     "db_conformer": db_conformer,
     "db_r_conformer": db_r_conformer,
     "mtf_c": mtf_c,
-    "mtf_r_c": mtf_r_c
+    "mtf_r_c": mtf_r_c,
+    "mtf_tr_c": mtf_tr_c
 }
