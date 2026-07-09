@@ -1,0 +1,1530 @@
+'2026-07-06T01:49:03.265647':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_addition
+    sst_method: stft
+    tem_depth: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T10:48:25.956318|model:db_conformer|subject:12.ckpt
+  mean_acc: 0.7046440988779068
+  std_acc: 0.12060252947261342
+  mean_sst_error: 0.005146141649068643
+  std_sst_error: 0.0008387206796483367
+  loss: 0.005624671699479222
+  subjects_acc:
+    1: 0.640625
+    2: 0.609375
+    3: 0.859375
+    4: 0.90625
+    5: 0.59375
+    6: 0.578125
+    7: 0.8229166865348816
+    8: 0.734375
+    9: 0.578125
+    10: 0.5703125
+    11: 0.71875
+    12: 0.84375
+  subjects_sst_error:
+    1: 0.005701679270714521
+    2: 0.005140282679349184
+    3: 0.0059548718854784966
+    4: 0.0056900703348219395
+    5: 0.006096994504332542
+    6: 0.005081345792859793
+    7: 0.004790004808455706
+    8: 0.005621728021651506
+    9: 0.005021926015615463
+    10: 0.0038053044117987156
+    11: 0.0056631797924637794
+    12: 0.003186312271282077
+'2026-07-06T01:54:59.161414':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.7245659728844961
+  std_acc: 0.1085804972481357
+  mean_sst_error: 0.004886353213805705
+  std_sst_error: 0.0006835852602526736
+  loss: 0.005350148227686684
+  subjects_acc:
+    1: 0.640625
+    2: 0.6875
+    3: 0.875
+    4: 0.890625
+    5: 0.640625
+    6: 0.546875
+    7: 0.8541666865348816
+    8: 0.765625
+    9: 0.640625
+    10: 0.609375
+    11: 0.75
+    12: 0.793749988079071
+  subjects_sst_error:
+    1: 0.005256846081465483
+    2: 0.005054703447967768
+    3: 0.005355529021471739
+    4: 0.005158723797649145
+    5: 0.00515212956815958
+    6: 0.005222488660365343
+    7: 0.0042504072189331055
+    8: 0.005124834831804037
+    9: 0.005346667021512985
+    10: 0.004013385623693466
+    11: 0.005565554369240999
+    12: 0.003134968923404813
+'2026-07-06T02:03:01.561397':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_projection+addition
+    sst_method: stft
+    tem_depth: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T10:48:25.956318|model:db_conformer|subject:12.ckpt
+  mean_acc: 0.7046440988779068
+  std_acc: 0.12060252947261342
+  mean_sst_error: 0.0026521460774044194
+  std_sst_error: 0.0008316569488616592
+  loss: 0.002884873674095919
+  subjects_acc:
+    1: 0.640625
+    2: 0.609375
+    3: 0.859375
+    4: 0.90625
+    5: 0.59375
+    6: 0.578125
+    7: 0.8229166865348816
+    8: 0.734375
+    9: 0.578125
+    10: 0.5703125
+    11: 0.71875
+    12: 0.84375
+  subjects_sst_error:
+    1: 0.002379643963649869
+    2: 0.002847091993317008
+    3: 0.0027812623884528875
+    4: 0.0024948997888714075
+    5: 0.0028689499013125896
+    6: 0.002682728925719857
+    7: 0.001965500880032778
+    8: 0.002582844579592347
+    9: 0.0023493359331041574
+    10: 0.0021594350691884756
+    11: 0.005130976904183626
+    12: 0.001583082601428032
+'2026-07-06T02:13:06.680811':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_projection+addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.7245659728844961
+  std_acc: 0.1085804972481357
+  mean_sst_error: 0.002918200276326388
+  std_sst_error: 0.0008428616455961918
+  loss: 0.0031915936657848456
+  subjects_acc:
+    1: 0.640625
+    2: 0.6875
+    3: 0.875
+    4: 0.890625
+    5: 0.640625
+    6: 0.546875
+    7: 0.8541666865348816
+    8: 0.765625
+    9: 0.640625
+    10: 0.609375
+    11: 0.75
+    12: 0.793749988079071
+  subjects_sst_error:
+    1: 0.0024373915512114763
+    2: 0.0038036389742046595
+    3: 0.002769474172964692
+    4: 0.002839898457750678
+    5: 0.002453055465593934
+    6: 0.003320135409012437
+    7: 0.002183650154620409
+    8: 0.0026316633448004723
+    9: 0.0030098112765699625
+    10: 0.0022873689886182547
+    11: 0.005227081011980772
+    12: 0.00205523450858891
+'2026-07-06T02:25:17.804584':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_projection_addition
+    sst_method: stft
+    tem_depth: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T10:48:25.956318|model:db_conformer|subject:12.ckpt
+  mean_acc: 0.7046440988779068
+  std_acc: 0.12060252947261342
+  mean_sst_error: 0.004521071581014742
+  std_sst_error: 0.0006287447983661792
+  loss: 0.004959765976915757
+  subjects_acc:
+    1: 0.640625
+    2: 0.609375
+    3: 0.859375
+    4: 0.90625
+    5: 0.59375
+    6: 0.578125
+    7: 0.8229166865348816
+    8: 0.734375
+    9: 0.578125
+    10: 0.5703125
+    11: 0.71875
+    12: 0.84375
+  subjects_sst_error:
+    1: 0.004709200467914343
+    2: 0.004842420108616352
+    3: 0.00498875230550766
+    4: 0.0046969386748969555
+    5: 0.0047339084558188915
+    6: 0.004686147440224886
+    7: 0.003961626440286636
+    8: 0.004686870612204075
+    9: 0.004692965652793646
+    10: 0.0036034067161381245
+    11: 0.005548873450607061
+    12: 0.0031017486471682787
+'2026-07-06T02:32:02.124442':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_projection_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.7245659728844961
+  std_acc: 0.1085804972481357
+  mean_sst_error: 0.00454008982827266
+  std_sst_error: 0.0006504097252549946
+  loss: 0.004976167149531345
+  subjects_acc:
+    1: 0.640625
+    2: 0.6875
+    3: 0.875
+    4: 0.890625
+    5: 0.640625
+    6: 0.546875
+    7: 0.8541666865348816
+    8: 0.765625
+    9: 0.640625
+    10: 0.609375
+    11: 0.75
+    12: 0.793749988079071
+  subjects_sst_error:
+    1: 0.004726695362478495
+    2: 0.005086455028504133
+    3: 0.004790113773196936
+    4: 0.004768117796629667
+    5: 0.0047849551774561405
+    6: 0.004753328859806061
+    7: 0.004005839582532644
+    8: 0.004689234308898449
+    9: 0.004747395403683186
+    10: 0.003498141886666417
+    11: 0.005537253338843584
+    12: 0.003093547420576215
+'2026-07-06T02:40:55.997360':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.7245659728844961
+  std_acc: 0.1085804972481357
+  mean_sst_error: 0.005093952214034895
+  std_sst_error: 0.0006998972108967274
+  loss: 0.0055899935541674495
+  subjects_acc:
+    1: 0.640625
+    2: 0.6875
+    3: 0.875
+    4: 0.890625
+    5: 0.640625
+    6: 0.546875
+    7: 0.8541666865348816
+    8: 0.765625
+    9: 0.640625
+    10: 0.609375
+    11: 0.75
+    12: 0.793749988079071
+  subjects_sst_error:
+    1: 0.0059905569069087505
+    2: 0.005046138074249029
+    3: 0.005787295289337635
+    4: 0.005133151076734066
+    5: 0.005367054603993893
+    6: 0.005392013117671013
+    7: 0.004305775742977858
+    8: 0.005446480121463537
+    9: 0.005101723596453667
+    10: 0.004397005308419466
+    11: 0.00573490047827363
+    12: 0.0034253322519361973
+'2026-07-06T02:49:06.497709':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_projection+addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.7245659728844961
+  std_acc: 0.1085804972481357
+  mean_sst_error: 0.003508497941462944
+  std_sst_error: 0.0007246996529870043
+  loss: 0.003842487659615775
+  subjects_acc:
+    1: 0.640625
+    2: 0.6875
+    3: 0.875
+    4: 0.890625
+    5: 0.640625
+    6: 0.546875
+    7: 0.8541666865348816
+    8: 0.765625
+    9: 0.640625
+    10: 0.609375
+    11: 0.75
+    12: 0.793749988079071
+  subjects_sst_error:
+    1: 0.0033759085927158594
+    2: 0.004069967195391655
+    3: 0.0036449884064495564
+    4: 0.003433066653087735
+    5: 0.0032552988268435
+    6: 0.004118865821510553
+    7: 0.002922353334724903
+    8: 0.003361155977472663
+    9: 0.0034925686195492744
+    10: 0.002648790366947651
+    11: 0.005323644727468491
+    12: 0.002455366775393486
+'2026-07-06T15:50:06.706956':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+    - scale_sst
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_addition
+    sst_method: stft
+    tem_depth: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T10:48:25.956318|model:db_conformer|subject:12.ckpt
+  mean_acc: 0.7046440988779068
+  std_acc: 0.12060252947261342
+  mean_sst_error: 0.005968234812219937
+  std_sst_error: 0.0009251427867271764
+  loss: 0.00653006477902333
+  subjects_acc:
+    1: 0.640625
+    2: 0.609375
+    3: 0.859375
+    4: 0.90625
+    5: 0.59375
+    6: 0.578125
+    7: 0.8229166865348816
+    8: 0.734375
+    9: 0.578125
+    10: 0.5703125
+    11: 0.71875
+    12: 0.84375
+  subjects_sst_error:
+    1: 0.006104161497205496
+    2: 0.006944514345377684
+    3: 0.0066819931380450726
+    4: 0.006428108550608158
+    5: 0.006651455536484718
+    6: 0.005781613290309906
+    7: 0.005379506386816502
+    8: 0.006681377068161964
+    9: 0.005990955978631973
+    10: 0.004386454354971647
+    11: 0.006674651987850666
+    12: 0.003914025612175465
+'2026-07-06T15:56:26.874449':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+    - scale_sst
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.7245659728844961
+  std_acc: 0.1085804972481357
+  mean_sst_error: 0.005503762765632321
+  std_sst_error: 0.0008592871473100865
+  loss: 0.006033345630081992
+  subjects_acc:
+    1: 0.640625
+    2: 0.6875
+    3: 0.875
+    4: 0.890625
+    5: 0.640625
+    6: 0.546875
+    7: 0.8541666865348816
+    8: 0.765625
+    9: 0.640625
+    10: 0.609375
+    11: 0.75
+    12: 0.793749988079071
+  subjects_sst_error:
+    1: 0.005801280029118061
+    2: 0.007225643843412399
+    3: 0.006215810310095549
+    4: 0.005537683609873056
+    5: 0.005353778600692749
+    6: 0.0056693414226174355
+    7: 0.004633011296391487
+    8: 0.005985249299556017
+    9: 0.005902481265366077
+    10: 0.004582586232572794
+    11: 0.005436444655060768
+    12: 0.003701842622831464
+'2026-07-06T16:05:02.877439':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+    - scale_sst
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_projection+addition
+    sst_method: stft
+    tem_depth: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T10:48:25.956318|model:db_conformer|subject:12.ckpt
+  mean_acc: 0.7046440988779068
+  std_acc: 0.12060252947261342
+  mean_sst_error: 0.0023694339324720204
+  std_sst_error: 0.0004493779519020138
+  loss: 0.002597259299363941
+  subjects_acc:
+    1: 0.640625
+    2: 0.609375
+    3: 0.859375
+    4: 0.90625
+    5: 0.59375
+    6: 0.578125
+    7: 0.8229166865348816
+    8: 0.734375
+    9: 0.578125
+    10: 0.5703125
+    11: 0.71875
+    12: 0.84375
+  subjects_sst_error:
+    1: 0.002074713818728924
+    2: 0.003428502008318901
+    3: 0.0023661379236727953
+    4: 0.0022860695607960224
+    5: 0.0024889674969017506
+    6: 0.0025980251375585794
+    7: 0.0018428675830364227
+    8: 0.0023476257920265198
+    9: 0.002501691924408078
+    10: 0.0020526519510895014
+    11: 0.002815770683810115
+    12: 0.0016301833093166351
+'2026-07-06T16:15:44.884365':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+    - scale_sst
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_projection+addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.7245659728844961
+  std_acc: 0.1085804972481357
+  mean_sst_error: 0.002386508567724377
+  std_sst_error: 0.00045349022639647196
+  loss: 0.002616452363630136
+  subjects_acc:
+    1: 0.640625
+    2: 0.6875
+    3: 0.875
+    4: 0.890625
+    5: 0.640625
+    6: 0.546875
+    7: 0.8541666865348816
+    8: 0.765625
+    9: 0.640625
+    10: 0.609375
+    11: 0.75
+    12: 0.793749988079071
+  subjects_sst_error:
+    1: 0.002110150409862399
+    2: 0.0033720212522894144
+    3: 0.002414215821772814
+    4: 0.002384152030572295
+    5: 0.00233895773999393
+    6: 0.0028063757345080376
+    7: 0.0019299763953313231
+    8: 0.0023363130167126656
+    9: 0.002369761001318693
+    10: 0.0019749144557863474
+    11: 0.002950835507363081
+    12: 0.0016504294471815228
+'2026-07-06T16:28:40.483888':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+    - scale_sst
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_projection_addition
+    sst_method: stft
+    tem_depth: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T10:48:25.956318|model:db_conformer|subject:12.ckpt
+  mean_acc: 0.7046440988779068
+  std_acc: 0.12060252947261342
+  mean_sst_error: 0.00449312098013858
+  std_sst_error: 0.0005901117566788164
+  loss: 0.00492858102855583
+  subjects_acc:
+    1: 0.640625
+    2: 0.609375
+    3: 0.859375
+    4: 0.90625
+    5: 0.59375
+    6: 0.578125
+    7: 0.8229166865348816
+    8: 0.734375
+    9: 0.578125
+    10: 0.5703125
+    11: 0.71875
+    12: 0.84375
+  subjects_sst_error:
+    1: 0.004760053940117359
+    2: 0.005000500939786434
+    3: 0.004870778881013393
+    4: 0.004763096105307341
+    5: 0.004758385941386223
+    6: 0.004744500853121281
+    7: 0.003949827514588833
+    8: 0.0047700307331979275
+    9: 0.004808131139725447
+    10: 0.0034987113904207945
+    11: 0.004876564722508192
+    12: 0.0031168696004897356
+'2026-07-06T16:35:55.123645':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+    - scale_sst
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_projection_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.7245659728844961
+  std_acc: 0.1085804972481357
+  mean_sst_error: 0.004478233264914404
+  std_sst_error: 0.0005868238073423163
+  loss: 0.004912736127153039
+  subjects_acc:
+    1: 0.640625
+    2: 0.6875
+    3: 0.875
+    4: 0.890625
+    5: 0.640625
+    6: 0.546875
+    7: 0.8541666865348816
+    8: 0.765625
+    9: 0.640625
+    10: 0.609375
+    11: 0.75
+    12: 0.793749988079071
+  subjects_sst_error:
+    1: 0.004800551105290651
+    2: 0.004919573664665222
+    3: 0.004820701666176319
+    4: 0.00474743265658617
+    5: 0.004763456992805004
+    6: 0.00478245597332716
+    7: 0.003941304981708527
+    8: 0.004721205215901136
+    9: 0.004742010962218046
+    10: 0.00346868927590549
+    11: 0.004911832045763731
+    12: 0.0031195846386253834
+'2026-07-06T16:45:20.271057':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+    - scale_sst
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.7245659728844961
+  std_acc: 0.1085804972481357
+  mean_sst_error: 0.006618043213772277
+  std_sst_error: 0.0009730901208946509
+  loss: 0.007276171469129622
+  subjects_acc:
+    1: 0.640625
+    2: 0.6875
+    3: 0.875
+    4: 0.890625
+    5: 0.640625
+    6: 0.546875
+    7: 0.8541666865348816
+    8: 0.765625
+    9: 0.640625
+    10: 0.609375
+    11: 0.75
+    12: 0.793749988079071
+  subjects_sst_error:
+    1: 0.0073040383867919445
+    2: 0.0075898380018770695
+    3: 0.007383374497294426
+    4: 0.006141145713627338
+    5: 0.006196869537234306
+    6: 0.006388317793607712
+    7: 0.004899490159004927
+    8: 0.007581013720482588
+    9: 0.007393769919872284
+    10: 0.006029202602803707
+    11: 0.00763518875464797
+    12: 0.004874269478023052
+'2026-07-06T16:53:50.484326':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+    - scale_sst
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_projection+addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.7245659728844961
+  std_acc: 0.1085804972481357
+  mean_sst_error: 0.002989564304395268
+  std_sst_error: 0.0004947734321516813
+  loss: 0.003279537835624069
+  subjects_acc:
+    1: 0.640625
+    2: 0.6875
+    3: 0.875
+    4: 0.890625
+    5: 0.640625
+    6: 0.546875
+    7: 0.8541666865348816
+    8: 0.765625
+    9: 0.640625
+    10: 0.609375
+    11: 0.75
+    12: 0.793749988079071
+  subjects_sst_error:
+    1: 0.002907524351030588
+    2: 0.00374528462998569
+    3: 0.00314442440867424
+    4: 0.0030037022661417723
+    5: 0.002927677473053336
+    6: 0.0036570646334439516
+    7: 0.0022777076810598373
+    8: 0.0028353724628686905
+    9: 0.0030574777629226446
+    10: 0.0026631017681211233
+    11: 0.0035997608210891485
+    12: 0.0020556733943521976
+'2026-07-08T06:15:13.458065':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_cross_attention
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_cross_attention
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.7245659728844961
+  std_acc: 0.1085804972481357
+  mean_sst_error: 0.004158111289143562
+  std_sst_error: 0.000721544161926025
+  loss: 0.004556317658474048
+  subjects_acc:
+    1: 0.640625
+    2: 0.6875
+    3: 0.875
+    4: 0.890625
+    5: 0.640625
+    6: 0.546875
+    7: 0.8541666865348816
+    8: 0.765625
+    9: 0.640625
+    10: 0.609375
+    11: 0.75
+    12: 0.793749988079071
+  subjects_sst_error:
+    1: 0.003991859965026379
+    2: 0.00487389275804162
+    3: 0.004330999217927456
+    4: 0.0038828817196190357
+    5: 0.0042639486491680145
+    6: 0.00426741037517786
+    7: 0.003448313334956765
+    8: 0.004390545189380646
+    9: 0.004557615611702204
+    10: 0.003167887218296528
+    11: 0.005739111453294754
+    12: 0.002982869977131486
+'2026-07-08T06:24:16.425448':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_multi_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_multi_projection+addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.7245659728844961
+  std_acc: 0.1085804972481357
+  mean_sst_error: 0.0027272512088529766
+  std_sst_error: 0.0008470015497485206
+  loss: 0.0029857243450048068
+  subjects_acc:
+    1: 0.640625
+    2: 0.6875
+    3: 0.875
+    4: 0.890625
+    5: 0.640625
+    6: 0.546875
+    7: 0.8541666865348816
+    8: 0.765625
+    9: 0.640625
+    10: 0.609375
+    11: 0.75
+    12: 0.793749988079071
+  subjects_sst_error:
+    1: 0.002100422978401184
+    2: 0.0036732973530888557
+    3: 0.0025670775212347507
+    4: 0.002481159521266818
+    5: 0.002477712696418166
+    6: 0.0029332751873880625
+    7: 0.002110661007463932
+    8: 0.002514172811061144
+    9: 0.002661558799445629
+    10: 0.0021984102204442024
+    11: 0.00511892419308424
+    12: 0.001890342216938734
+'2026-07-08T16:07:43.188631':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_multi_projection+branch_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_multi_projection+branch_addition
+    sst_method: frequency_backbone
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    wsize_divisor: 2
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Kalunga2016
+      | validation_strategy=loso/2026-07-02T13:06:37.196861|model:mtf_c|subject:12.ckpt
+  mean_acc: 0.7245659728844961
+  std_acc: 0.1085804972481357
+  mean_sst_error: 0.0027185152866877615
+  std_sst_error: 0.0007974034950641832
+  loss: 0.0029705862204233804
+  subjects_acc:
+    1: 0.640625
+    2: 0.6875
+    3: 0.875
+    4: 0.890625
+    5: 0.640625
+    6: 0.546875
+    7: 0.8541666865348816
+    8: 0.765625
+    9: 0.640625
+    10: 0.609375
+    11: 0.75
+    12: 0.793749988079071
+  subjects_sst_error:
+    1: 0.002190070692449808
+    2: 0.0032408111728727818
+    3: 0.0026922563556581736
+    4: 0.0026335688307881355
+    5: 0.002890062751248479
+    6: 0.002940507372841239
+    7: 0.002347069326788187
+    8: 0.002463327953591943
+    9: 0.0023512402549386024
+    10: 0.0021629484836012125
+    11: 0.005018634721636772
+    12: 0.0016916855238378048

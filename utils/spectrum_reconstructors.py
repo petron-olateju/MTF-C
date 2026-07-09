@@ -234,5 +234,120 @@ class R_SpectrumSpatioTemporal_ProjectionAddition(nn.Module):
 
         z = self.addition_estimator(z_s, z_t, z_c).squeeze(-1)
         return z
+
+class R_SpectrumSpatioTemporal_ProjectionAdditionPerBank(nn.Module):
+    def __init__(self, n_banks, num_channels, num_patches, emb_size):
+        super().__init__()
+        print(f"SST  Target Size: {(num_channels, n_banks, num_patches)}")
+        self.n_banks = n_banks
+        self.shared_projection = nn.ModuleList([SharedProjectionLayer(emb_size) for n in range(self.n_banks)])
+        self.addition = nn.ModuleList([SpectrumSpatioTemporalAddition(n_banks, num_channels, num_patches) for n in range(self.n_banks)])
+        self.estimator = EstimatorLayer(emb_size)
+
+    def forward(self, x_spectrum, x_temporal, x_spatial):
+        z = []
+
+        for n in range(self.n_banks):
+            z_s = self.shared_projection[n](x_spectrum)
+            z_t = self.shared_projection[n](x_temporal)
+            z_c = self.shared_projection[n](x_spatial)
+            
+            z_sst = self.addition[n](z_s, z_t, z_c)
+            z.append(z_sst.unsqueeze(dim=2))
         
+        z = torch.concat(z, dim=2)
+        z = z.mean(dim=3)
+        z = self.estimator(z).squeeze(-1)
+        return z
+    
+class R_SpetrumSpatioTemporal_Projection_BranchAddition(nn.Module):
+    def __init__(self, n_banks, num_channels, num_patches, emb_size):
+        super().__init__()
+        self.n_banks = self.F = n_banks
+        self.C, self.P, self.D = num_channels, num_patches, emb_size
+
+        self.shared_projection = nn.ModuleList([SharedProjectionLayer(emb_size) for n in range(self.n_banks)])
+        self.st_addition = nn.ModuleList([SpatioTemporalAddition(num_channels, num_patches) for n in range(n_banks)])
+
+        self.spectrum_gate = nn.Linear(self.F * emb_size, self.F * emb_size)
+
+        self.estimator = EstimatorLayer(emb_size)
+
+    def forward(self, x_spectrum, x_temporal, x_spatial):
+        B, _, _ = x_spectrum.size()
+        zs = []
+        z = []
+
+        for n in range(self.n_banks):
+            z_s = self.shared_projection[n](x_spectrum)
+            zs.append(z_s.unsqueeze(dim=2))
+
+            z_t = self.shared_projection[n](x_temporal)
+            z_c = self.shared_projection[n](x_spatial)
+            z_ct_f = self.st_addition[n](z_t, z_c)
+            z.append(z_ct_f.unsqueeze(dim=2))
+
+        z = torch.cat(z, dim=2)
+        zs = torch.mean(torch.cat(zs, dim=2), dim=2)
+        zs = zs.unsqueeze(1).unsqueeze(3)
+
+        g = torch.sigmoid(self.spectrum_gate(x_spectrum.reshape(B, self.F*self.D)))
+        g = g.reshape(B, self.F, self.D)
+        g = g.unsqueeze(1).unsqueeze(3)
+        zs = g * zs
+
+        z = z + zs
+        z = self.estimator(z).squeeze(-1)
+
+        return z
+        
+    
+class CrossAttentionSSTDecoder(nn.Module):
+    def __init__(self, n_banks, num_channels, num_patches, emb_size, n_heads=8, n_layers=2):
+        super().__init__()
+        self.F, self.C, self.P, self.D = n_banks, num_channels, num_patches, emb_size
+
+        self.channel_pos = nn.Parameter(torch.randn(self.C, emb_size) * 0.02)
+        self.freq_pos = nn.Parameter(torch.randn(self.F, emb_size) * 0.02)
+        self.patch_pos = nn.Parameter(torch.randn(self.P, emb_size) * 0.02)
+
+        self.spectrum_type = nn.Parameter(torch.randn(1, 1, emb_size) * 0.02)
+        self.temporal_type = nn.Parameter(torch.randn(1, 1, emb_size) * 0.02)
+        self.spatial_type = nn.Parameter(torch.randn(1, 1, emb_size) * 0.02)
+
+        self.cross_attn = nn.ModuleList(
+            [nn.MultiheadAttention(emb_size, n_heads, batch_first=True) for _ in range(n_layers)]
+        )
+        self.norm1 = nn.ModuleList([nn.LayerNorm(emb_size) for _ in range(n_layers)])
+        self.ffn = nn.ModuleList([
+            nn.Sequential(nn.Linear(emb_size, emb_size * 2), nn.ELU(), nn.Linear(emb_size * 2, emb_size))
+            for _ in range(n_layers)
+        ])
+        self.norm2 = nn.ModuleList([nn.LayerNorm(emb_size) for _ in range(n_layers)])
+
+        self.estimator = EstimatorLayer(emb_size)
+
+    def forward(self, x_spectrum, x_temporal, x_spatial):
+        B = x_spectrum.shape[0]
+
+        query = (
+            self.channel_pos[:, None, None, :]
+            + self.freq_pos[None, :, None, :]
+            + self.patch_pos[None, None, :, :]
+        ).reshape(self.C * self.F * self.P, self.D).unsqueeze(0).expand(B, -1, -1)
+
+        memory = torch.cat([
+            x_spectrum + self.spectrum_type,
+            x_temporal + self.temporal_type,
+            x_spatial + self.spatial_type,
+        ], dim=1)
+
+        z = query
+        for attn, n1, ffn, n2 in zip(self.cross_attn, self.norm1, self.ffn, self.norm2):
+            attn_out, _ = attn(z, memory, memory)
+            z = n1(z + attn_out)
+            z = n2(z + ffn(z))
+
+        z = z.view(B, self.C, self.F, self.P, self.D)
+        return self.estimator(z).squeeze(-1)   # (B, C, F, P)
 
