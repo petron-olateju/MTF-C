@@ -1,0 +1,123 @@
+'2026-07-11T11:23:55.238901':
+  model: mtf_tr_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_multi_projection+branch_addition
+  - trace_pretrain only
+  - sst_trace=sst_multi_projecgtion+branch_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    spectrum_attn_flag: false
+    chn_attn_flag: true
+    temporal_attn_flag: false
+    spec_depth: 2
+    chn_depth: 2
+    tem_depth: 2
+    patch_emb_size: 40
+    patch_size: 100
+    spa_dim: 16
+    posemb_flag: true
+    gate_flag: false
+    reconstruction_lambda: 0.001
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    temporal_kernel: 43
+    wsize_divisor: 2
+    sst_method: frequency_backbone
+    sst_decoder: sst_multi_projection+branch_addition
+    filter_banks: 11
+    freq_downsample: 1
+    sst_trace: sst_multi_projection+branch_addition
+    trace_target: hard_argmax
+    trace_temperature: 0.95
+    pretrain: false
+    trace_pretrain: true
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/sst_decoding+NRMSE_Loss/dataset=Rodrigues2017 | validation_strategy=loso/2026-07-08T15:38:15.780011|model:mtf_r_c|subject:20.ckpt
+  mean_acc: 0.9418337533348485
+  std_acc: 0.1286957304211087
+  loss: 1.9371180722587986
+  subjects_acc:
+    1: 0.625
+    2: 0.5555555820465088
+    3: 0.8571428656578064
+    4: 1.0
+    5: 1.0
+    6: 1.0
+    8: 1.0
+    9: 0.8571428656578064
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 1.0
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 1.0
+    20: 1.0
+  trace_target_est_error: 0.10014535133775912
+  mean_inter_class_sim: 0.9898287434326974
+  mean_intra_class_sim: 0.9919718158872504
+  inter_intra_sim_gap: 0.002143072454552919
+  subjects_inter_class_sim:
+    1: 0.9599932432174683
+    2: 0.9732927083969116
+    3: 0.9811339179674784
+    4: 0.9854691922664642
+    5: 0.9876533150672913
+    6: 0.9886079629262289
+    8: 0.9879569751875741
+    9: 0.9869614243507385
+    10: 0.9880052275127835
+    11: 0.9888531148433686
+    12: 0.9885822588747198
+    13: 0.9891821046670278
+    14: 0.9892950562330393
+    15: 0.9896219117300851
+    16: 0.989963173866272
+    17: 0.9897807873785496
+    18: 0.9899101572878221
+    19: 0.9893805020385318
+    20: 0.9898287434326974
+  subjects_intra_class_sim:
+    1: 0.9572121500968933
+    2: 0.9742051959037781
+    3: 0.9817774097124735
+    4: 0.9859896302223206
+    5: 0.9881396770477295
+    6: 0.9889645576477051
+    8: 0.9886937652315412
+    9: 0.9877967685461044
+    10: 0.9888217912779914
+    11: 0.9896162033081055
+    12: 0.9896876432678916
+    13: 0.9902450988690058
+    14: 0.9906478340809162
+    15: 0.991060095173972
+    16: 0.9914083520571391
+    17: 0.991505566984415
+    18: 0.9917857331388137
+    19: 0.9916425314214494
+    20: 0.9919718158872504

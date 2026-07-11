@@ -1,0 +1,102 @@
+'2026-07-11T12:05:35.239832':
+  model: mtf_tr_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_multi_projection+branch_addition
+  - trace_pretrain only
+  - sst_trace=sst_multi_projecgtion+branch_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    spectrum_attn_flag: false
+    chn_attn_flag: true
+    temporal_attn_flag: false
+    spec_depth: 2
+    chn_depth: 2
+    tem_depth: 2
+    patch_emb_size: 40
+    patch_size: 100
+    spa_dim: 16
+    posemb_flag: true
+    gate_flag: false
+    reconstruction_lambda: 0.001
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    temporal_kernel: 43
+    wsize_divisor: 2
+    sst_method: frequency_backbone
+    sst_decoder: sst_multi_projection+branch_addition
+    filter_banks: 11
+    freq_downsample: 1
+    sst_trace: sst_multi_projection+branch_addition
+    trace_target: hard_argmax
+    trace_temperature: 0.95
+    pretrain: false
+    trace_pretrain: true
+    data_name: Kalunga2016
+    chn: 8
+    time_sample_num: 513
+    class_num: 4
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/sst_decoding+NRMSE_Loss/dataset=Kalunga2016 | validation_strategy=loso/2026-07-08T16:07:43.188631|model:mtf_r_c|subject:12.ckpt
+  mean_acc: 0.7245659728844961
+  std_acc: 0.1085804972481357
+  loss: 4.203496376673381
+  subjects_acc:
+    1: 0.640625
+    2: 0.6875
+    3: 0.875
+    4: 0.890625
+    5: 0.640625
+    6: 0.546875
+    7: 0.8541666865348816
+    8: 0.765625
+    9: 0.640625
+    10: 0.609375
+    11: 0.75
+    12: 0.793749988079071
+  trace_target_est_error: 0.10791616297016542
+  mean_inter_class_sim: 0.6355631121744713
+  mean_intra_class_sim: 0.7016658249000708
+  inter_intra_sim_gap: 0.06610271272559953
+  subjects_inter_class_sim:
+    1: 0.9622792601585388
+    2: 0.5372138731181622
+    3: 0.6277163500587145
+    4: 0.6347331460565329
+    5: 0.6918555304408074
+    6: 0.6948383487761021
+    7: 0.6966841423085758
+    8: 0.7102226791903377
+    9: 0.6963821541931894
+    10: 0.6560516737401485
+    11: 0.6435234025120735
+    12: 0.6355631121744713
+  subjects_intra_class_sim:
+    1: 0.9636155366897583
+    2: 0.5620082840323448
+    3: 0.662976418932279
+    4: 0.6783857755362988
+    5: 0.733288237452507
+    6: 0.7432314033309618
+    7: 0.7494449849639621
+    8: 0.7647330667823553
+    9: 0.7477782285875745
+    10: 0.7123457089066505
+    11: 0.7042283158410679
+    12: 0.7016658249000708
