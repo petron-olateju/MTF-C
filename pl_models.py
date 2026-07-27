@@ -28,7 +28,7 @@ from utils.spectrum_reconstructors import (
     CrossAttentionSSTDecoder
 )
 from utils.trace_predictors import (
-    Trace_SpetrumSpatioTemporal_Projection_BranchAddition,
+    Trace_SpectrumSpatioTemporal_Projection_BranchAddition,
 )
 
 
@@ -68,7 +68,7 @@ class SST_Trace(nn.Module):
         self.name = trace
 
         if trace == 'sst_multi_projection+branch_addition':
-            self.predictor = Trace_SpetrumSpatioTemporal_Projection_BranchAddition( n_banks, num_channels, num_patches, emb_size)
+            self.predictor = Trace_SpectrumSpatioTemporal_Projection_BranchAddition( n_banks, num_channels, num_patches, emb_size)
         else:
             ValueError(f"Argument trace should be one of: [sst_multi_projection+branch_addition, ]")
 
