@@ -5,10 +5,10 @@ from tqdm import tqdm
 with open('configs/model_params.yaml', 'r') as f:
     MODEL_PARAMS = yaml.safe_load(f)
 DATASETS = [
-    # "BNCI2014_001",
-    "Cattan2019_PHMD", "Rodrigues2017", 
-    "Nakanishi2015", "Kalunga2016", 
-    "BNCI2014_001", "BNCI2014_002", "BNCI2014_004"
+    "BNCI2014_001",
+    # "Cattan2019_PHMD", "Rodrigues2017", 
+    # "Nakanishi2015", "Kalunga2016", 
+    # "BNCI2014_001", "BNCI2014_002", "BNCI2014_004"
 ]
 VALIDATION = "loso"
 OUTPUT_DIR = "experiments/sst_trace_prediction"
@@ -16,7 +16,7 @@ OUTPUT_DIR = "experiments/sst_trace_prediction"
 for dataset in tqdm(DATASETS, total=len(DATASETS)):
         
     # for sst_trace in ['sst_addition', 'sst_projection+addition', 'gated_sst_projection+addition']:
-    for sst_trace in ['sst_multi_projection+branch_addition']:
+    for sst_trace in ['sst_cross_attention']:
         MODEL_PARAMS['mtf_c']['sst_trace'] = sst_trace
 
         for trace_target in ['hard_argmax', 'soft_argmax']:

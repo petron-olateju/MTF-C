@@ -27,9 +27,7 @@ from utils.spectrum_reconstructors import (
     R_SpetrumSpatioTemporal_Projection_BranchAddition,
     CrossAttentionSSTDecoder
 )
-from utils.trace_predictors import (
-    Trace_SpectrumSpatioTemporal_Projection_BranchAddition,
-)
+from utils.trace_predictors import TracePredictor
 
 
 class SST_Decoder(nn.Module):
@@ -68,9 +66,13 @@ class SST_Trace(nn.Module):
         self.name = trace
 
         if trace == 'sst_multi_projection+branch_addition':
-            self.predictor = Trace_SpectrumSpatioTemporal_Projection_BranchAddition( n_banks, num_channels, num_patches, emb_size)
+            sst = R_SpetrumSpatioTemporal_Projection_BranchAddition
+        elif trace == 'sst_cross_attention':
+            sst = CrossAttentionSSTDecoder
         else:
-            ValueError(f"Argument trace should be one of: [sst_multi_projection+branch_addition, ]")
+            ValueError(f"Argument trace should be one of: [sst_multi_projection+branch_addition, sst_cross_attention]")
+
+        self.predictor = TracePredictor( n_banks, num_channels, num_patches, emb_size, sst)
 
     def forward(self, x_spectrum, x_temporal, x_spatial):
         z = self.predictor(x_spectrum, x_temporal, x_spatial)
