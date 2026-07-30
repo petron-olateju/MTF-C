@@ -91,3 +91,95 @@
     7: 0.9309969544410706
     8: 0.9304021298885345
     9: 0.9283193349838257
+'2026-07-30T13:08:29.335659':
+  model: mtf_tr_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_projection+branch_addition
+  - sst_trace=sst_multi_projection+branch_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: false
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_multi_projection+branch_addition
+    sst_method: frequency_backbone
+    sst_trace: sst_multi_projection+branch_addition
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    trace_pretrain: true
+    trace_target: soft_argmax
+    trace_temperature: 0.95
+    wsize_divisor: 2
+    data_name: BNCI2014_004
+    chn: 3
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+    pretrain_dir: experiments/sst_decoding+NRMSE_Loss/dataset=BNCI2014_004 | validation_strategy=loso/2026-07-08T17:29:28.708787|model:mtf_r_c|subject:9.ckpt
+  mean_acc: 0.7053240802552965
+  std_acc: 0.08697543780734927
+  loss: 4.207669311099583
+  subjects_acc:
+    1: 0.8999999761581421
+    2: 0.6666666865348816
+    3: 0.6416666507720947
+    4: 0.7250000238418579
+    5: 0.6000000238418579
+    6: 0.7749999761581421
+    7: 0.7416666746139526
+    8: 0.6312500238418579
+    9: 0.6666666865348816
+  trace_target_est_error: 0.1388415280315611
+  mean_inter_class_sim: 0.91476219230228
+  mean_intra_class_sim: 0.9304190145598518
+  inter_intra_sim_gap: 0.015656822257571812
+  subjects_inter_class_sim:
+    1: 0.9046456217765808
+    2: 0.9509665668010712
+    3: 0.8918617963790894
+    4: 0.8990081995725632
+    5: 0.9190403103828431
+    6: 0.9202253123124441
+    7: 0.9258139218602862
+    8: 0.9250016435980797
+    9: 0.91476219230228
+  subjects_intra_class_sim:
+    1: 0.9215391278266907
+    2: 0.9595996141433716
+    3: 0.9028512835502625
+    4: 0.9132739454507828
+    5: 0.9304443717002868
+    6: 0.9336350858211517
+    7: 0.9387443661689758
+    8: 0.9378354176878929
+    9: 0.9304190145598518
