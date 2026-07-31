@@ -17,7 +17,7 @@ subprocess.run([
     "aws", "s3", "sync",
     "experiments/",
     "s3://mtfc-model-checkpoints/experiments/",
-    "--exlude", "*",
+    "--exclude", "*",
     "--include", "**/dataset*/*.ckpt",
     "--endpoint-url",
     "https://462a449f422520aa7ab25f587cc14d39.r2.cloudflarestorage.com",
