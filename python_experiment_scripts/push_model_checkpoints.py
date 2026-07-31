@@ -22,4 +22,4 @@ subprocess.run([
     "--endpoint-url",
     "https://462a449f422520aa7ab25f587cc14d39.r2.cloudflarestorage.com",
 ], env=env, check=True)
-print("MTFC MODEL CHECKPOINTS LOADED")
+print("MTFC MODEL CHECKPOINTS UPLOADED")
