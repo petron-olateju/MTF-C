@@ -15,11 +15,11 @@ OUTPUT_DIR = "experiments/sst_trace_prediction"
 
 for dataset in tqdm(DATASETS, total=len(DATASETS)):
         
-    # for sst_trace in ['sst_addition', 'sst_projection+addition', 'gated_sst_projection+addition']:
-    for sst_trace in ['sst_cross_attention']:
+    # for sst_trace in ['sst_multi_projection+branch_addition', 'sst_cross_attention']:
+    for sst_trace in ['sst_multi_projection+branch_addition']:
         MODEL_PARAMS['mtf_c']['sst_trace'] = sst_trace
 
-        for trace_target in ['hard_argmax', 'soft_argmax']:
+        for trace_target in [None]:
             MODEL_PARAMS['mtf_c']['trace_target'] = trace_target
             with open('configs/model_params.yaml', 'w') as f:
                 yaml.dump(MODEL_PARAMS, f)
