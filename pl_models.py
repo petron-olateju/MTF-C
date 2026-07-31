@@ -684,7 +684,7 @@ class mtf_tr_c(mtf_r_c):
 
         with torch.no_grad():
             if self.trace_target is None:
-                x_coords, y_coords = None
+                x_coords = y_coords = None
             elif self.trace_target.upper() == 'HARD_ARGMAX':
                 decoder_sst = rearrange(decoder_sst, 'b c f p -> b p c f')
                 B, P, C, _F = decoder_sst.shape
@@ -714,20 +714,28 @@ class mtf_tr_c(mtf_r_c):
                 decoder_coords = rearrange(decoder_coords, 'b p d -> b (p d)')
             else:
                 decoder_coords = None
+
         if decoder_coords is not None:
             trace_coords_ = trace_coords.squeeze(dim=1)
             trace_decoder_loss = F.mse_loss(trace_coords_, decoder_coords)
         else:
-            trace_decoder_loss = 0
+            trace_decoder_loss = None
 
         trace_loss = SupConLoss(
             temperature=self.trace_temperature, 
             base_temperature=self.trace_temperature
         )(trace_coords, y)
+
         if self.trace_pretrain is not False:
-            loss = trace_loss + trace_decoder_loss
+            if trace_decoder_loss is not None:
+                loss = trace_loss + trace_decoder_loss
+            else:
+                loss = trace_loss
         else:
-            loss = trace_loss + trace_decoder_loss + encoder_decoder_loss
+            if trace_decoder_loss is not None:
+                loss = trace_loss + trace_decoder_loss + encoder_decoder_loss
+            else:
+                loss = trace_loss + encoder_decoder_loss
 
         return trace_coords, decoder_coords, logits, loss, y
     
@@ -740,7 +748,10 @@ class mtf_tr_c(mtf_r_c):
         inter_class_sim, intra_class_sim = InterIntraClass_Similarity()(trace_coords.squeeze(1), y)
         self.train_inter_class_sim(inter_class_sim)
         self.train_intra_class_sim(intra_class_sim)
-        self.train_decoder_trace_error.update(trace_coords.squeeze(1), decoder_coords)
+        if decoder_coords is not None:
+            self.train_decoder_trace_error.update(trace_coords.squeeze(1), decoder_coords)
+        else:
+            self.train_decoder_trace_error.update(torch.zeros((10, 10)), torch.zeros((10, 10)))
 
         self.log("train_loss", loss, prog_bar=True)
         self.log("train_inter_class_sim", inter_class_sim, prog_bar=True)
@@ -760,7 +771,10 @@ class mtf_tr_c(mtf_r_c):
             inter_class_sim, intra_class_sim = InterIntraClass_Similarity()(trace_coords.squeeze(1), y)
             self.val_inter_class_sim(inter_class_sim)
             self.val_intra_class_sim(intra_class_sim)
-            self.val_decoder_trace_error.update(trace_coords.squeeze(1), decoder_coords)
+            if decoder_coords is not None:
+                self.val_decoder_trace_error.update(trace_coords.squeeze(1), decoder_coords)
+            else:
+                self.val_decoder_trace_error.update(torch.zeros((10, 10)), torch.zeros((10, 10)))
 
             self.log("val_loss", loss, prog_bar=True)
             self.log("val_inter_class_sim", inter_class_sim, prog_bar=True)
@@ -778,7 +792,10 @@ class mtf_tr_c(mtf_r_c):
             inter_class_sim, intra_class_sim = InterIntraClass_Similarity()(trace_coords.squeeze(1), y)
             self.test_inter_class_sim(inter_class_sim)
             self.test_intra_class_sim(intra_class_sim)
-            self.test_decoder_trace_error.update(trace_coords.squeeze(1), decoder_coords)
+            if decoder_coords is not None:
+                self.test_decoder_trace_error.update(trace_coords.squeeze(1), decoder_coords)
+            else:
+                self.test_decoder_trace_error.update(torch.zeros((10, 10)), torch.zeros((10, 10)))
 
             self.log("test_loss", loss, prog_bar=True)
             self.log("test_inter_class_sim", inter_class_sim, prog_bar=True)
