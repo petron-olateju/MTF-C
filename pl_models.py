@@ -683,7 +683,9 @@ class mtf_tr_c(mtf_r_c):
         trace_coords = F.normalize(trace_coords, dim=-1)
 
         with torch.no_grad():
-            if self.trace_target.upper() == 'HARD_ARGMAX':
+            if self.trace_target is None:
+                x_coords, y_coords = None
+            elif self.trace_target.upper() == 'HARD_ARGMAX':
                 decoder_sst = rearrange(decoder_sst, 'b c f p -> b p c f')
                 B, P, C, _F = decoder_sst.shape
                 # Flatten the C×F plane
@@ -705,12 +707,18 @@ class mtf_tr_c(mtf_r_c):
                 x_coords = (chan_weights * chan_idx).sum(dim=-1) / (C - 1)
                 y_coords = (freq_weights * freq_idx).sum(dim=-1) / (_F - 1)
             else:
-                raise ValueError(f'--trace_target should be one of [hard_argmax, soft_argmax] not {self.trace_target}')
-            
-            decoder_coords = torch.stack([x_coords, y_coords], dim=-1).detach()
-            decoder_coords = rearrange(decoder_coords, 'b p d -> b (p d)')
-        trace_coords_ = trace_coords.squeeze(dim=1)
-        trace_decoder_loss = F.mse_loss(trace_coords_, decoder_coords)
+                raise ValueError(f'--trace_target should be one of [hard_argmax, soft_argmax, None] not {self.trace_target}')
+
+            if (x_coords is not None) and (y_coords is not None):
+                decoder_coords = torch.stack([x_coords, y_coords], dim=-1).detach()
+                decoder_coords = rearrange(decoder_coords, 'b p d -> b (p d)')
+            else:
+                decoder_coords = None
+        if decoder_coords is not None:
+            trace_coords_ = trace_coords.squeeze(dim=1)
+            trace_decoder_loss = F.mse_loss(trace_coords_, decoder_coords)
+        else:
+            trace_decoder_loss = 0
 
         trace_loss = SupConLoss(
             temperature=self.trace_temperature, 
