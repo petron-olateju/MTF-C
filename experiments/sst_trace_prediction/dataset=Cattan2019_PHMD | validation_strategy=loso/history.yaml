@@ -504,3 +504,105 @@
     10: 0.9774581730365753
     11: 0.9794908436861905
     12: 0.9799427737792333
+'2026-08-03T13:13:32.185295':
+  model: mtf_tr_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_projection+branch_addition
+  - sst_trace=sst_multi_projection+branch_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    contrastive_pairs: per_class
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: false
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_multi_projection+branch_addition
+    sst_method: frequency_backbone
+    sst_trace: sst_multi_projection+branch_addition
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    trace_pretrain: true
+    trace_target: null
+    trace_temperature: 0.95
+    wsize_divisor: 2
+    data_name: Cattan2019_PHMD
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/sst_decoding+NRMSE_Loss/dataset=Cattan2019_PHMD | validation_strategy=loso/2026-07-08T15:33:07.689615|model:mtf_r_c|subject:12.ckpt
+  mean_acc: 0.700000007947286
+  std_acc: 0.14142135483241508
+  loss: 2.197064201037089
+  subjects_acc:
+    1: 0.800000011920929
+    2: 0.5
+    3: 0.800000011920929
+    4: 0.800000011920929
+    5: 0.6000000238418579
+    6: 0.800000011920929
+    7: 0.699999988079071
+    8: 0.5
+    9: 0.699999988079071
+    10: 1.0
+    11: 0.6000000238418579
+    12: 0.6000000238418579
+  trace_target_est_error: 0.0
+  mean_inter_class_sim: 0.9794993102550507
+  mean_intra_class_sim: 0.9799407223860422
+  inter_intra_sim_gap: 0.00044141213099158083
+  subjects_inter_class_sim:
+    1: 0.9780950546264648
+    2: 0.9890450835227966
+    3: 0.9789026180903116
+    4: 0.9714053571224213
+    5: 0.9753261685371399
+    6: 0.9701070388158163
+    7: 0.9696057694298881
+    8: 0.9734034538269043
+    9: 0.9762800865703158
+    10: 0.9769036293029785
+    11: 0.9789872440424833
+    12: 0.9794993102550507
+  subjects_intra_class_sim:
+    1: 0.980787456035614
+    2: 0.990390956401825
+    3: 0.9804817835489908
+    4: 0.9727950543165207
+    5: 0.9766476035118103
+    6: 0.9704529444376627
+    7: 0.9696244086538043
+    8: 0.9734198823571205
+    9: 0.9762921333312988
+    10: 0.9774554133415222
+    11: 0.979488345709714
+    12: 0.9799407223860422
