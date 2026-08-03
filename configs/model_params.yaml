@@ -1,55 +1,48 @@
-db_conformer: &db_conformer
+db_conformer: &id001
   branch: all
   chn_attn_flag: true
   chn_depth: 2
-  tem_depth: 2
   emb_size: 40
-  patch_size: 100
-  spa_dim: 16
-
-  posemb_flag: true
-  gate_flag: false
-
-  sst_method: stft
-  sst_decoder: null
   filter_banks: 11
   freq_downsample: 1
+  gate_flag: false
+  patch_size: 100
+  posemb_flag: true
+  pretrain: false
+  spa_dim: 16
+  sst_decoder: null
+  sst_method: stft
   sst_trace: null
+  tem_depth: 2
+  trace_pretrain: true
   trace_target: hard_argmax
   trace_temperature: 0.95
-
-  pretrain: false
-  trace_pretrain: true
-db_r_conformer: *db_conformer
-
-mtf_c: &mtf_c
-  spectrum_attn_flag: false
+db_r_conformer: *id001
+mtf_c: &id002
   chn_attn_flag: true
-  temporal_attn_flag: false
-  spec_depth: 2
   chn_depth: 2
-  tem_depth: 2
+  contrastive_pairs: per_class
+  filter_banks: 11
+  filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+  freq_downsample: 1
+  gate_flag: false
   patch_emb_size: 40
   patch_size: 100
-  spa_dim: 16
-
   posemb_flag: true
-  gate_flag: false
-  
-  reconstruction_lambda: 0.001
-  filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
-  temporal_kernel: 43
-  wsize_divisor: 2
-
-  sst_method: frequency_backbone
-  sst_decoder: sst_multi_projection+branch_addition
-  filter_banks: 11
-  freq_downsample: 1
-  sst_trace: sst_multi_projection+branch_addition
-  trace_target: hard_argmax
-  trace_temperature: 0.95
-
   pretrain: false
+  reconstruction_lambda: 0.001
+  spa_dim: 16
+  spec_depth: 2
+  spectrum_attn_flag: false
+  sst_decoder: sst_multi_projection+branch_addition
+  sst_method: frequency_backbone
+  sst_trace: sst_multi_projection+branch_addition
+  tem_depth: 2
+  temporal_attn_flag: false
+  temporal_kernel: 43
   trace_pretrain: true
-mtf_r_c: *mtf_c
-mtf_tr_c: *mtf_c
+  trace_target: null
+  trace_temperature: 0.95
+  wsize_divisor: 2
+mtf_r_c: *id002
+mtf_tr_c: *id002

@@ -1,3 +1,5 @@
+import math
+
 from argparse import Namespace
 import pytorch_lightning as pl
 import torch
@@ -604,6 +606,8 @@ class mtf_tr_c(mtf_r_c):
         P_cfg = MODEL_ARGS['patch_size']
         n_patches = (n_times - 1) // P_cfg
 
+        self.contrastive_pairs = MODEL_ARGS['contrastive_pairs']
+
         self.trace = SST_Trace(
             trace=self.sst_trace_name,
             n_banks=MODEL_ARGS['filter_banks'],
@@ -721,10 +725,36 @@ class mtf_tr_c(mtf_r_c):
         else:
             trace_decoder_loss = None
 
+        if self.contrastive_pairs == 'per_sample':
+            x_trace = trace_coords
+            y_trace = y
+        elif self.contrastive_pairs == 'per_class':
+            labels = y.unique()
+            _x, _y = [], []
+
+            for label in labels:
+                x_ = trace_coords[y==label]
+                _x.append(x_)
+                _y.append(label)
+
+            max_n = max(t.shape[0] for t in _x)
+            upsampled = []
+            for t in _x:
+                if t.shape[0] == max_n:
+                    upsampled.append(t)
+                else:
+                    repeats = math.ceil(max_n / t.shape[0])
+                    t = t.repeat((repeats,) + (1,) * (t.ndim - 1))
+                    t = t[:max_n]
+                    upsampled.append(t)
+            x = torch.cat(upsampled, dim=1)
+            x_trace = rearrange(x, 'b n d -> n b d')
+            y_trace = torch.tensor(_y, dtype=y.dtype)
+
         trace_loss = SupConLoss(
             temperature=self.trace_temperature, 
             base_temperature=self.trace_temperature
-        )(trace_coords, y)
+        )(x_trace, y_trace)
 
         if self.trace_pretrain is not False:
             if trace_decoder_loss is not None:
