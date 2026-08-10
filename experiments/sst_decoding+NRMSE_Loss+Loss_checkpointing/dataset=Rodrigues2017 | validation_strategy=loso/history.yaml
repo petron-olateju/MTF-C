@@ -1,0 +1,585 @@
+'2026-08-10T08:32:46.782019':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_addition
+    sst_method: stft
+    sst_trace: null
+    tem_depth: 2
+    trace_pretrain: true
+    trace_target: hard_argmax
+    trace_temperature: 0.95
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Rodrigues2017
+      | validation_strategy=loso/2026-07-02T10:35:38.635027|model:db_conformer|subject:20.ckpt
+  mean_acc: 0.8534878931547466
+  std_acc: 0.1784510125955934
+  loss: 0.003058937084125845
+  subjects_acc:
+    1: 0.625
+    2: 0.5555555820465088
+    3: 0.7142857313156128
+    4: 1.0
+    5: 0.75
+    6: 1.0
+    8: 1.0
+    9: 0.7142857313156128
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 0.7142857313156128
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 0.5714285969734192
+    20: 0.5714285969734192
+  mean_sst_error: 0.003058937084125845
+  std_sst_error: 0.00020224258624919
+  subjects_sst_error:
+    1: 0.003538073506206274
+    2: 0.0027630499098449945
+    3: 0.003003617050126195
+    4: 0.0029046167619526386
+    5: 0.0029577009845525026
+    6: 0.0027120730374008417
+    8: 0.0032508226577192545
+    9: 0.003361337585374713
+    10: 0.0029373876750469208
+    11: 0.002973077120259404
+    12: 0.0031613537576049566
+    13: 0.0028933908324688673
+    14: 0.0031257832888513803
+    15: 0.003079974092543125
+    16: 0.002979889279231429
+    17: 0.0032820517662912607
+    18: 0.002969985129311681
+    19: 0.0032535509672015905
+    20: 0.0029720691964030266
+'2026-08-10T08:40:09.172399':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    contrastive_pairs: per_class
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_addition
+    sst_method: frequency_backbone
+    sst_trace: sst_multi_projection+branch_addition
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    trace_pretrain: true
+    trace_target: null
+    trace_temperature: 0.95
+    wsize_divisor: 2
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Rodrigues2017
+      | validation_strategy=loso/2026-07-02T12:08:16.932865|model:mtf_c|subject:20.ckpt
+  mean_acc: 0.9418337533348485
+  std_acc: 0.1286957304211087
+  loss: 0.0030430211734614873
+  subjects_acc:
+    1: 0.625
+    2: 0.5555555820465088
+    3: 0.8571428656578064
+    4: 1.0
+    5: 1.0
+    6: 1.0
+    8: 1.0
+    9: 0.8571428656578064
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 1.0
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 1.0
+    20: 1.0
+  mean_sst_error: 0.0030430211979699763
+  std_sst_error: 0.00018603338861850015
+  subjects_sst_error:
+    1: 0.0034148613922297955
+    2: 0.002727923449128866
+    3: 0.0030070121865719557
+    4: 0.0029088887386024
+    5: 0.002962299156934023
+    6: 0.0026734175626188517
+    8: 0.003235258860513568
+    9: 0.0033313599415123463
+    10: 0.0029578381218016148
+    11: 0.002986328676342964
+    12: 0.003146557370200753
+    13: 0.00288444384932518
+    14: 0.0031000436283648014
+    15: 0.0030759936198592186
+    16: 0.00298918760381639
+    17: 0.0032551002223044634
+    18: 0.002965566935017705
+    19: 0.0032138105016201735
+    20: 0.0029815109446644783
+'2026-08-10T08:46:25.057976':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_projection+addition
+    sst_method: stft
+    sst_trace: null
+    tem_depth: 2
+    trace_pretrain: true
+    trace_target: hard_argmax
+    trace_temperature: 0.95
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Rodrigues2017
+      | validation_strategy=loso/2026-07-02T10:35:38.635027|model:db_conformer|subject:20.ckpt
+  mean_acc: 0.8534878931547466
+  std_acc: 0.1784510125955934
+  loss: 0.0020478707554407024
+  subjects_acc:
+    1: 0.625
+    2: 0.5555555820465088
+    3: 0.7142857313156128
+    4: 1.0
+    5: 0.75
+    6: 1.0
+    8: 1.0
+    9: 0.7142857313156128
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 0.7142857313156128
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 0.5714285969734192
+    20: 0.5714285969734192
+  mean_sst_error: 0.002047870767694947
+  std_sst_error: 0.00042109948220012854
+  subjects_sst_error:
+    1: 0.0033156222198158503
+    2: 0.0018439422128722072
+    3: 0.0018863185541704297
+    4: 0.0015570834511891007
+    5: 0.0018233744194731116
+    6: 0.0018633301369845867
+    8: 0.002359366277232766
+    9: 0.00273440801538527
+    10: 0.0020918806549161673
+    11: 0.0020228049252182245
+    12: 0.001793463947251439
+    13: 0.0016060761408880353
+    14: 0.0017833648016676307
+    15: 0.0018512203823775053
+    16: 0.0021250208374112844
+    17: 0.002125359605997801
+    18: 0.0018144315108656883
+    19: 0.002568281488493085
+    20: 0.0017441950039938092
+'2026-08-10T08:52:10.123590':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection+addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    contrastive_pairs: per_class
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_projection+addition
+    sst_method: frequency_backbone
+    sst_trace: sst_multi_projection+branch_addition
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    trace_pretrain: true
+    trace_target: null
+    trace_temperature: 0.95
+    wsize_divisor: 2
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Rodrigues2017
+      | validation_strategy=loso/2026-07-02T12:08:16.932865|model:mtf_c|subject:20.ckpt
+  mean_acc: 0.9418337533348485
+  std_acc: 0.1286957304211087
+  loss: 0.001981555098226588
+  subjects_acc:
+    1: 0.625
+    2: 0.5555555820465088
+    3: 0.8571428656578064
+    4: 1.0
+    5: 1.0
+    6: 1.0
+    8: 1.0
+    9: 0.8571428656578064
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 1.0
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 1.0
+    20: 1.0
+  mean_sst_error: 0.001981555098226588
+  std_sst_error: 0.0003773885286919158
+  subjects_sst_error:
+    1: 0.003032839857041836
+    2: 0.0016165211563929915
+    3: 0.0019154790788888931
+    4: 0.0015577286249026656
+    5: 0.001780302613042295
+    6: 0.001837850664742291
+    8: 0.0023861173540353775
+    9: 0.002696155570447445
+    10: 0.0021366707514971495
+    11: 0.002058404963463545
+    12: 0.001732660224661231
+    13: 0.0015741632087156177
+    14: 0.001716254511848092
+    15: 0.0018574274145066738
+    16: 0.002121260156854987
+    17: 0.00199453579261899
+    18: 0.001789349946193397
+    19: 0.0021883510053157806
+    20: 0.0016574739711359143
+'2026-08-10T08:59:26.348763':
+  model: db_r_conformer
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    branch: all
+    chn_attn_flag: true
+    chn_depth: 2
+    emb_size: 40
+    filter_banks: 11
+    freq_downsample: 1
+    gate_flag: false
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    spa_dim: 16
+    sst_decoder: st_projection_addition
+    sst_method: stft
+    sst_trace: null
+    tem_depth: 2
+    trace_pretrain: true
+    trace_target: hard_argmax
+    trace_temperature: 0.95
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Rodrigues2017
+      | validation_strategy=loso/2026-07-02T10:35:38.635027|model:db_conformer|subject:20.ckpt
+  mean_acc: 0.8534878931547466
+  std_acc: 0.1784510125955934
+  loss: 0.003039226058478418
+  subjects_acc:
+    1: 0.625
+    2: 0.5555555820465088
+    3: 0.7142857313156128
+    4: 1.0
+    5: 0.75
+    6: 1.0
+    8: 1.0
+    9: 0.7142857313156128
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 0.7142857313156128
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 0.5714285969734192
+    20: 0.5714285969734192
+  mean_sst_error: 0.0030392261074953957
+  std_sst_error: 0.0002051448086460659
+  subjects_sst_error:
+    1: 0.0035167422611266375
+    2: 0.0027354888152331114
+    3: 0.0029775595758110285
+    4: 0.0028794079553335905
+    5: 0.0029512036126106977
+    6: 0.002676716074347496
+    8: 0.003234713338315487
+    9: 0.0033381397370249033
+    10: 0.0029304204508662224
+    11: 0.0029543116688728333
+    12: 0.003138153348118067
+    13: 0.0028653661720454693
+    14: 0.0030902375001460314
+    15: 0.003060435876250267
+    16: 0.002953974064439535
+    17: 0.003274689894169569
+    18: 0.0029619440902024508
+    19: 0.003251805901527405
+    20: 0.002953985705971718
+'2026-08-10T09:04:22.311810':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=st_projection_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    contrastive_pairs: per_class
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: st_projection_addition
+    sst_method: frequency_backbone
+    sst_trace: sst_multi_projection+branch_addition
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    trace_pretrain: true
+    trace_target: null
+    trace_temperature: 0.95
+    wsize_divisor: 2
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Rodrigues2017
+      | validation_strategy=loso/2026-07-02T12:08:16.932865|model:mtf_c|subject:20.ckpt
+  mean_acc: 0.9418337533348485
+  std_acc: 0.1286957304211087
+  loss: 0.0030142301325931362
+  subjects_acc:
+    1: 0.625
+    2: 0.5555555820465088
+    3: 0.8571428656578064
+    4: 1.0
+    5: 1.0
+    6: 1.0
+    8: 1.0
+    9: 0.8571428656578064
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 1.0
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 1.0
+    20: 1.0
+  mean_sst_error: 0.0030142301080846473
+  std_sst_error: 0.00019351033961286776
+  subjects_sst_error:
+    1: 0.003412863239645958
+    2: 0.002718056319281459
+    3: 0.002967158332467079
+    4: 0.0028590105939656496
+    5: 0.002917232923209667
+    6: 0.0026417162735015154
+    8: 0.003207009518519044
+    9: 0.0033148047514259815
+    10: 0.0029038297943770885
+    11: 0.002941860118880868
+    12: 0.0031361044384539127
+    13: 0.002857588231563568
+    14: 0.003069340717047453
+    15: 0.0030454599764198065
+    16: 0.0029490238521248102
+    17: 0.0032502165995538235
+    18: 0.002947307424619794
+    19: 0.003192921867594123
+    20: 0.0029388670809566975
