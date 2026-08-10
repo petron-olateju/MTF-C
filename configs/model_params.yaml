@@ -8,7 +8,7 @@ db_conformer: &id001
   gate_flag: false
   patch_size: 100
   posemb_flag: true
-  pretrain: false
+  pretrain: true
   spa_dim: 16
   sst_decoder: null
   sst_method: stft
@@ -29,7 +29,7 @@ mtf_c: &id002
   patch_emb_size: 40
   patch_size: 100
   posemb_flag: true
-  pretrain: false
+  pretrain: true
   reconstruction_lambda: 0.001
   spa_dim: 16
   spec_depth: 2
