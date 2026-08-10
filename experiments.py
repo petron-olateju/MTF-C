@@ -171,13 +171,22 @@ def across_subjects_evaluation(
                     lr=lr,
                     subject=subject
                 )
-                checkpoint_callback = ModelCheckpoint(
-                    monitor="val_acc",
-                    mode="max",
-                    save_top_k=1,
-                    dirpath=experiment_path,
-                    filename=f'{run_timestamp}|model:{model_name}|subject:{subject}'
-                )
+                if model_name not in ['mtf_r_c', 'mtf_tr_c', 'db_r_conformer']:
+                    checkpoint_callback = ModelCheckpoint(
+                        monitor="val_acc",
+                        mode="max",
+                        save_top_k=1,
+                        dirpath=experiment_path,
+                        filename=f'{run_timestamp}|model:{model_name}|subject:{subject}'
+                    )
+                else:
+                    checkpoint_callback = ModelCheckpoint(
+                        monitor="val_loss",
+                        mode="min",
+                        save_top_k=1,
+                        dirpath=experiment_path,
+                        filename=f'{run_timestamp}|model:{model_name}|subject:{subject}'
+                    )
                 trainer = pl.Trainer(
                     max_epochs=n_epochs,
                     accelerator="auto",
