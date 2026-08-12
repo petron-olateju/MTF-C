@@ -14,7 +14,7 @@ db_conformer: &id001
   sst_method: stft
   sst_trace: null
   tem_depth: 2
-  trace_pretrain: true
+  trace_pretrain: false
   trace_target: hard_argmax
   trace_temperature: 0.95
 db_r_conformer: *id001
@@ -29,7 +29,7 @@ mtf_c: &id002
   patch_emb_size: 40
   patch_size: 100
   posemb_flag: true
-  pretrain: true
+  pretrain: false
   reconstruction_lambda: 0.001
   spa_dim: 16
   spec_depth: 2

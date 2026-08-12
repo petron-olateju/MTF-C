@@ -11,12 +11,12 @@ DATASETS = [
     "BNCI2014_001", "BNCI2014_002", "BNCI2014_004"
 ]
 VALIDATION = "loso"
-OUTPUT_DIR = "experiments/sst_trace_prediction"
+OUTPUT_DIR = "experiments/sst_trace_prediction+Loss_checkpointing"
 
 for dataset in tqdm(DATASETS, total=len(DATASETS)):
         
-    # for sst_trace in ['sst_multi_projection+branch_addition', 'sst_cross_attention']:
-    for sst_trace in ['sst_multi_projection+branch_addition']:
+    for sst_trace in ['sst_multi_projection+branch_addition', 'sst_cross_attention']:
+    # for sst_trace in ['sst_multi_projection+branch_addition']:
         MODEL_PARAMS['mtf_c']['sst_trace'] = sst_trace
 
         for trace_target in [None]:
