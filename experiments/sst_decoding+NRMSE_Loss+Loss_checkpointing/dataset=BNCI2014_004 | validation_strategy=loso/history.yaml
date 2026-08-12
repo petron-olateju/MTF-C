@@ -787,3 +787,84 @@
     7: 0.0013410962419584394
     8: 0.0011794102611020207
     9: 0.0013905439991503954
+'2026-08-12T12:15:22.210280':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_cross_attention
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.5
+    epoch_end: 3.5
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    contrastive_pairs: per_class
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_cross_attention
+    sst_method: frequency_backbone
+    sst_trace: sst_multi_projection+branch_addition
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    trace_pretrain: true
+    trace_target: null
+    trace_temperature: 0.95
+    wsize_divisor: 2
+    data_name: BNCI2014_004
+    chn: 3
+    time_sample_num: 750
+    class_num: 2
+    lr: 0.001
+    fs: 250.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=BNCI2014_004
+      | validation_strategy=loso/2026-07-02T15:36:10.341303|model:mtf_c|subject:9.ckpt
+  mean_acc: 0.7053240802552965
+  std_acc: 0.08697543780734927
+  loss: 0.002063328206228713
+  subjects_acc:
+    1: 0.8999999761581421
+    2: 0.6666666865348816
+    3: 0.6416666507720947
+    4: 0.7250000238418579
+    5: 0.6000000238418579
+    6: 0.7749999761581421
+    7: 0.7416666746139526
+    8: 0.6312500238418579
+    9: 0.6666666865348816
+  mean_sst_error: 0.001426731171603832
+  std_sst_error: 0.0001770197401756187
+  subjects_sst_error:
+    1: 0.0013540108921006322
+    2: 0.001234961673617363
+    3: 0.001714965095743537
+    4: 0.0012061058077961206
+    5: 0.0016598579240962863
+    6: 0.0012303167022764683
+    7: 0.0014582931762561202
+    8: 0.0014362030196934938
+    9: 0.0015458662528544664

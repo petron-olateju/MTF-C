@@ -987,3 +987,104 @@
     18: 0.0017542268615216017
     19: 0.00222201575525105
     20: 0.0016731334617361426
+'2026-08-12T10:32:52.646586':
+  model: mtf_r_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_cross_attention
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    contrastive_pairs: per_class
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: true
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_cross_attention
+    sst_method: frequency_backbone
+    sst_trace: sst_multi_projection+branch_addition
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    trace_pretrain: true
+    trace_target: null
+    trace_temperature: 0.95
+    wsize_divisor: 2
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/classification/frequency_backbone/dataset=Rodrigues2017
+      | validation_strategy=loso/2026-07-02T12:08:16.932865|model:mtf_c|subject:20.ckpt
+  mean_acc: 0.9418337533348485
+  std_acc: 0.1286957304211087
+  loss: 0.0020706907931813284
+  subjects_acc:
+    1: 0.625
+    2: 0.5555555820465088
+    3: 0.8571428656578064
+    4: 1.0
+    5: 1.0
+    6: 1.0
+    8: 1.0
+    9: 0.8571428656578064
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 1.0
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 1.0
+    20: 1.0
+  mean_sst_error: 0.0020706908299440614
+  std_sst_error: 0.00044169381155909586
+  subjects_sst_error:
+    1: 0.0033621585462242365
+    2: 0.001793752540834248
+    3: 0.0018870565108954906
+    4: 0.0015522376634180546
+    5: 0.0018219617195427418
+    6: 0.0018059569410979748
+    8: 0.0024595733266323805
+    9: 0.002775396453216672
+    10: 0.002062556566670537
+    11: 0.002072166185826063
+    12: 0.0018877401016652584
+    13: 0.001648732228204608
+    14: 0.0017978543182834983
+    15: 0.0018135765567421913
+    16: 0.002132447436451912
+    17: 0.002277950756251812
+    18: 0.001883655320852995
+    19: 0.002618965459987521
+    20: 0.0016893871361389756
