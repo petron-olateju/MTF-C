@@ -1,0 +1,248 @@
+'2026-08-12T21:14:37.730460':
+  model: mtf_tr_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_projection+branch_addition
+  - sst_trace=sst_multi_projection+branch_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    contrastive_pairs: per_class
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: false
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_multi_projection+branch_addition
+    sst_method: frequency_backbone
+    sst_trace: sst_multi_projection+branch_addition
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    trace_pretrain: true
+    trace_target: null
+    trace_temperature: 0.95
+    wsize_divisor: 2
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/sst_decoding+NRMSE_Loss+Loss_checkpointing/dataset=Rodrigues2017
+      | validation_strategy=loso/2026-08-11T16:04:34.495210|model:mtf_r_c|subject:20.ckpt
+  mean_acc: 0.9418337533348485
+  std_acc: 0.1286957304211087
+  loss: 1.819546850104081
+  subjects_acc:
+    1: 0.625
+    2: 0.5555555820465088
+    3: 0.8571428656578064
+    4: 1.0
+    5: 1.0
+    6: 1.0
+    8: 1.0
+    9: 0.8571428656578064
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 1.0
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 1.0
+    20: 1.0
+  trace_target_est_error: 0.0
+  mean_inter_class_sim: 0.600729303072991
+  mean_intra_class_sim: 0.8886526728931227
+  inter_intra_sim_gap: 0.28792336982013167
+  subjects_inter_class_sim:
+    1: 0.9576764702796936
+    2: 0.6106424778699875
+    3: 0.7341616253058115
+    4: 0.7940581515431404
+    5: 0.8310281336307526
+    6: 0.820185179511706
+    8: 0.8402658828667232
+    9: 0.8095460869371891
+    10: 0.796872486670812
+    11: 0.7489135593175889
+    12: 0.7161668593233282
+    13: 0.6807671139637629
+    14: 0.6647769143948188
+    15: 0.6554302764790398
+    16: 0.6117838928243146
+    17: 0.6318432976622717
+    18: 0.6120504517012331
+    19: 0.5963578960250339
+    20: 0.600729303072991
+  subjects_intra_class_sim:
+    1: 0.9549063444137573
+    2: 0.9293692708015442
+    3: 0.9472207824389139
+    4: 0.9569870233535767
+    5: 0.9628002166748046
+    6: 0.9476617376009623
+    8: 0.951352059841156
+    9: 0.9204629510641098
+    10: 0.9251347846455045
+    11: 0.9101378560066223
+    12: 0.9017515561797402
+    13: 0.8988039394219717
+    14: 0.8933056455392104
+    15: 0.8975314455372947
+    16: 0.8970648368199666
+    17: 0.9018241502344608
+    18: 0.903386652469635
+    19: 0.8885358174641927
+    20: 0.8886526728931227
+'2026-08-12T21:30:00.806976':
+  model: mtf_tr_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_projection+branch_addition
+  - sst_trace=sst_cross_attention
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 10.0
+    epoch_end: 50.0
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    contrastive_pairs: per_class
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: false
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_multi_projection+branch_addition
+    sst_method: frequency_backbone
+    sst_trace: sst_cross_attention
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    trace_pretrain: true
+    trace_target: null
+    trace_temperature: 0.95
+    wsize_divisor: 2
+    data_name: Rodrigues2017
+    chn: 16
+    time_sample_num: 5120
+    class_num: 2
+    lr: 0.001
+    fs: 512.0
+    pretrain_dir: experiments/sst_decoding+NRMSE_Loss+Loss_checkpointing/dataset=Rodrigues2017
+      | validation_strategy=loso/2026-08-11T16:04:34.495210|model:mtf_r_c|subject:20.ckpt
+  mean_acc: 0.9418337533348485
+  std_acc: 0.1286957304211087
+  loss: 1.782173056351511
+  subjects_acc:
+    1: 0.625
+    2: 0.5555555820465088
+    3: 0.8571428656578064
+    4: 1.0
+    5: 1.0
+    6: 1.0
+    8: 1.0
+    9: 0.8571428656578064
+    10: 1.0
+    11: 1.0
+    12: 1.0
+    13: 1.0
+    14: 1.0
+    15: 1.0
+    16: 1.0
+    17: 1.0
+    18: 1.0
+    19: 1.0
+    20: 1.0
+  trace_target_est_error: 0.0
+  mean_inter_class_sim: 0.497871208307946
+  mean_intra_class_sim: 0.8935305789897316
+  inter_intra_sim_gap: 0.39565937068178564
+  subjects_inter_class_sim:
+    1: 0.9991852045059204
+    2: 0.9991857409477234
+    3: 0.864478329817454
+    4: 0.8519549667835236
+    5: 0.8727130889892578
+    6: 0.8810216784477234
+    8: 0.8908088547842843
+    9: 0.8752238601446152
+    10: 0.7780130100630535
+    11: 0.7320344381674658
+    12: 0.6872860322526487
+    13: 0.6330651852525383
+    14: 0.59917490418481
+    15: 0.5567598109191749
+    16: 0.5198150211285489
+    17: 0.5347626594557369
+    18: 0.5035135456299245
+    19: 0.4905766422129495
+    20: 0.497871208307946
+  subjects_intra_class_sim:
+    1: 0.9989349842071533
+    2: 0.9990776479244232
+    3: 0.9064860542615255
+    4: 0.9111605286598206
+    5: 0.9268600463867187
+    6: 0.9262693921724955
+    8: 0.9330176115036011
+    9: 0.9183497726917267
+    10: 0.9268887175454034
+    11: 0.9070629298686981
+    12: 0.8876064040444114
+    13: 0.8959369907776514
+    14: 0.8819071879753699
+    15: 0.8898888954094478
+    16: 0.8969222625096639
+    17: 0.9012202844023705
+    18: 0.9063556720228756
+    19: 0.8938988579644097
+    20: 0.8935305789897316

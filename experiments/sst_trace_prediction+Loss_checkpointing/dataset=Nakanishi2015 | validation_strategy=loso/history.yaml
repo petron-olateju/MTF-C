@@ -1,0 +1,188 @@
+'2026-08-12T21:00:18.311752':
+  model: mtf_tr_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_projection+branch_addition
+  - sst_trace=sst_multi_projection+branch_addition
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    contrastive_pairs: per_class
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: false
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_multi_projection+branch_addition
+    sst_method: frequency_backbone
+    sst_trace: sst_multi_projection+branch_addition
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    trace_pretrain: true
+    trace_target: null
+    trace_temperature: 0.95
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/sst_decoding+NRMSE_Loss+Loss_checkpointing/dataset=Nakanishi2015
+      | validation_strategy=loso/2026-08-11T16:50:24.223617|model:mtf_r_c|subject:9.ckpt
+  mean_acc: 0.8080246878994836
+  std_acc: 0.18737796711631527
+  loss: 4.295603805118137
+  subjects_acc:
+    1: 0.6277777552604675
+    2: 0.3722222149372101
+    3: 0.7777777910232544
+    4: 0.9944444298744202
+    5: 0.8333333134651184
+    6: 0.9111111164093018
+    7: 0.8722222447395325
+    8: 1.0
+    9: 0.8833333253860474
+  trace_target_est_error: 0.0
+  mean_inter_class_sim: 0.250891528195805
+  mean_intra_class_sim: 0.6290555596351624
+  inter_intra_sim_gap: 0.37816403143935734
+  subjects_inter_class_sim:
+    1: 0.41603317856788635
+    2: 0.42332105338573456
+    3: 0.38728559017181396
+    4: 0.35002946108579636
+    5: 0.310439458489418
+    6: 0.2968039313952128
+    7: 0.2731524897473199
+    8: 0.26909798942506313
+    9: 0.250891528195805
+  subjects_intra_class_sim:
+    1: 0.7217258214950562
+    2: 0.6535714566707611
+    3: 0.6475928425788879
+    4: 0.6624859124422073
+    5: 0.6288831114768982
+    6: 0.6413103739420573
+    7: 0.6350929651941571
+    8: 0.6449508592486382
+    9: 0.6290555596351624
+'2026-08-12T21:25:58.054806':
+  model: mtf_tr_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_projection+branch_addition
+  - sst_trace=sst_cross_attention
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    contrastive_pairs: per_class
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: false
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_multi_projection+branch_addition
+    sst_method: frequency_backbone
+    sst_trace: sst_cross_attention
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    trace_pretrain: true
+    trace_target: null
+    trace_temperature: 0.95
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/sst_decoding+NRMSE_Loss+Loss_checkpointing/dataset=Nakanishi2015
+      | validation_strategy=loso/2026-08-11T16:50:24.223617|model:mtf_r_c|subject:9.ckpt
+  mean_acc: 0.8080246878994836
+  std_acc: 0.18737796711631527
+  loss: 4.492245568169488
+  subjects_acc:
+    1: 0.6277777552604675
+    2: 0.3722222149372101
+    3: 0.7777777910232544
+    4: 0.9944444298744202
+    5: 0.8333333134651184
+    6: 0.9111111164093018
+    7: 0.8722222447395325
+    8: 1.0
+    9: 0.8833333253860474
+  trace_target_est_error: 0.0
+  mean_inter_class_sim: 0.12205239716503355
+  mean_intra_class_sim: 0.3079397951563199
+  inter_intra_sim_gap: 0.18588739799128637
+  subjects_inter_class_sim:
+    1: 0.07524621486663818
+    2: 0.07647165656089783
+    3: 0.07416976988315582
+    4: 0.10163379088044167
+    5: 0.14150067269802094
+    6: 0.13555830220381418
+    7: 0.12893160645450866
+    8: 0.12407257128506899
+    9: 0.12205239716503355
+  subjects_intra_class_sim:
+    1: 0.21035811305046082
+    2: 0.16039739921689034
+    3: 0.17883546402057013
+    4: 0.25099444575607777
+    5: 0.3006482020020485
+    6: 0.3041197471320629
+    7: 0.3059212320617267
+    8: 0.3071332247927785
+    9: 0.3079397951563199
