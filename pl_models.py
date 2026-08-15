@@ -63,7 +63,12 @@ class SST_Decoder(nn.Module):
 
 class SST_Trace(nn.Module):
 
-    def __init__(self, trace, n_banks, num_channels, num_patches, emb_size):
+    def __init__(
+            self, 
+            trace, n_banks, num_channels, num_patches, emb_size, 
+            trace_cf_proposer='linear', trace_lstm_hidden_size=32, 
+            trace_lstm_num_layers=1, trace_cnn_hidden_channels=16,
+            trace_cnn_kernel_size=3):
         super().__init__()
         self.name = trace
 
@@ -74,7 +79,11 @@ class SST_Trace(nn.Module):
         else:
             ValueError(f"Argument trace should be one of: [sst_multi_projection+branch_addition, sst_cross_attention]")
 
-        self.predictor = TracePredictor( n_banks, num_channels, num_patches, emb_size, sst)
+        self.predictor = TracePredictor(
+            n_banks, num_channels, num_patches, emb_size, sst, 
+            cf_proposer=trace_cf_proposer, 
+            hidden_size=trace_lstm_hidden_size, num_layers=trace_lstm_num_layers, 
+            hidden_channels=trace_cnn_hidden_channels, kernel_size=trace_cnn_kernel_size)
 
     def forward(self, x_spectrum, x_temporal, x_spatial):
         z = self.predictor(x_spectrum, x_temporal, x_spatial)
@@ -613,7 +622,12 @@ class mtf_tr_c(mtf_r_c):
             n_banks=MODEL_ARGS['filter_banks'],
             num_channels=MODEL_ARGS['chn'],
             num_patches=n_patches,
-            emb_size=MODEL_ARGS['patch_emb_size']
+            emb_size=MODEL_ARGS['patch_emb_size'],
+            trace_cf_proposer=MODEL_ARGS['trace_cf_proposer'],
+            trace_lstm_hidden_size=MODEL_ARGS['trace_lstm_hidden_size'],
+            trace_lstm_num_layers=MODEL_ARGS['trace_lstm_num_layers'],
+            trace_cnn_hidden_channels=MODEL_ARGS['trace_cnn_hidden_channels'],
+            trace_cnn_kernel_size=MODEL_ARGS['trace_cnn_kernel_size'],
         )
         self.spectrum_normalization = nn.BatchNorm1d(MODEL_ARGS['filter_banks'])
         self.temporal_normalization = nn.BatchNorm1d(n_patches)
