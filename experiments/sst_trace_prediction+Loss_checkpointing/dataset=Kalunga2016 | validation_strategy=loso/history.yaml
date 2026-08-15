@@ -43,6 +43,11 @@
     tem_depth: 2
     temporal_attn_flag: false
     temporal_kernel: 43
+    trace_cf_proposer: linear
+    trace_cnn_hidden_channels: 16
+    trace_cnn_kernel_size: 3
+    trace_lstm_hidden_size: 32
+    trace_lstm_num_layers: 1
     trace_pretrain: true
     trace_target: null
     trace_temperature: 0.95
@@ -146,6 +151,11 @@
     tem_depth: 2
     temporal_attn_flag: false
     temporal_kernel: 43
+    trace_cf_proposer: linear
+    trace_cnn_hidden_channels: 16
+    trace_cnn_kernel_size: 3
+    trace_lstm_hidden_size: 32
+    trace_lstm_num_layers: 1
     trace_pretrain: true
     trace_target: null
     trace_temperature: 0.95
