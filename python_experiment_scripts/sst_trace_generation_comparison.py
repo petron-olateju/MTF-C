@@ -19,7 +19,7 @@ TRACE_TARGETS = [None, 'hard_argmax', 'soft_argmax']
 
 for dataset in tqdm(DATASETS, total=len(DATASETS)):
         
-    for sst_trace in SST_DECODERS[0:1]:
+    for sst_trace in SST_DECODERS[1:]:
         MODEL_PARAMS['mtf_c']['sst_trace'] = sst_trace
         for cf_proposer in CF_PROPOSERS:
             MODEL_PARAMS['mtf_c']['trace_cf_proposer'] = cf_proposer 
