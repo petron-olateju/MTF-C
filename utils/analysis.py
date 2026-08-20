@@ -2,6 +2,7 @@ import re
 import os
 from pathlib import Path
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 import yaml
 
@@ -963,6 +964,228 @@ def plot_paired_delta(
                            frameon=True, framealpha=0.95, edgecolor='#cccccc',
                            borderpad=0.8, labelspacing=0.6)
         legend.get_frame().set_linewidth(0.8)
+
+        fig.tight_layout()
+
+        if save_path:
+            os.makedirs(save_path, exist_ok=True)
+            os.makedirs(os.path.join(save_path, 'pdf'), exist_ok=True)
+            fig.savefig(os.path.join(save_path, f'{filename}.png'),
+                        dpi=300, bbox_inches='tight')
+            fig.savefig(os.path.join(save_path, 'pdf', f'{filename}.pdf'),
+                        bbox_inches='tight')
+
+    return fig, ax
+
+
+def plot_grouped_boxplots(
+    root_dir='experiments/sst_trace_prediction+Loss_checkpointing',
+    save_path='plots/sst_trace_prediction+Loss_checkpointing',
+    filename='grouped_boxplots',
+    figsize=(12, 6),
+    metric='inter_intra_sim_gap',
+    group_param='sst_trace',
+    subgroup_param='trace_cf_proposer',
+    subgroup_values=None,
+    filter_params=None,
+    datasets=None,
+    hline=None,
+    show_points=False,
+):
+    """Grouped boxplots: metric distribution across datasets, grouped by one parameter
+    with side-by-side boxplots for each value of a second parameter.
+
+    Parameters
+    ----------
+    root_dir : str or Path
+        Directory containing dataset subdirectories.
+    save_path : str or None
+        Directory to save output files. Set to None to disable saving.
+    filename : str
+        Base name for output files (saved as {filename}.png and pdf/{filename}.pdf).
+    figsize : tuple
+        Figure dimensions (width, height) in inches.
+    metric : str
+        Metric key to extract (default ``'inter_intra_sim_gap'``).
+    group_param : str
+        Parameter name in ``model_params`` for x-axis grouping (default ``'sst_trace'``).
+    subgroup_param : str
+        Parameter name in ``model_params`` for side-by-side boxplots (default ``'trace_cf_proposer'``).
+    subgroup_values : list of str or None
+        Values of ``subgroup_param`` to include. If None, auto-detect from data.
+    filter_params : dict or None
+        Additional ``model_params`` key-value pairs to filter entries.
+    datasets : list of str or None
+        List of dataset names to include. If None (default), all datasets are included.
+    hline : list of (float, str) or None
+        Additional horizontal reference lines as ``(y_value, color)`` pairs.
+    show_points : bool
+        If True, overlay individual dataset points (jittered) on each boxplot
+        with labels (default False).
+    """
+    style = {
+        'font.family': 'serif',
+        'font.serif': ['Times New Roman', 'DejaVu Serif', 'cmr10'],
+        'mathtext.fontset': 'cm',
+        'axes.edgecolor': '#333333',
+        'axes.linewidth': 1.0,
+        'axes.labelcolor': '#222222',
+        'xtick.color': '#222222',
+        'ytick.color': '#222222',
+        'savefig.dpi': 300,
+        'figure.dpi': 120,
+    }
+
+    root = Path(root_dir)
+
+    # Collect data: data[group_val][subgroup_val] = [(dataset_name, metric_value), ...]
+    data = {}
+
+    for d in sorted(root.iterdir()):
+        if not d.is_dir():
+            continue
+        dataset_name = _extract_dataset_name(d.name)
+        if datasets is not None and dataset_name not in datasets:
+            continue
+        yaml_path = d / 'history.yaml'
+        if not yaml_path.exists():
+            continue
+
+        entries = _load_history(yaml_path)
+        for e in entries:
+            mp = e.get('model_params', {})
+            if not _params_match(mp, filter_params):
+                continue
+
+            group_val = mp.get(group_param)
+            subgroup_val = mp.get(subgroup_param)
+            metric_val = e.get(metric)
+
+            if group_val is None or subgroup_val is None or metric_val is None:
+                continue
+
+            data.setdefault(group_val, {}).setdefault(subgroup_val, []).append(
+                (dataset_name, metric_val)
+            )
+
+    all_groups = sorted(data.keys())
+    if not all_groups:
+        raise ValueError("No data found for any group / dataset combination.")
+
+    if subgroup_values is None:
+        all_subgroups = sorted({sg for g in data for sg in data[g]})
+    else:
+        all_subgroups = list(subgroup_values)
+
+    all_datasets = sorted({dset for g in data for sg in data[g]
+                           for dset, _ in data[g][sg]})
+
+    n_groups = len(all_groups)
+    n_subgroups = len(all_subgroups)
+
+    # ---- plotting ----
+    with plt.rc_context(style):
+        fig, ax = plt.subplots(figsize=figsize)
+
+        palette = ['#0173B2', '#DE8F05', '#029E73', '#D55E00',
+                   '#CC78BC', '#CA9161', '#949494', '#56B4E9']
+        markers = ['o', 's', '^', 'D', 'v', 'P', 'X', '*']
+        dataset_markers = {dset: markers[i % len(markers)]
+                           for i, dset in enumerate(all_datasets)}
+
+        x = np.arange(n_groups)
+        box_width = 0.7 / max(n_subgroups, 1)
+
+        legend_handles = []
+
+        for i, subgroup in enumerate(all_subgroups):
+            positions = []
+            box_data = []
+            for j, group in enumerate(all_groups):
+                pos = j + (i - (n_subgroups - 1) / 2) * box_width
+                positions.append(pos)
+                values = [v for _, v in data.get(group, {}).get(subgroup, [])]
+                box_data.append(values if values else [np.nan])
+
+            color = palette[i % len(palette)]
+            bp = ax.boxplot(
+                box_data, positions=positions, patch_artist=True,
+                widths=box_width * 0.8,
+                boxprops=dict(facecolor=color, alpha=0.3, edgecolor=color,
+                              linewidth=0.8),
+                medianprops=dict(color=color, linewidth=1.2),
+                whiskerprops=dict(color=color, linewidth=0.6),
+                capprops=dict(color=color, linewidth=0.6),
+                flierprops=dict(marker='o', markerfacecolor=color,
+                                markersize=3, alpha=0.5),
+                zorder=3,
+            )
+            legend_handles.append(bp['boxes'][0])
+
+            # Overlay individual dataset points with unique markers
+            if show_points:
+                for j, group in enumerate(all_groups):
+                    entries = data.get(group, {}).get(subgroup, [])
+                    if not entries:
+                        continue
+                    pos = j + (i - (n_subgroups - 1) / 2) * box_width
+                    n_pts = len(entries)
+                    np.random.seed(42)
+                    jitter = np.random.uniform(-0.25, 0.25, size=n_pts) * box_width
+                    for k, (dset, val) in enumerate(entries):
+                        ax.scatter(pos + jitter[k], val,
+                                   color=color, edgecolor='white',
+                                   linewidths=0.6, s=30, alpha=0.85,
+                                   marker=dataset_markers[dset],
+                                   zorder=4)
+
+        if hline:
+            for y_val, color in hline:
+                ax.axhline(y=y_val, color=color, linestyle='--', linewidth=1.0,
+                           alpha=0.7, zorder=2)
+
+        # ---- axes cosmetics ----
+        group_labels = [str(g) for g in all_groups]
+        ax.set_xticks(x)
+        ax.set_xticklabels(group_labels, fontsize=11, rotation=15, ha='right')
+
+        metric_display = metric.replace('_', ' ').title()
+        ax.set_ylabel(metric_display, fontsize=13, labelpad=8)
+        ax.set_title(f'{metric_display} by {group_param} and {subgroup_param}',
+                     fontsize=14, fontweight='bold', pad=14)
+
+        ax.grid(True, which='major', axis='y', alpha=0.3, linewidth=0.7, zorder=0)
+        ax.grid(False, axis='x')
+        ax.set_axisbelow(True)
+
+        for spine in ('top', 'right'):
+            ax.spines[spine].set_visible(False)
+        for spine in ('left', 'bottom'):
+            ax.spines[spine].set_linewidth(1.0)
+            ax.spines[spine].set_color('#333333')
+
+        ax.tick_params(axis='both', which='major', labelsize=10.5, length=4)
+
+        # Subgroup legend (boxplot colors)
+        legend = ax.legend(legend_handles, all_subgroups,
+                           fontsize=9.5, loc='upper left',
+                           bbox_to_anchor=(1.02, 1.0),
+                           frameon=True, framealpha=0.95, edgecolor='#cccccc',
+                           borderpad=0.8, labelspacing=0.6)
+        legend.get_frame().set_linewidth(0.8)
+
+        # Dataset marker legend (horizontal, below title)
+        if show_points and all_datasets:
+            ds_handles = [
+                Line2D([0], [0], marker=dataset_markers[dset], color='#333333',
+                       markersize=8, markeredgecolor='#333333', linestyle='None',
+                       label=DATASET_LABELS.get(dset, dset))
+                for dset in all_datasets
+            ]
+            fig.legend(handles=ds_handles, loc='upper center',
+                       bbox_to_anchor=(0.5, 0.93), ncol=min(len(all_datasets), 7),
+                       fontsize=9, frameon=False, handletextpad=0.5,
+                       columnspacing=1.5)
 
         fig.tight_layout()
 
