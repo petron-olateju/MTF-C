@@ -493,3 +493,300 @@
     7: 0.0
     8: 0.0
     9: 0.0
+'2026-08-20T10:25:07.877687':
+  model: mtf_tr_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_projection+branch_addition
+  - sst_trace=sst_cross_attention
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    contrastive_pairs: per_class
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: false
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_multi_projection+branch_addition
+    sst_method: frequency_backbone
+    sst_trace: sst_cross_attention
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    trace_cf_proposer: lstm
+    trace_cnn_hidden_channels: 16
+    trace_cnn_kernel_size: 3
+    trace_lstm_hidden_size: 32
+    trace_lstm_num_layers: 1
+    trace_pretrain: true
+    trace_target: null
+    trace_temperature: 0.95
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/sst_decoding+NRMSE_Loss+Loss_checkpointing/dataset=Nakanishi2015
+      | validation_strategy=loso/2026-08-11T16:50:24.223617|model:mtf_r_c|subject:9.ckpt
+  mean_acc: 0.8080246878994836
+  std_acc: 0.18737796711631527
+  loss: 4.316924624972874
+  subjects_acc:
+    1: 0.6277777552604675
+    2: 0.3722222149372101
+    3: 0.7777777910232544
+    4: 0.9944444298744202
+    5: 0.8333333134651184
+    6: 0.9111111164093018
+    7: 0.8722222447395325
+    8: 1.0
+    9: 0.8833333253860474
+  trace_target_est_error: 0.0
+  mean_inter_class_sim: 0.10308507995473014
+  mean_intra_class_sim: 0.35319698022471535
+  inter_intra_sim_gap: 0.2501119002699852
+  subjects_inter_class_sim:
+    1: 0.06039894372224808
+    2: 0.08161773532629013
+    3: 0.08096256107091904
+    4: 0.08969462290406227
+    5: 0.10907489359378815
+    6: 0.11104359477758408
+    7: 0.10833601760012763
+    8: 0.10160269774496555
+    9: 0.10308507995473014
+  subjects_intra_class_sim:
+    1: 0.2143876999616623
+    2: 0.18705999106168747
+    3: 0.20274666448434195
+    4: 0.2726329229772091
+    5: 0.3108773618936539
+    6: 0.34192265818516415
+    7: 0.3455611360924585
+    8: 0.3430939745157957
+    9: 0.35319698022471535
+'2026-08-20T10:50:54.928325':
+  model: mtf_tr_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_projection+branch_addition
+  - sst_trace=sst_cross_attention
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    contrastive_pairs: per_class
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: false
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_multi_projection+branch_addition
+    sst_method: frequency_backbone
+    sst_trace: sst_cross_attention
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    trace_cf_proposer: cnn
+    trace_cnn_hidden_channels: 16
+    trace_cnn_kernel_size: 3
+    trace_lstm_hidden_size: 32
+    trace_lstm_num_layers: 1
+    trace_pretrain: true
+    trace_target: null
+    trace_temperature: 0.95
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/sst_decoding+NRMSE_Loss+Loss_checkpointing/dataset=Nakanishi2015
+      | validation_strategy=loso/2026-08-11T16:50:24.223617|model:mtf_r_c|subject:9.ckpt
+  mean_acc: 0.8080246878994836
+  std_acc: 0.18737796711631527
+  loss: 4.234919495052761
+  subjects_acc:
+    1: 0.6277777552604675
+    2: 0.3722222149372101
+    3: 0.7777777910232544
+    4: 0.9944444298744202
+    5: 0.8333333134651184
+    6: 0.9111111164093018
+    7: 0.8722222447395325
+    8: 1.0
+    9: 0.8833333253860474
+  trace_target_est_error: 0.0
+  mean_inter_class_sim: 0.49678219689263237
+  mean_intra_class_sim: 0.935128304693434
+  inter_intra_sim_gap: 0.43834610780080163
+  subjects_inter_class_sim:
+    1: 0.4927595257759094
+    2: 0.5343575179576874
+    3: 0.5197656452655792
+    4: 0.5056111291050911
+    5: 0.50626180768013
+    6: 0.5024019728104273
+    7: 0.5022729081766946
+    8: 0.49734752625226974
+    9: 0.49678219689263237
+  subjects_intra_class_sim:
+    1: 0.880602240562439
+    2: 0.8484624922275543
+    3: 0.8738500674565634
+    4: 0.9003534615039825
+    5: 0.9052982807159424
+    6: 0.9194505910078684
+    7: 0.9261084794998169
+    8: 0.935337632894516
+    9: 0.935128304693434
+'2026-08-20T11:16:32.935973':
+  model: mtf_tr_c
+  details:
+  - Transformer depth=2 across all branches
+  - One LOSO repeat
+  - channel_attn_pooling alone
+  - sst_decoder=sst_projection+branch_addition
+  - sst_trace=sst_cross_attention
+  experiment_seed: 42
+  taining_params:
+    n_folds: 1
+    n_repeats: 1
+    val_split: 0.2
+    test_split: 0.0
+    lr: 0.001
+    batch_size: 64
+    n_epochs: 100
+    preprocessing_args:
+    - bandpass
+    - EA
+  dataset_params:
+    epoch_start: 0.0
+    epoch_end: null
+  model_params:
+    chn_attn_flag: true
+    chn_depth: 2
+    contrastive_pairs: per_class
+    filter_banks: 11
+    filter_banks_variant: MultiscaleTemporalCollapse_ChannelsExpand_FilterBanks
+    freq_downsample: 1
+    gate_flag: false
+    patch_emb_size: 40
+    patch_size: 100
+    posemb_flag: true
+    pretrain: false
+    reconstruction_lambda: 0.001
+    spa_dim: 16
+    spec_depth: 2
+    spectrum_attn_flag: false
+    sst_decoder: sst_multi_projection+branch_addition
+    sst_method: frequency_backbone
+    sst_trace: sst_cross_attention
+    tem_depth: 2
+    temporal_attn_flag: false
+    temporal_kernel: 43
+    trace_cf_proposer: conv_lstm
+    trace_cnn_hidden_channels: 16
+    trace_cnn_kernel_size: 3
+    trace_lstm_hidden_size: 32
+    trace_lstm_num_layers: 1
+    trace_pretrain: true
+    trace_target: null
+    trace_temperature: 0.95
+    wsize_divisor: 2
+    data_name: Nakanishi2015
+    chn: 8
+    time_sample_num: 1064
+    class_num: 12
+    lr: 0.001
+    fs: 256.0
+    pretrain_dir: experiments/sst_decoding+NRMSE_Loss+Loss_checkpointing/dataset=Nakanishi2015
+      | validation_strategy=loso/2026-08-11T16:50:24.223617|model:mtf_r_c|subject:9.ckpt
+  mean_acc: 0.8080246878994836
+  std_acc: 0.18737796711631527
+  loss: 4.097995758056641
+  subjects_acc:
+    1: 0.6277777552604675
+    2: 0.3722222149372101
+    3: 0.7777777910232544
+    4: 0.9944444298744202
+    5: 0.8333333134651184
+    6: 0.9111111164093018
+    7: 0.8722222447395325
+    8: 1.0
+    9: 0.8833333253860474
+  trace_target_est_error: 0.0
+  mean_inter_class_sim: 0.5953185624546475
+  mean_intra_class_sim: 0.9377358622021146
+  inter_intra_sim_gap: 0.34241729974746704
+  subjects_inter_class_sim:
+    1: 0.6033830642700195
+    2: 0.6038466095924377
+    3: 0.5927589734395345
+    4: 0.5893082171678543
+    5: 0.6006507039070129
+    6: 0.5990343491236368
+    7: 0.5973869476999555
+    8: 0.5954452976584435
+    9: 0.5953185624546475
+  subjects_intra_class_sim:
+    1: 0.8860161900520325
+    2: 0.8324149250984192
+    3: 0.8607868552207947
+    4: 0.8907384127378464
+    5: 0.9000332951545715
+    6: 0.9147947231928507
+    7: 0.9254635146686009
+    8: 0.9347742274403572
+    9: 0.9377358622021146
