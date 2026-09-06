@@ -991,6 +991,13 @@ def plot_grouped_boxplots(
     datasets=None,
     hline=None,
     show_points=False,
+    show_boxplots=None,
+    connect_lines=None,
+    ymin=None,
+    ymax=None,
+    boxplot_alpha=0.3,
+    connect_alpha=0.55,
+    summary=None,
 ):
     """Grouped boxplots: metric distribution across datasets, grouped by one parameter
     with side-by-side boxplots for each value of a second parameter.
@@ -1022,6 +1029,28 @@ def plot_grouped_boxplots(
     show_points : bool
         If True, overlay individual dataset points (jittered) on each boxplot
         with labels (default False).
+    show_boxplots : list of str or None
+        Group-option values (values of ``group_param``, e.g. each ``sst_trace``
+        method) whose boxplots should be drawn. If None (default), all groups
+        get boxplots. An empty list hides all boxplots while keeping every
+        group's x-axis position.
+    connect_lines : list of str or None
+        Group-option values for which each dataset's metric values are
+        connected by a dashed line across the ``subgroup_param`` positions
+        (e.g. ``trace_cf_proposer``) inside that group's cluster. If None
+        (default), no connecting lines are drawn.
+    ymin : float or None
+        Lower y-axis limit. None (default) leaves the bound auto-scaled.
+    ymax : float or None
+        Upper y-axis limit. None (default) leaves the bound auto-scaled.
+    boxplot_alpha : float
+        Face transparency of the boxplots (default 0.3).
+    connect_alpha : float
+        Transparency of the dataset connecting lines (default 0.55).
+    summary : {'median', 'mean', None} or None
+        Statistic used to draw a thick black summary line across the subgroup
+        positions of each group in ``connect_lines``. If None (default), no
+        summary line is drawn.
     """
     style = {
         'font.family': 'serif',
@@ -1080,6 +1109,11 @@ def plot_grouped_boxplots(
     all_datasets = sorted({dset for g in data for sg in data[g]
                            for dset, _ in data[g][sg]})
 
+    box_groups = (all_groups if show_boxplots is None
+                  else [show_boxplots] if isinstance(show_boxplots, str) else list(show_boxplots))
+    line_groups = ([] if connect_lines is None
+                   else [connect_lines] if isinstance(connect_lines, str) else list(connect_lines))
+
     n_groups = len(all_groups)
     n_subgroups = len(all_subgroups)
 
@@ -1102,16 +1136,21 @@ def plot_grouped_boxplots(
             positions = []
             box_data = []
             for j, group in enumerate(all_groups):
+                if group not in box_groups:
+                    continue
                 pos = j + (i - (n_subgroups - 1) / 2) * box_width
                 positions.append(pos)
                 values = [v for _, v in data.get(group, {}).get(subgroup, [])]
                 box_data.append(values if values else [np.nan])
 
+            if not positions:
+                continue
+
             color = palette[i % len(palette)]
             bp = ax.boxplot(
                 box_data, positions=positions, patch_artist=True,
                 widths=box_width * 0.8,
-                boxprops=dict(facecolor=color, alpha=0.3, edgecolor=color,
+                boxprops=dict(facecolor=color, alpha=boxplot_alpha, edgecolor=color,
                               linewidth=0.8),
                 medianprops=dict(color=color, linewidth=1.2),
                 whiskerprops=dict(color=color, linewidth=0.6),
@@ -1125,6 +1164,8 @@ def plot_grouped_boxplots(
             # Overlay individual dataset points with unique markers
             if show_points:
                 for j, group in enumerate(all_groups):
+                    if group in line_groups:
+                        continue
                     entries = data.get(group, {}).get(subgroup, [])
                     if not entries:
                         continue
@@ -1138,6 +1179,49 @@ def plot_grouped_boxplots(
                                    linewidths=0.6, s=30, alpha=0.85,
                                    marker=dataset_markers[dset],
                                    zorder=4)
+
+        # Connect each dataset's values across the subgroup positions within a group
+        for j, group in enumerate(all_groups):
+            if group not in line_groups:
+                continue
+            for i_ds, dset in enumerate(all_datasets):
+                xs = []
+                ys = []
+                for i, subgroup in enumerate(all_subgroups):
+                    pos = j + (i - (n_subgroups - 1) / 2) * box_width
+                    ds_vals = [
+                        v for d, v in data.get(group, {}).get(subgroup, [])
+                        if d == dset
+                    ]
+                    if ds_vals:
+                        xs.append(pos)
+                        ys.append(ds_vals[0])
+                if len(xs) < 2:
+                    continue
+                color = palette[i_ds % len(palette)]
+                ax.plot(xs, ys, color=color, marker=dataset_markers[dset],
+                        markersize=6, markeredgecolor=color, markeredgewidth=1,
+                        linestyle='--', linewidth=1.0, alpha=connect_alpha, zorder=4)
+
+        # Thick black summary line (median/mean) across subgroups for connect groups
+        summary_label = None
+        if summary in ('median', 'mean'):
+            summary_func = np.median if summary == 'median' else np.mean
+            summary_label = summary.capitalize()
+            for j, group in enumerate(all_groups):
+                if group not in line_groups:
+                    continue
+                xs = []
+                ys = []
+                for i, subgroup in enumerate(all_subgroups):
+                    pos = j + (i - (n_subgroups - 1) / 2) * box_width
+                    vals = [v for _, v in data.get(group, {}).get(subgroup, [])]
+                    if vals:
+                        xs.append(pos)
+                        ys.append(summary_func(vals))
+                if len(xs) >= 2:
+                    ax.plot(xs, ys, color='black', linewidth=2.5,
+                            marker='o', markersize=5, alpha=0.85, zorder=5)
 
         if hline:
             for y_val, color in hline:
@@ -1166,22 +1250,39 @@ def plot_grouped_boxplots(
 
         ax.tick_params(axis='both', which='major', labelsize=10.5, length=4)
 
+        ax.set_ylim(bottom=ymin, top=ymax)
+
         # Subgroup legend (boxplot colors)
-        legend = ax.legend(legend_handles, all_subgroups,
-                           fontsize=9.5, loc='upper left',
-                           bbox_to_anchor=(1.02, 1.0),
-                           frameon=True, framealpha=0.95, edgecolor='#cccccc',
-                           borderpad=0.8, labelspacing=0.6)
-        legend.get_frame().set_linewidth(0.8)
+        if legend_handles:
+            legend_labels = list(all_subgroups)
+            if summary_label is not None:
+                legend_handles.append(Line2D([0], [0], color='black',
+                                             linewidth=2.5, marker='o',
+                                             markersize=5, label=summary_label))
+                legend_labels.append(summary_label)
+            legend = ax.legend(legend_handles, legend_labels,
+                               fontsize=9.5, loc='upper left',
+                               bbox_to_anchor=(1.02, 1.0),
+                               frameon=True, framealpha=0.95, edgecolor='#cccccc',
+                               borderpad=0.8, labelspacing=0.6)
+            legend.get_frame().set_linewidth(0.8)
 
         # Dataset marker legend (horizontal, below title)
-        if show_points and all_datasets:
-            ds_handles = [
-                Line2D([0], [0], marker=dataset_markers[dset], color='#333333',
-                       markersize=8, markeredgecolor='#333333', linestyle='None',
-                       label=DATASET_LABELS.get(dset, dset))
-                for dset in all_datasets
-            ]
+        if (show_points or line_groups) and all_datasets:
+            show_line_style = bool(line_groups)
+            ds_handles = []
+            for i_ds, dset in enumerate(all_datasets):
+                color = palette[i_ds % len(palette)]
+                ds_handles.append(Line2D(
+                    [0], [0],
+                    marker=dataset_markers[dset],
+                    color=color if show_line_style else '#333333',
+                    markersize=8,
+                    markeredgecolor=color if show_line_style else '#333333',
+                    linestyle='--' if show_line_style else 'None',
+                    linewidth=1.0 if show_line_style else 0,
+                    label=DATASET_LABELS.get(dset, dset),
+                ))
             fig.legend(handles=ds_handles, loc='upper center',
                        bbox_to_anchor=(0.5, 0.93), ncol=min(len(all_datasets), 7),
                        fontsize=9, frameon=False, handletextpad=0.5,
