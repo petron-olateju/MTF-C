@@ -123,7 +123,8 @@ def main():
     parser.add_argument(
         '--root_dir',
         type=str,
-        default='experiments/classification/frequency_backbone',
+        nargs='+',
+        default=['experiments/classification/frequency_backbone'],
         help='Root experiment directory containing dataset subdirectories.',
     )
     parser.add_argument(
@@ -140,9 +141,10 @@ def main():
     )
     args = parser.parse_args()
 
-    root = Path(args.root_dir)
-    if not root.is_dir():
-        raise FileNotFoundError(f'Root directory not found: {root}')
+    roots = [Path(r) for r in args.root_dir]
+    for root in roots:
+        if not root.is_dir():
+            raise FileNotFoundError(f'Root directory not found: {root}')
 
     # Parse model filters into (training_params, model_params, model) tuples
     parsed_filters = {}
@@ -152,26 +154,27 @@ def main():
     # Collect timestamp paths per model per dataset
     checkpoints = {label: {} for label in parsed_filters}
 
-    for d in sorted(root.iterdir()):
-        if not d.is_dir():
-            continue
-        dataset_name = _extract_dataset_name(d.name)
-        yaml_path = d / 'history.yaml'
-        if not yaml_path.exists():
-            continue
-
-        entries = _load_history(yaml_path)
-
-        for label, (tp, mp, mf) in parsed_filters.items():
-            entry = _find_matching_entry(entries, tp, mp, mf)
-            if entry is None:
-                print(
-                    f'Warning: no matching entry for "{label}" in {dataset_name}'
-                )
+    for root in roots:
+        for d in sorted(root.iterdir()):
+            if not d.is_dir():
+                continue
+            dataset_name = _extract_dataset_name(d.name)
+            yaml_path = d / 'history.yaml'
+            if not yaml_path.exists():
                 continue
 
-            timestamp = entry['timestamp']
-            checkpoints[label][dataset_name] = f'{root}/{d.name}/{timestamp}|model:{mf}'
+            entries = _load_history(yaml_path)
+
+            for label, (tp, mp, mf) in parsed_filters.items():
+                entry = _find_matching_entry(entries, tp, mp, mf)
+                if entry is None:
+                    print(
+                        f'Warning: no matching entry for "{label}" in {dataset_name}'
+                    )
+                    continue
+
+                timestamp = entry['timestamp']
+                checkpoints[label][dataset_name] = f'{root}/{d.name}/{timestamp}|model:{mf}'
 
     # Build YAML data with shared objects (PyYAML will create anchors/aliases)
     yaml_data = {}
