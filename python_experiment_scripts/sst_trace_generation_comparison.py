@@ -12,14 +12,14 @@ DATASETS = [
     # "BNCI2014_001", "BNCI2014_002", "BNCI2014_004"
 ]
 VALIDATION = "loso"
-OUTPUT_DIR = "experiments/sst_trace_prediction+Loss_checkpointing"
+OUTPUT_DIR = "experiments/sst_trace_prediction+Loss_checkpointing[RE-RUN]"
 SST_DECODERS = ['sst_multi_projection+branch_addition', 'sst_cross_attention']
-CF_PROPOSERS = ['lstm', 'cnn', 'conv_lstm']
+CF_PROPOSERS = ['linear', 'lstm', 'cnn', 'conv_lstm']
 TRACE_TARGETS = [None, 'hard_argmax', 'soft_argmax']
 
 for dataset in tqdm(DATASETS, total=len(DATASETS)):
         
-    for sst_trace in SST_DECODERS[1:]:
+    for sst_trace in SST_DECODERS[0:]:
         MODEL_PARAMS['mtf_c']['sst_trace'] = sst_trace
         for cf_proposer in CF_PROPOSERS:
             MODEL_PARAMS['mtf_c']['trace_cf_proposer'] = cf_proposer 
