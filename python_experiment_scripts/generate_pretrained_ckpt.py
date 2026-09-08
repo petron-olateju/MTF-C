@@ -92,7 +92,8 @@ mtf_tr_c_model_params = {
     'chn_attn_flag': True, 'spectrum_attn_flag': False, 'temporal_attn_flag': False,
     'reconstruction_lambda':0.001, 'sst_method': 'frequency_backbone', 
     'sst_decoder': 'sst_multi_projection+branch_addition', 'pretrain': False,
-    'sst_trace': 'sst_multi_projection+branch_addition', 'trace_pretrain': True, 'trace_target': None
+    'sst_trace': 'sst_multi_projection+branch_addition', 'trace_pretrain': True, 'trace_target': None,
+    'trace_cf_proposer': 'linear'
     }
 
 

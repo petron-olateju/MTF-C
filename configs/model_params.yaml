@@ -41,7 +41,7 @@ mtf_c: &id002
   spectrum_attn_flag: false
   sst_decoder: sst_multi_projection+branch_addition
   sst_method: frequency_backbone
-  sst_trace: sst_cross_attention
+  sst_trace: sst_multi_projection+branch_addition
   tem_depth: 2
   temporal_attn_flag: false
   temporal_kernel: 43
