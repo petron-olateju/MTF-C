@@ -99,21 +99,21 @@ mtf_tr_c_model_params = {
 
 MODEL_FILTERS = {
     'db_conformer': (training_params, dbconformer_model_params, 'db_conformer'),
-    'db_r_conformer': (training_params, db_r_conformer_model_params, 'db_r_conformer'),
+    # 'db_r_conformer': (training_params, db_r_conformer_model_params, 'db_r_conformer'),
 
     'mtf_c': (training_params, mtfc_model_params, 'mtf_c',),
-    'mtf_r_c': (training_params, mtf_r_c_model_params, 'mtf_r_c',),
-    'mtf_tr_c': (training_params, mtf_tr_c_model_params, 'mtf_tr_c',),
+    # 'mtf_r_c': (training_params, mtf_r_c_model_params, 'mtf_r_c',),
+    # 'mtf_tr_c': (training_params, mtf_tr_c_model_params, 'mtf_tr_c',),
 }
 
 # Aliases that should reference the same entries as their target model.
 MODEL_ALIASES = {
-    'db_conformer': 'db_conformer',
-    'db_r_conformer': 'db_r_conformer',
+    # 'db_conformer': 'db_conformer',
+    'db_r_conformer': 'db_conformer',
     
-    'mtf_c': 'mtf_c',
-    'mtf_r_c': 'mtf_r_c',
-    'mtf_tr_c': 'mtf_tr_c',
+    # 'mtf_c': 'mtf_c',
+    'mtf_r_c': 'mtf_c',
+    # 'mtf_tr_c': 'mtf_tr_c',
 }
 
 

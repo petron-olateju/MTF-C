@@ -10,46 +10,46 @@ DATASETS = [
     "BNCI2014_001", "BNCI2014_002", "BNCI2014_004"
 ]
 VALIDATION = "loso"
-OUTPUT_DIR = "experiments/sst_decoding+NRMSE_Loss+Loss_checkpointing"
+OUTPUT_DIR = "experiments/sst_decoding+NRMSE_Loss+Loss_checkpointing[RE-RUN]"
 
 DBCONFORMER_SSTs = ['st_addition', 'st_projection+addition', 'st_projection_addition']
 MTFC_SSTs = ['sst_addition', 'sst_projection+addition', 'sst_multi_projection+addition', 'sst_multi_projection+branch_addition', 'sst_cross_attention']
 
-# for dataset in tqdm(DATASETS, total=len(DATASETS)):
-#     # RUN FOR DBCONFORMER
-#     for sst_decoder in DBCONFORMER_SSTs:
-#         MODEL_PARAMS['db_conformer']['sst_decoder'] = sst_decoder
-#         MODEL_PARAMS['mtf_c']['sst_decoder'] = sst_decoder
-#         with open('configs/model_params.yaml', 'w') as f:
-#             yaml.dump(MODEL_PARAMS, f)
+for dataset in tqdm(DATASETS, total=len(DATASETS)):
+    # RUN FOR DBCONFORMER
+    for sst_decoder in DBCONFORMER_SSTs:
+        MODEL_PARAMS['db_conformer']['sst_decoder'] = sst_decoder
+        MODEL_PARAMS['mtf_c']['sst_decoder'] = sst_decoder
+        with open('configs/model_params.yaml', 'w') as f:
+            yaml.dump(MODEL_PARAMS, f)
 
-#         EXPERIMENT_DETAILS = f"Transformer depth=2 across all branches  One LOSO repeat  channel_attn_pooling alone  sst_decoder={sst_decoder}"
+        EXPERIMENT_DETAILS = f"Transformer depth=2 across all branches  One LOSO repeat  channel_attn_pooling alone  sst_decoder={sst_decoder}"
 
-#         subprocess.run(
-#                 [
-#                     "python",
-#                     "main.py",
-#                     "--validation_strategy", VALIDATION,
-#                     "--dataset_name", dataset,
-#                     "--model_name", "db_r_conformer",
-#                     "--experiment_details", EXPERIMENT_DETAILS,
-#                 "--output_dir", OUTPUT_DIR
-#                 ],
-#                 check=True,
-#             )
+        subprocess.run(
+                [
+                    "python",
+                    "main.py",
+                    "--validation_strategy", VALIDATION,
+                    "--dataset_name", dataset,
+                    "--model_name", "db_r_conformer",
+                    "--experiment_details", EXPERIMENT_DETAILS,
+                "--output_dir", OUTPUT_DIR
+                ],
+                check=True,
+            )
         
-#         subprocess.run(
-#                 [
-#                     "python",
-#                     "main.py",
-#                     "--validation_strategy", VALIDATION,
-#                     "--dataset_name", dataset,
-#                     "--model_name", "mtf_r_c",
-#                     "--experiment_details", EXPERIMENT_DETAILS,
-#                 "--output_dir", OUTPUT_DIR
-#                 ],
-#                 check=True,
-#             )
+        subprocess.run(
+                [
+                    "python",
+                    "main.py",
+                    "--validation_strategy", VALIDATION,
+                    "--dataset_name", dataset,
+                    "--model_name", "mtf_r_c",
+                    "--experiment_details", EXPERIMENT_DETAILS,
+                "--output_dir", OUTPUT_DIR
+                ],
+                check=True,
+            )
 
 
 
@@ -74,3 +74,11 @@ for dataset in tqdm(DATASETS, total=len(DATASETS)):
                 ],
                 check=True,
             )
+
+subprocess.run(
+    [
+        'git', 
+        'restore',
+        'configs/model_params.yaml'
+    ]
+)

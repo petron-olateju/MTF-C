@@ -20,7 +20,7 @@ db_conformer: &id001
   trace_lstm_hidden_size: 32
   trace_lstm_num_layers: 1
   trace_pretrain: false
-  trace_target: hard_argmax
+  trace_target: null
   trace_temperature: 0.95
 db_r_conformer: *id001
 mtf_c: &id002
@@ -34,7 +34,7 @@ mtf_c: &id002
   patch_emb_size: 40
   patch_size: 100
   posemb_flag: true
-  pretrain: false
+  pretrain: true
   reconstruction_lambda: 0.001
   spa_dim: 16
   spec_depth: 2
@@ -50,7 +50,7 @@ mtf_c: &id002
   trace_cnn_kernel_size: 3
   trace_lstm_hidden_size: 32
   trace_lstm_num_layers: 1
-  trace_pretrain: true
+  trace_pretrain: false
   trace_target: null
   trace_temperature: 0.95
   wsize_divisor: 2
